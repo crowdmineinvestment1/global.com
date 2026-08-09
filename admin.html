@@ -838,9 +838,9 @@
                     </div>
 
                     <!-- Right Panel: Live Chat Thread -->
-                    <div style="display: flex; flex-direction: column; background: #1e293b;" id="admin-chat-active-container">
+                    <div style="display: flex; flex-direction: column; background: #1e293b; height: 100%; min-height: 0; overflow: hidden;" id="admin-chat-active-container">
                         <!-- Active Chat Header -->
-                        <div style="padding: 1rem; border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; background: #0f172a;" id="admin-chat-header">
+                        <div style="padding: 1rem; border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; background: #0f172a; flex-shrink: 0;" id="admin-chat-header">
                             <div>
                                 <div id="admin-active-chat-name" style="font-weight: 800; color: #f8fafc; font-size: 1rem;">Select a Conversation</div>
                                 <div id="admin-active-chat-email" style="font-size: 0.8rem; color: #94a3b8;">Choose a visitor from the left sidebar to start live chatting</div>
@@ -849,7 +849,7 @@
                         </div>
 
                         <!-- Chat Messages Thread -->
-                        <div id="admin-chat-thread-messages" style="flex: 1; padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #0f172a;">
+                        <div id="admin-chat-thread-messages" style="flex: 1 1 auto; padding: 1.25rem; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 10px; background: #0f172a; min-height: 0; max-height: 100%;">
                             <div style="text-align: center; color: #64748b; margin-top: 6rem;">
                                 <i class="fas fa-comments" style="font-size: 3.5rem; margin-bottom: 1rem; color: #334155;"></i>
                                 <p style="font-size:0.95rem; margin:0;">Select a conversation on the left to start real-time messaging with visitors.</p>
@@ -857,7 +857,7 @@
                         </div>
 
                         <!-- Chat Input Box -->
-                        <div style="padding: 0.85rem 1rem; border-top: 1px solid #334155; background: #1e293b; display: flex; gap: 10px; align-items: center;">
+                        <div style="padding: 0.85rem 1rem; border-top: 1px solid #334155; background: #1e293b; display: flex; gap: 10px; align-items: center; flex-shrink: 0;">
                             <label id="admin-chat-file-label" style="background:#0f172a; color:#94a3b8; width:38px; height:38px; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1.1rem; border:1px solid #334155; flex-shrink:0;" title="Attach Image or Video">
                                 <i class="fas fa-paperclip" style="pointer-events:none;"></i>
                                 <input type="file" id="admin-chat-file-input" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.zip" style="display:none;" />

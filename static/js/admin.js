@@ -1998,7 +1998,11 @@ function renderAdminChatThread(chatId) {
     `;
   }).join('');
 
-  threadBody.scrollTop = threadBody.scrollHeight;
+  setTimeout(() => {
+    if (threadBody) {
+      threadBody.scrollTop = threadBody.scrollHeight;
+    }
+  }, 50);
 }
 
 window.deleteAdminChatSession = async function(chatId) {
