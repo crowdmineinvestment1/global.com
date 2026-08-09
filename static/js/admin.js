@@ -28,7 +28,22 @@ window.loginAdmin = async function() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email, password: pass })
     });
-    const data = await res.json();
+    
+    if (!res) {
+      if (errorEl) {
+        errorEl.textContent = 'Unable to reach authentication server. Check network connection.';
+        errorEl.style.display = 'block';
+      }
+      return;
+    }
+
+    let data = {};
+    try {
+      data = await res.json();
+    } catch(e) {
+      data = {};
+    }
+
     if (res.ok && data.success && data.token) {
       sessionStorage.setItem('genius_admin_session', 'active');
       localStorage.setItem('genius_admin_token', data.token);

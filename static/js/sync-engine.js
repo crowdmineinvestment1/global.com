@@ -58,22 +58,26 @@ window.geniusFetch = async function(endpointPath, options = {}) {
   const origins = isRelative ? window.getBackendOrigins() : [''];
   
   let lastErr = null;
+  let lastRes = null;
+
   for (const origin of origins) {
     const fullUrl = isRelative ? (origin + endpointPath) : endpointPath;
     try {
       const res = await fetch(fullUrl, options);
-      if (res.ok) {
-        const contentType = res.headers.get('content-type') || '';
-        // If static host returns 404 HTML for /api/*, skip to real server origin
-        if (endpointPath.startsWith('/api/') && contentType.includes('text/html')) {
-          continue;
-        }
-        return res;
+      const contentType = res.headers.get('content-type') || '';
+      
+      // If static host (e.g. GitHub Pages) returns 404/405 or HTML for /api/*, skip to real cloud backend
+      if (endpointPath.startsWith('/api/') && (contentType.includes('text/html') || res.status === 405 || (res.status === 404 && origin === ''))) {
+        lastRes = res;
+        continue;
       }
+      return res;
     } catch(err) {
       lastErr = err;
     }
   }
+
+  if (lastRes) return lastRes;
   if (lastErr) throw lastErr;
   return null;
 };
