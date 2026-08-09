@@ -1041,7 +1041,6 @@ function showToast(message) {
 
 // ==================== AUTO SYNC ====================
 setInterval(async () => {
-  if (!localStorage.getItem('genius_current_admin')) return;
   if (window._syncInProgress) return;
   window._syncInProgress = true;
   try {
@@ -1051,7 +1050,13 @@ setInterval(async () => {
   } catch(e) { } finally {
     window._syncInProgress = false;
   }
-}, 12000);
+}, 4000);
+
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && window.cloudSyncFull) {
+    try { await window.cloudSyncFull(); } catch(e) {}
+  }
+});
 
 // ==================== KYC MANAGEMENT LOGIC ====================
 function loadPendingKYC(approved) {

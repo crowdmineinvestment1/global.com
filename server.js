@@ -382,6 +382,67 @@ app.post('/api/cloud-sync', (req, res) => {
   }
 });
 
+// Dedicated User Registration Endpoint
+app.post('/api/register', (req, res) => {
+  try {
+    const { email, password, amount, proofFile, name, fullName } = req.body || {};
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required.' });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const currentDb = getCloudDb();
+
+    const approvedUsers = currentDb['geniusact_approved_users'] || [];
+    const pendingUsers = currentDb['geniusact_pending_users'] || [];
+
+    const existingApproved = approvedUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (existingApproved) {
+      return res.status(400).json({ error: 'An account with this email already exists and is approved.' });
+    }
+
+    const existingPending = pendingUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (existingPending) {
+      return res.status(200).json({ success: true, message: 'Account is already pending review.', user: existingPending });
+    }
+
+    const parsedAmount = parseFloat(amount) || 0;
+    const userFullName = fullName || name || cleanEmail.split('@')[0];
+    const newUser = {
+      uid: Date.now().toString() + '_' + Math.random().toString(36).substring(2, 6),
+      email: cleanEmail,
+      password: String(password),
+      fullName: userFullName,
+      name: userFullName,
+      amount: parsedAmount,
+      date: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      proofFile: proofFile || null,
+      status: 'pending',
+      donations: [
+        {
+          id: 'RCP-' + Math.floor(1000000 + Math.random() * 9000000),
+          amount: parsedAmount,
+          description: 'Initial Campaign Contribution',
+          date: new Date().toISOString(),
+          proofFile: proofFile || null
+        }
+      ]
+    };
+
+    pendingUsers.push(newUser);
+    currentDb['geniusact_pending_users'] = pendingUsers;
+    saveCloudDb(currentDb);
+
+    console.log('[Server] New user registered & saved to cloud DB:', cleanEmail);
+    return res.json({ success: true, user: newUser });
+  } catch (err) {
+    console.error('[Server] Registration error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // Base redirects / page renders
 app.get('/', (req, res) => {
   res.redirect('/index.html');
