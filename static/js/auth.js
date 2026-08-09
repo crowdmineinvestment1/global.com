@@ -4,20 +4,44 @@
 
 const loginForm = document.getElementById('login_form'); 
 
-// Check Auth state — redirect logged-in users only when visiting login page
-(function() {
+// Check Auth state — validate user session against server on page load
+(async function() {
   const currentUser = localStorage.getItem('geniusact_current_user');
   if (currentUser) {
     try {
       const u = JSON.parse(currentUser);
-      if (u && (u.email || u.uid)) {
+      if (u && u.email) {
+        // Server validation check
+        try {
+          const fetchFn = window.geniusFetch || fetch;
+          const res = await fetchFn('/api/auth/verify-session?email=' + encodeURIComponent(u.email));
+          if (res.ok) {
+            const data = await res.json();
+            if (!data.valid || data.status === 'pending' || data.status === 'suspended') {
+              console.warn('[Auth] Session invalid or pending according to server. Clearing local session.');
+              localStorage.removeItem('geniusact_current_user');
+              const path = window.location.pathname.toLowerCase();
+              if (path.includes('dashboard.html')) {
+                window.location.href = 'login.html?status=pending';
+              }
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('[Auth] Server verify failed, offline fallback check:', e);
+        }
+
         const path = window.location.pathname.toLowerCase();
         // Redirect only if user tries to open login page while already logged in
         if (path.includes('login.html')) {
           window.location.href = 'dashboard.html';
         }
+      } else {
+        localStorage.removeItem('geniusact_current_user');
       }
-    } catch(e) {}
+    } catch(e) {
+      localStorage.removeItem('geniusact_current_user');
+    }
   }
 })();
 

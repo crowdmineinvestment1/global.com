@@ -255,24 +255,6 @@
         try { window.refreshAllData(); } catch(e) {}
       }
     };
-
-    window.loginAdmin = function() {
-      var emailEl = document.getElementById('admin-email');
-      var email = (emailEl && emailEl.value) ? emailEl.value.toLowerCase().trim() : 'admin@geniusact.com';
-      sessionStorage.setItem('genius_admin_session', 'active');
-      localStorage.setItem('genius_current_admin', JSON.stringify({ email: email }));
-      
-      var loginSec = document.getElementById('login-section');
-      var dashSec = document.getElementById('dashboard-section');
-      if (loginSec) loginSec.style.display = 'none';
-      if (dashSec) dashSec.style.display = 'block';
-
-      var displayEl = document.getElementById('admin-email-display');
-      if (displayEl) displayEl.textContent = email;
-
-      if (window.setupTabNavigation) window.setupTabNavigation();
-      if (window.refreshAllData) window.refreshAllData();
-    };
   </script>
 
   <link rel="stylesheet" href="/static/css/mobile-premium.css">
@@ -292,9 +274,9 @@
                 </div>
                 <div class="form-field">
                     <label>Password</label>
-                    <input type="password" id="admin-password" value="" placeholder="Enter password" autocomplete="current-password" autofocus oninput="if(this.value.length>=4) window.loginAdmin();" />
+                    <input type="password" id="admin-password" value="" placeholder="Enter password" autocomplete="current-password" autofocus />
                 </div>
-                <button type="button" class="login-btn" id="admin-login-btn" onclick="window.loginAdmin()"><i class="fas fa-lock"></i> Sign In to Admin Panel</button>
+                <button type="submit" class="login-btn" id="admin-login-btn"><i class="fas fa-lock"></i> Sign In to Admin Panel</button>
             </form>
             <div class="login-error" id="login-error" style="display:none;">Invalid admin credentials. Access denied.</div>
         </div>

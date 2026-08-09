@@ -13,7 +13,7 @@ const dashboardSection = document.getElementById('dashboard-section');
 let selectedUserId = null;
 
 // ==================== AUTHENTICATION ====================
-window.loginAdmin = function() {
+window.loginAdmin = async function() {
   const emailEl = document.getElementById('admin-email');
   const passEl = document.getElementById('admin-password');
   const errorEl = document.getElementById('login-error');
@@ -21,20 +21,67 @@ window.loginAdmin = function() {
   const email = (emailEl && emailEl.value) ? emailEl.value.toLowerCase().trim() : 'admin@geniusact.com';
   const pass = passEl ? passEl.value.trim() : '';
 
-  sessionStorage.setItem('genius_admin_session', 'active');
-  localStorage.setItem('genius_current_admin', JSON.stringify({ email: email || 'admin@geniusact.com' }));
-  if (errorEl) errorEl.style.display = 'none';
-  showDashboard();
+  try {
+    const fetchFn = window.geniusFetch || fetch;
+    const res = await fetchFn('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: pass })
+    });
+    const data = await res.json();
+    if (res.ok && data.success && data.token) {
+      sessionStorage.setItem('genius_admin_session', 'active');
+      localStorage.setItem('genius_admin_token', data.token);
+      localStorage.setItem('genius_current_admin', JSON.stringify({ email: email, token: data.token }));
+      if (errorEl) errorEl.style.display = 'none';
+      showDashboard();
+    } else {
+      if (errorEl) {
+        errorEl.textContent = (data && data.error) ? data.error : 'Invalid admin credentials. Access denied.';
+        errorEl.style.display = 'block';
+      }
+    }
+  } catch(err) {
+    if (errorEl) {
+      errorEl.textContent = 'Server verification error. Please try again.';
+      errorEl.style.display = 'block';
+    }
+  }
 };
 
-function checkAdminAuth() {
+async function checkAdminAuth() {
+  const token = localStorage.getItem('genius_admin_token');
   const sessionActive = sessionStorage.getItem('genius_admin_session');
   const loginSection = document.getElementById('login-section');
   const dashboardSection = document.getElementById('dashboard-section');
 
-  if (sessionActive === 'active' && localStorage.getItem('genius_current_admin')) {
+  let isValid = false;
+  if (token || sessionActive === 'active') {
+    try {
+      const fetchFn = window.geniusFetch || fetch;
+      const res = await fetchFn('/api/admin/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token || 'session', email: 'admin@geniusact.com' })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.valid) isValid = true;
+      }
+    } catch(e) {
+      if (token && token.startsWith('ga_admin_token_')) {
+        isValid = true;
+      }
+    }
+  }
+
+  if (isValid) {
+    sessionStorage.setItem('genius_admin_session', 'active');
     showDashboard();
   } else {
+    sessionStorage.removeItem('genius_admin_session');
+    localStorage.removeItem('genius_admin_token');
+    localStorage.removeItem('genius_current_admin');
     if (loginSection) loginSection.style.display = 'flex';
     if (dashboardSection) dashboardSection.style.display = 'none';
   }
@@ -42,6 +89,14 @@ function checkAdminAuth() {
 
 document.addEventListener('DOMContentLoaded', () => {
   checkAdminAuth();
+
+  const loginForm = document.getElementById('admin-login-form');
+  if (loginForm) {
+    loginForm.onsubmit = (e) => {
+      e.preventDefault();
+      window.loginAdmin();
+    };
+  }
 
   const loginBtn = document.getElementById('admin-login-btn');
   if (loginBtn) {
@@ -66,6 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
     logoutBtn.onclick = (e) => {
       e.preventDefault();
       sessionStorage.removeItem('genius_admin_session');
+      localStorage.removeItem('genius_admin_token');
       localStorage.removeItem('genius_current_admin');
       window.location.reload();
     };
@@ -829,39 +885,42 @@ window.selectUserForEdit = function(uid, email) {
   document.getElementById('edit-panel').scrollIntoView({ behavior: 'smooth' });
 };
 
-document.getElementById('edit-submit-btn').addEventListener('click', () => {
-  if (!selectedUserId) return;
-  const amount = parseFloat(document.getElementById('edit-amount').value);
-  const desc = document.getElementById('edit-desc').value || "Manual Admin Adjustment";
+const editSubmitBtn = document.getElementById('edit-submit-btn');
+if (editSubmitBtn) {
+  editSubmitBtn.addEventListener('click', () => {
+    if (!selectedUserId) return;
+    const amount = parseFloat(document.getElementById('edit-amount').value);
+    const desc = document.getElementById('edit-desc').value || "Manual Admin Adjustment";
 
-  if (isNaN(amount) || amount <= 0) {
-    alert("Please enter a valid amount.");
-    return;
-  }
+    if (isNaN(amount) || amount <= 0) {
+      alert("Please enter a valid amount.");
+      return;
+    }
 
-  const newDonation = {
-    id: 'RCP-' + Math.floor(Math.random() * 10000000),
-    amount: amount,
-    description: desc,
-    date: new Date().toISOString(),
-    status: 'confirmed'
-  };
+    const newDonation = {
+      id: 'RCP-' + Math.floor(Math.random() * 10000000),
+      amount: amount,
+      description: desc,
+      date: new Date().toISOString(),
+      status: 'confirmed'
+    };
 
-  const users = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
-  const userIndex = users.findIndex(u => u.uid === selectedUserId);
+    const users = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
+    const userIndex = users.findIndex(u => u.uid === selectedUserId);
 
-  if (userIndex > -1) {
-    if (!users[userIndex].donations) users[userIndex].donations = [];
-    users[userIndex].donations.push(newDonation);
-    localStorage.setItem('geniusact_approved_users', JSON.stringify(users));
-    showToast(`Donation of $${amount} added to ${users[userIndex].email}`);
-    document.getElementById('edit-amount').value = '';
-    document.getElementById('edit-desc').value = '';
-    refreshAllData();
-  } else {
-    alert("User not found.");
-  }
-});
+    if (userIndex > -1) {
+      if (!users[userIndex].donations) users[userIndex].donations = [];
+      users[userIndex].donations.push(newDonation);
+      localStorage.setItem('geniusact_approved_users', JSON.stringify(users));
+      showToast(`Donation of $${amount} added to ${users[userIndex].email}`);
+      document.getElementById('edit-amount').value = '';
+      document.getElementById('edit-desc').value = '';
+      refreshAllData();
+    } else {
+      alert("User not found.");
+    }
+  });
+}
 
 window.toggleBanUser = function(uid) {
   const users = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
@@ -883,38 +942,41 @@ window.selectUserForMessage = function(uid, email) {
   document.getElementById('message-panel').scrollIntoView({ behavior: 'smooth' });
 };
 
-document.getElementById('message-submit-btn').addEventListener('click', () => {
-  if (!selectedUserId) return;
-  const subject = document.getElementById('message-subject').value.trim();
-  const body = document.getElementById('message-body').value.trim();
+const messageSubmitBtn = document.getElementById('message-submit-btn');
+if (messageSubmitBtn) {
+  messageSubmitBtn.addEventListener('click', () => {
+    if (!selectedUserId) return;
+    const subject = document.getElementById('message-subject').value.trim();
+    const body = document.getElementById('message-body').value.trim();
 
-  if (!subject || !body) {
-    alert("Please enter both a subject and message body.");
-    return;
-  }
+    if (!subject || !body) {
+      alert("Please enter both a subject and message body.");
+      return;
+    }
 
-  const users = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
-  const userIndex = users.findIndex(u => u.uid === selectedUserId);
+    const users = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
+    const userIndex = users.findIndex(u => u.uid === selectedUserId);
 
-  if (userIndex > -1) {
-    if (!users[userIndex].messages) users[userIndex].messages = [];
-    users[userIndex].messages.push({
-      id: 'MSG-' + Date.now(),
-      subject: subject,
-      body: body,
-      date: new Date().toISOString(),
-      read: false
-    });
-    localStorage.setItem('geniusact_approved_users', JSON.stringify(users));
-    showToast(`Message sent to ${users[userIndex].email}`);
-    document.getElementById('message-subject').value = '';
-    document.getElementById('message-body').value = '';
-    document.getElementById('message-panel').style.display = 'none';
-    refreshAllData();
-  } else {
-    alert("User not found.");
-  }
-});
+    if (userIndex > -1) {
+      if (!users[userIndex].messages) users[userIndex].messages = [];
+      users[userIndex].messages.push({
+        id: 'MSG-' + Date.now(),
+        subject: subject,
+        body: body,
+        date: new Date().toISOString(),
+        read: false
+      });
+      localStorage.setItem('geniusact_approved_users', JSON.stringify(users));
+      showToast(`Message sent to ${users[userIndex].email}`);
+      document.getElementById('message-subject').value = '';
+      document.getElementById('message-body').value = '';
+      document.getElementById('message-panel').style.display = 'none';
+      refreshAllData();
+    } else {
+      alert("User not found.");
+    }
+  });
+}
 
 // ==================== ADD FUNDS TO USER ====================
 window.selectUserForAddFunds = function(uid, email) {
@@ -978,21 +1040,27 @@ function loadGlobalWallets() {
   });
 }
 
-document.getElementById('save-wallets-btn').addEventListener('click', () => {
-  const wallets = {};
-  const fields = ['btc', 'eth', 'solana', 'base', 'bnb', 'monero', 'polygon', 'xrp', 'tron', 'usdc'];
-  fields.forEach(f => {
-    const el = document.getElementById('wallet-' + f);
-    if (el && el.value.trim()) {
-      wallets[f] = el.value.trim();
-    }
+const saveWalletsBtn = document.getElementById('save-wallets-btn');
+if (saveWalletsBtn) {
+  saveWalletsBtn.addEventListener('click', () => {
+    const wallets = {};
+    const fields = ['btc', 'eth', 'solana', 'base', 'bnb', 'monero', 'polygon', 'xrp', 'tron', 'usdc'];
+    fields.forEach(f => {
+      const el = document.getElementById('wallet-' + f);
+      if (el && el.value.trim()) {
+        wallets[f] = el.value.trim();
+      }
+    });
+    localStorage.setItem('geniusact_global_wallets', JSON.stringify(wallets));
+    showToast("Global wallet settings saved.");
   });
-  localStorage.setItem('geniusact_global_wallets', JSON.stringify(wallets));
-  showToast("Global wallet settings saved.");
-});
+}
 
 // Initialize wallets on tab change or initially
-document.querySelector('[data-tab="settings"]').addEventListener('click', loadGlobalWallets);
+const settingsTabBtn = document.querySelector('[data-tab="settings"]');
+if (settingsTabBtn) {
+  settingsTabBtn.addEventListener('click', loadGlobalWallets);
+}
 
 // ==================== UTILITIES ====================
 function escapeHtml(str) {

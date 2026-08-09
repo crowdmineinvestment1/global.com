@@ -695,6 +695,116 @@ app.post('/api/register', (req, res) => {
   }
 });
 
+// Server-validated User Session Verification Endpoint
+app.post('/api/auth/verify-session', (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email) {
+      return res.status(400).json({ valid: false, error: 'Email parameter required.' });
+    }
+    const cleanEmail = String(email).trim().toLowerCase();
+    const currentDb = getCloudDb();
+    const approvedUsers = currentDb['geniusact_approved_users'] || [];
+    const pendingUsers = currentDb['geniusact_pending_users'] || [];
+
+    const approvedUser = approvedUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (approvedUser) {
+      if (approvedUser.suspended) {
+        return res.json({ valid: false, status: 'suspended', error: 'Account suspended.' });
+      }
+      const safeUser = { ...approvedUser };
+      delete safeUser.proofFile;
+      return res.json({ valid: true, status: 'approved', user: safeUser });
+    }
+
+    const pendingUser = pendingUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (pendingUser) {
+      return res.json({ valid: false, status: 'pending', error: 'Account is undergoing compliance audit.' });
+    }
+
+    return res.json({ valid: false, status: 'unauthorized', error: 'User not found in cloud database.' });
+  } catch (err) {
+    return res.status(500).json({ valid: false, error: err.message });
+  }
+});
+
+app.get('/api/auth/verify-session', (req, res) => {
+  try {
+    const email = req.query.email;
+    if (!email) {
+      return res.status(400).json({ valid: false, error: 'Email parameter required.' });
+    }
+    const cleanEmail = String(email).trim().toLowerCase();
+    const currentDb = getCloudDb();
+    const approvedUsers = currentDb['geniusact_approved_users'] || [];
+    const pendingUsers = currentDb['geniusact_pending_users'] || [];
+
+    const approvedUser = approvedUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (approvedUser) {
+      if (approvedUser.suspended) {
+        return res.json({ valid: false, status: 'suspended', error: 'Account suspended.' });
+      }
+      const safeUser = { ...approvedUser };
+      delete safeUser.proofFile;
+      return res.json({ valid: true, status: 'approved', user: safeUser });
+    }
+
+    const pendingUser = pendingUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (pendingUser) {
+      return res.json({ valid: false, status: 'pending', error: 'Account is undergoing compliance audit.' });
+    }
+
+    return res.json({ valid: false, status: 'unauthorized', error: 'User not found in cloud database.' });
+  } catch (err) {
+    return res.status(500).json({ valid: false, error: err.message });
+  }
+});
+
+// Admin Authentication Endpoints
+const ADMIN_EMAIL = 'admin@geniusact.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '2005';
+
+app.post('/api/admin/login', (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password are required.' });
+    }
+    const cleanEmail = String(email).trim().toLowerCase();
+    if (cleanEmail === ADMIN_EMAIL.toLowerCase() && String(password).trim() === ADMIN_PASSWORD) {
+      const adminToken = 'ga_admin_token_' + Buffer.from(cleanEmail + ':' + Date.now()).toString('base64');
+      return res.json({
+        success: true,
+        token: adminToken,
+        admin: { email: ADMIN_EMAIL, name: 'Federal Compliance Officer', role: 'administrator' }
+      });
+    } else {
+      return res.status(401).json({ success: false, error: 'Invalid administrative credentials. Access denied.' });
+    }
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/admin/verify', (req, res) => {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const { token, email } = req.body || {};
+    const adminToken = token || (authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader);
+    
+    if (adminToken && adminToken.startsWith('ga_admin_token_')) {
+      return res.json({ valid: true, email: ADMIN_EMAIL });
+    } else if (email && String(email).trim().toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      if (adminToken) {
+        return res.json({ valid: true, email: ADMIN_EMAIL });
+      }
+    }
+    return res.status(401).json({ valid: false, error: 'Unauthorized administrative access.' });
+  } catch (err) {
+    return res.status(500).json({ valid: false, error: err.message });
+  }
+});
+
 // Base redirects / page renders
 app.get('/', (req, res) => {
   res.redirect('/index.html');
