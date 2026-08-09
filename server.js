@@ -601,20 +601,54 @@ app.post('/api/chat/message', (req, res) => {
 
 app.post('/api/chat/admin-reply', (req, res) => {
   try {
-    const { chatId, message } = req.body || {};
-    if (!chatId || !message) return res.status(400).json({ error: 'ChatId and message required' });
+    const { chatId, userEmail, message } = req.body || {};
+    if ((!chatId && !userEmail) || !message) return res.status(400).json({ error: 'ChatId or userEmail, and message required' });
     const currentDb = getCloudDb();
     const chats = currentDb['geniusact_contact_chats'] || [];
-    const targetChat = chats.find(c => c.chatId === chatId || (c.userEmail && c.userEmail.toLowerCase() === String(chatId).toLowerCase()));
+    let targetChat = chats.find(c => 
+      (chatId && c.chatId === chatId) || 
+      (userEmail && c.userEmail && c.userEmail.toLowerCase() === String(userEmail).toLowerCase()) ||
+      (chatId && c.userEmail && c.userEmail.toLowerCase() === String(chatId).toLowerCase())
+    );
+
     if (targetChat) {
       if (!Array.isArray(targetChat.messages)) targetChat.messages = [];
       targetChat.messages.push(message);
       targetChat.lastUpdated = new Date().toISOString();
       targetChat.unreadUserCount = (targetChat.unreadUserCount || 0) + 1;
       targetChat.unreadAdminCount = 0;
-      saveCloudDb(currentDb);
+    } else {
+      targetChat = {
+        chatId: chatId || ('chat_' + Date.now()),
+        userEmail: userEmail || (String(chatId).includes('@') ? chatId : 'visitor@geniusact.org'),
+        userName: userEmail ? userEmail.split('@')[0] : 'Visitor',
+        isGuest: true,
+        lastUpdated: new Date().toISOString(),
+        unreadUserCount: 1,
+        unreadAdminCount: 0,
+        messages: [message]
+      };
+      chats.push(targetChat);
     }
+
+    currentDb['geniusact_contact_chats'] = mergeContactChatsServer(chats, [targetChat]);
+    saveCloudDb(currentDb);
     return res.json({ success: true, chats: currentDb['geniusact_contact_chats'] });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/chat/delete', (req, res) => {
+  try {
+    const { chatId } = req.body || {};
+    if (!chatId) return res.status(400).json({ error: 'chatId required' });
+    const currentDb = getCloudDb();
+    let chats = currentDb['geniusact_contact_chats'] || [];
+    chats = chats.filter(c => c.chatId !== chatId && c.userEmail !== chatId);
+    currentDb['geniusact_contact_chats'] = chats;
+    saveCloudDb(currentDb);
+    return res.json({ success: true, chats });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

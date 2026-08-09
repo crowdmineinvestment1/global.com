@@ -1928,15 +1928,18 @@ function renderAdminChatThread(chatId) {
   headerStatus.textContent = chat.isGuest ? 'Guest Visitor' : 'Registered Supporter';
   headerStatus.className = `status-badge ${chat.isGuest ? 'status-pending' : 'status-approved'}`;
 
-  // Add Clear Chat button to header if not already present
-  if (headerContainer && !document.getElementById('btn-clear-chat-session')) {
-    let clearBtn = document.createElement('button');
-    clearBtn.id = 'btn-clear-chat-session';
-    clearBtn.className = 'action-btn btn-ban';
-    clearBtn.style.cssText = 'padding:4px 10px; font-size:0.75rem; margin-left:auto;';
-    clearBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Clear Chat';
+  // Add or update Clear Chat button in header
+  let clearBtn = document.getElementById('btn-clear-chat-session');
+  if (headerContainer) {
+    if (!clearBtn) {
+      clearBtn = document.createElement('button');
+      clearBtn.id = 'btn-clear-chat-session';
+      clearBtn.className = 'action-btn btn-ban';
+      clearBtn.style.cssText = 'padding:4px 10px; font-size:0.75rem; margin-left:auto;';
+      clearBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Clear Chat';
+      headerContainer.appendChild(clearBtn);
+    }
     clearBtn.onclick = () => window.deleteAdminChatSession(chat.chatId);
-    headerContainer.appendChild(clearBtn);
   }
 
   replyInput.disabled = false;
@@ -2006,6 +2009,14 @@ window.deleteAdminChatSession = async function(chatId) {
 
   activeAdminChatId = chats.length > 0 ? chats[0].chatId : null;
 
+  try {
+    await (window.geniusFetch || fetch)('/api/chat/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chatId })
+    });
+  } catch(e) {}
+
   if (window.cloudSyncFull) {
     try { await window.cloudSyncFull(); } catch(e) { }
   }
@@ -2021,7 +2032,7 @@ async function sendAdminChatMessage() {
   if (!text && !adminPendingMedia) return;
 
   let chats = JSON.parse(localStorage.getItem('geniusact_contact_chats')) || [];
-  const idx = chats.findIndex(c => c.chatId === activeAdminChatId);
+  const idx = chats.findIndex(c => c.chatId === activeAdminChatId || (c.userEmail && activeAdminChatId.includes('@') && c.userEmail.toLowerCase() === activeAdminChatId.toLowerCase()));
   if (idx > -1) {
     const now = new Date().toISOString();
     const newMsg = {
@@ -2034,17 +2045,23 @@ async function sendAdminChatMessage() {
     chats[idx].messages.push(newMsg);
     chats[idx].lastUpdated = now;
     chats[idx].unreadUserCount = (chats[idx].unreadUserCount || 0) + 1;
+    chats[idx].unreadAdminCount = 0;
     localStorage.setItem('geniusact_contact_chats', JSON.stringify(chats));
 
     // Direct REST API call for instant multi-device sync
-    (window.geniusFetch || fetch)('/api/chat/admin-reply', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chatId: activeAdminChatId,
-        message: newMsg
-      })
-    }).catch(err => console.warn('Direct admin reply API call error:', err));
+    try {
+      await (window.geniusFetch || fetch)('/api/chat/admin-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chatId: activeAdminChatId,
+          userEmail: chats[idx].userEmail,
+          message: newMsg
+        })
+      });
+    } catch(err) {
+      console.warn('Direct admin reply API call error:', err);
+    }
 
     if (window.cloudSyncFull) {
       try { await window.cloudSyncFull(); } catch (e) { }

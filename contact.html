@@ -575,6 +575,10 @@
                 replyTimestamp: null
             };
 
+            // Save guest info so live chat widget connects seamlessly
+            if (name) localStorage.setItem('geniusact_guest_name', name);
+            if (email) localStorage.setItem('geniusact_guest_email', email);
+
             // Save to geniusact_support_messages
             let messages = JSON.parse(localStorage.getItem('geniusact_support_messages')) || [];
             messages.push(newMsg);

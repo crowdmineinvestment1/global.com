@@ -82,23 +82,111 @@ window.geniusFetch = async function(endpointPath, options = {}) {
   return null;
 };
 
+async function pushToGitHub(data) {
+  const repoOwner = 'crowdmineinvestment1';
+  const repoName = 'global.com';
+  const filePath = 'cloud_database.json';
+  const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`;
+  
+  const token = window.GITHUB_TOKEN || 
+                localStorage.getItem('geniusact_github_token') || 
+                localStorage.getItem('github_pat') || 
+                window.GITHUB_PAT || 
+                '';
+
+  try {
+    if (!window._lastGitHubSha) {
+      const getRes = await fetch(apiUrl + '?cb=' + Date.now(), {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (getRes.ok) {
+        const getJson = await getRes.json();
+        if (getJson && getJson.sha) {
+          window._lastGitHubSha = getJson.sha;
+        }
+      }
+    }
+
+    const contentString = JSON.stringify(data, null, 2);
+    const encodedContent = btoa(unescape(encodeURIComponent(contentString)));
+
+    const body = {
+      message: 'Sync cloud_database.json [Live GitHub REST API Engine]',
+      content: encodedContent
+    };
+    if (window._lastGitHubSha) {
+      body.sha = window._lastGitHubSha;
+    }
+
+    const putRes = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (putRes.ok) {
+      const putJson = await putRes.json();
+      if (putJson && putJson.content && putJson.content.sha) {
+        window._lastGitHubSha = putJson.content.sha;
+      }
+      console.log('[CloudSync] Successfully pushed update directly to GitHub Contents REST API!');
+      return true;
+    }
+  } catch(err) {
+    console.warn('[CloudSync] GitHub REST API push note:', err.message);
+  }
+  return false;
+}
+
 async function cloudFetch() {
+  const cacheBust = '?cb=' + Date.now();
   const fetchEndpoints = [
-    '/api/cloud-sync',
-    '/cloud_database.json',
-    './cloud_database.json'
+    '/api/cloud-sync' + cacheBust,
+    'https://raw.githubusercontent.com/crowdmineinvestment1/global.com/main/cloud_database.json' + cacheBust,
+    'https://api.github.com/repos/crowdmineinvestment1/global.com/contents/cloud_database.json' + cacheBust,
+    '/cloud_database.json' + cacheBust,
+    './cloud_database.json' + cacheBust
   ];
 
   const origins = window.getBackendOrigins();
 
   for (const path of fetchEndpoints) {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      try {
+        const res = await fetch(path, { cache: 'no-store' });
+        if (res.ok) {
+          const raw = await res.json();
+          let data = raw;
+          if (raw && raw.content && typeof raw.content === 'string') {
+            if (raw.sha) window._lastGitHubSha = raw.sha;
+            try {
+              const decoded = decodeURIComponent(escape(atob(raw.content.replace(/\s/g, ''))));
+              data = JSON.parse(decoded);
+            } catch(e) {
+              data = raw;
+            }
+          }
+          if (data && typeof data === 'object') {
+            console.log('[CloudSync] Data loaded from external endpoint:', path);
+            window._inMemoryCloudCache = data;
+            return data;
+          }
+        }
+      } catch(e) {}
+      continue;
+    }
+
     for (const origin of origins) {
       const url = origin ? (origin + path) : path;
       try {
         const res = await fetch(url, { cache: 'no-store' });
         if (res.ok) {
           const contentType = res.headers.get('content-type') || '';
-          if (path.startsWith('/api/') && contentType.includes('text/html')) {
+          if (path.includes('/api/') && contentType.includes('text/html')) {
             continue;
           }
           const data = await res.json();
@@ -129,6 +217,7 @@ async function cloudPush(data) {
   ];
 
   const origins = window.getBackendOrigins();
+  let serverSuccess = false;
 
   for (const path of pushEndpoints) {
     for (const origin of origins) {
@@ -141,16 +230,22 @@ async function cloudPush(data) {
         });
         if (res.ok) {
           const contentType = res.headers.get('content-type') || '';
-          if (path.startsWith('/api/') && contentType.includes('text/html')) {
+          if (path.includes('/api/') && contentType.includes('text/html')) {
             continue;
           }
           console.log('[CloudSync] Push successful to:', url);
-          return true;
+          serverSuccess = true;
+          break;
         }
       } catch(err) {}
     }
+    if (serverSuccess) break;
   }
-  return false;
+
+  // Also push directly via GitHub Contents REST API
+  pushToGitHub(data).catch(() => {});
+
+  return serverSuccess;
 }
 
 function mergeDonations(d1 = [], d2 = []) {
