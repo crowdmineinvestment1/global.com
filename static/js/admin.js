@@ -1966,7 +1966,7 @@ async function sendAdminChatMessage() {
     localStorage.setItem('geniusact_contact_chats', JSON.stringify(chats));
 
     // Direct REST API call for instant multi-device sync
-    fetch('/api/chat/admin-reply', {
+    (window.geniusFetch || fetch)('/api/chat/admin-reply', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

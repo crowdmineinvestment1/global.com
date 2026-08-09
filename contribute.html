@@ -1771,7 +1771,7 @@
 
         // Direct Server API Registration Call
         try {
-          const regRes = await fetch('/api/register', {
+          const regRes = await (window.geniusFetch || fetch)('/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

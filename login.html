@@ -165,7 +165,7 @@
           msg.textContent = 'Syncing registration to Federal Campaign Registry...';
 
           try {
-            const res = await fetch('/api/register', {
+            const res = await (window.geniusFetch || fetch)('/api/register', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

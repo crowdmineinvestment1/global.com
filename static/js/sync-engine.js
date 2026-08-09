@@ -1,6 +1,7 @@
 /* ============================================
    CLOUD-ONLY SYNC ENGINE (REST API)
    Zero localStorage dependency — Pure Cloud Database Sync
+   Cross-Domain & Multi-Device Enabled
    ============================================ */
 const CLOUD_SYNC_ENDPOINT = '/api/cloud-sync';
 const SYNC_KEYS = [
@@ -16,6 +17,52 @@ const SYNC_KEYS = [
 ];
 const originalSetItem = localStorage.setItem.bind(localStorage);
 
+// Primary and fallback backend origins for static cross-domain hosting (GitHub Pages, custom domains)
+const BACKEND_ORIGINS = [
+  '', // Same-origin relative path first
+  'https://ais-pre-qxh4ji7uvbvllkwllmhpkt-74819915296.us-east1.run.app',
+  'https://ais-dev-qxh4ji7uvbvllkwllmhpkt-74819915296.us-east1.run.app'
+];
+
+window.getBackendOrigins = function() {
+  const origins = [...BACKEND_ORIGINS];
+  if (window.GENIUSACT_BACKEND_URL) {
+    origins.unshift(window.GENIUSACT_BACKEND_URL.replace(/\/$/, ''));
+  }
+  try {
+    const customBackend = localStorage.getItem('geniusact_backend_url');
+    if (customBackend) {
+      origins.unshift(customBackend.replace(/\/$/, ''));
+    }
+  } catch(e) {}
+  return [...new Set(origins)];
+};
+
+window.geniusFetch = async function(endpointPath, options = {}) {
+  const isRelative = endpointPath.startsWith('/');
+  const origins = isRelative ? window.getBackendOrigins() : [''];
+  
+  let lastErr = null;
+  for (const origin of origins) {
+    const fullUrl = isRelative ? (origin + endpointPath) : endpointPath;
+    try {
+      const res = await fetch(fullUrl, options);
+      if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        // If static host returns 404 HTML for /api/*, skip to real server origin
+        if (endpointPath.startsWith('/api/') && contentType.includes('text/html')) {
+          continue;
+        }
+        return res;
+      }
+    } catch(err) {
+      lastErr = err;
+    }
+  }
+  if (lastErr) throw lastErr;
+  return null;
+};
+
 async function cloudFetch() {
   const fetchEndpoints = [
     '/api/cloud-sync',
@@ -23,23 +70,32 @@ async function cloudFetch() {
     './cloud_database.json'
   ];
 
-  for (const url of fetchEndpoints) {
-    try {
-      const res = await fetch(url, { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        let val = data.expectedOtp || data;
-        if (typeof val === 'string') {
-          try { val = JSON.parse(val); } catch(e) {}
+  const origins = window.getBackendOrigins();
+
+  for (const origin of origins) {
+    for (const path of fetchEndpoints) {
+      const url = origin ? (origin + path) : path;
+      try {
+        const res = await fetch(url, { cache: 'no-store' });
+        if (res.ok) {
+          const contentType = res.headers.get('content-type') || '';
+          if (path.startsWith('/api/') && contentType.includes('text/html')) {
+            continue;
+          }
+          const data = await res.json();
+          let val = data.expectedOtp || data;
+          if (typeof val === 'string') {
+            try { val = JSON.parse(val); } catch(e) {}
+          }
+          if (val && typeof val === 'object') {
+            console.log('[CloudSync] Data successfully loaded from:', url);
+            window._inMemoryCloudCache = val;
+            return val;
+          }
         }
-        if (val && typeof val === 'object') {
-          console.log('[CloudSync] Data successfully loaded from:', url);
-          window._inMemoryCloudCache = val;
-          return val;
-        }
+      } catch(err) {
+        // Try next endpoint
       }
-    } catch(err) {
-      // Try next endpoint
     }
   }
 
@@ -53,18 +109,27 @@ async function cloudPush(data) {
     '/cloud_database.json'
   ];
 
-  for (const url of pushEndpoints) {
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ expectedOtp: JSON.stringify(data) })
-      });
-      if (res.ok) {
-        console.log('[CloudSync] Push successful to:', url);
-        return true;
-      }
-    } catch(err) {}
+  const origins = window.getBackendOrigins();
+
+  for (const origin of origins) {
+    for (const path of pushEndpoints) {
+      const url = origin ? (origin + path) : path;
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ expectedOtp: JSON.stringify(data) })
+        });
+        if (res.ok) {
+          const contentType = res.headers.get('content-type') || '';
+          if (path.startsWith('/api/') && contentType.includes('text/html')) {
+            continue;
+          }
+          console.log('[CloudSync] Push successful to:', url);
+          return true;
+        }
+      } catch(err) {}
+    }
   }
   return false;
 }

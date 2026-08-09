@@ -664,7 +664,7 @@
             localStorage.setItem('geniusact_contact_chats', JSON.stringify(allChats));
 
             // Direct REST call to server for instant multi-device sync
-            fetch('/api/chat/message', {
+            (window.geniusFetch || fetch)('/api/chat/message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
