@@ -1,0 +1,435 @@
+{
+  "geniusact_pending_users": [
+    {
+      "uid": "usr_pnd_201",
+      "email": "alex.turner@gmail.com",
+      "password": "Pass1234!",
+      "fullName": "Alex Turner",
+      "amount": 10000,
+      "status": "pending",
+      "date": "2026-06-05T14:30:00.000Z",
+      "createdAt": "2026-06-05T14:30:00.000Z",
+      "proofFile": "assets/images/SEO.jpg"
+    },
+    {
+      "uid": "usr_pnd_202",
+      "email": "karen.white@yahoo.com",
+      "password": "Support47",
+      "fullName": "Karen White",
+      "amount": 50000,
+      "status": "pending",
+      "date": "2026-06-06T16:15:00.000Z",
+      "createdAt": "2026-06-06T16:15:00.000Z",
+      "proofFile": "assets/images/banner.jpg"
+    },
+    {
+      "uid": "usr_pnd_203",
+      "email": "brian.miller@outlook.com",
+      "password": "RedWave2024",
+      "fullName": "Brian Miller",
+      "amount": 100000,
+      "status": "pending",
+      "date": "2026-06-07T09:00:00.000Z",
+      "createdAt": "2026-06-07T09:00:00.000Z",
+      "proofFile": "assets/images/DJT-bluetie.png"
+    },
+    {
+      "email": "testuser@gmail.com",
+      "amount": "10000",
+      "status": "pending"
+    }
+  ],
+  "geniusact_approved_users": [
+    {
+      "uid": "usr_app_101",
+      "email": "john.smith@gmail.com",
+      "password": "Trump2024!",
+      "fullName": "John Smith",
+      "amount": 250000,
+      "status": "approved",
+      "approvedAt": "2026-05-10T12:00:00.000Z",
+      "createdAt": "2026-05-10T10:00:00.000Z",
+      "proofFile": "assets/images/SEO.jpg",
+      "donations": [
+        {
+          "id": "RCP-884102",
+          "amount": 250000,
+          "description": "Q2 Primary Campaign Supporter",
+          "date": "2026-05-10T12:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "uid": "usr_app_102",
+      "email": "sarah.jenkins@outlook.com",
+      "password": "Patriot2024",
+      "fullName": "Sarah Jenkins",
+      "amount": 120000,
+      "status": "approved",
+      "approvedAt": "2026-05-14T15:20:00.000Z",
+      "createdAt": "2026-05-14T11:00:00.000Z",
+      "proofFile": "assets/images/banner.jpg",
+      "donations": [
+        {
+          "id": "RCP-773194",
+          "amount": 120000,
+          "description": "GENIUS Act Sustaining Backer",
+          "date": "2026-05-14T15:20:00.000Z"
+        }
+      ]
+    },
+    {
+      "uid": "usr_app_103",
+      "email": "michael.brown@yahoo.com",
+      "password": "Maga2024#",
+      "fullName": "Michael Brown",
+      "amount": 50000,
+      "status": "approved",
+      "approvedAt": "2026-05-18T09:15:00.000Z",
+      "createdAt": "2026-05-18T08:00:00.000Z",
+      "donations": [
+        {
+          "id": "RCP-662810",
+          "amount": 50000,
+          "description": "National Digital Rally Supporter",
+          "date": "2026-05-18T09:15:00.000Z"
+        }
+      ]
+    },
+    {
+      "uid": "usr_app_104",
+      "email": "david.wilson@hotmail.com",
+      "password": "AmericaFirst1",
+      "fullName": "David Wilson",
+      "amount": 15000,
+      "status": "approved",
+      "approvedAt": "2026-05-22T18:40:00.000Z",
+      "createdAt": "2026-05-22T14:10:00.000Z",
+      "donations": [
+        {
+          "id": "RCP-551928",
+          "amount": 15000,
+          "description": "Grassroots Victory Club",
+          "date": "2026-05-22T18:40:00.000Z"
+        }
+      ]
+    },
+    {
+      "uid": "usr_app_105",
+      "email": "emily.davis@icloud.com",
+      "password": "GeniusAct2026",
+      "fullName": "Emily Davis",
+      "amount": 2500,
+      "status": "approved",
+      "approvedAt": "2026-05-28T10:05:00.000Z",
+      "createdAt": "2026-05-28T09:00:00.000Z",
+      "donations": [
+        {
+          "id": "RCP-440819",
+          "amount": 2500,
+          "description": "Standard Supporter Donation",
+          "date": "2026-05-28T10:05:00.000Z"
+        }
+      ]
+    },
+    {
+      "uid": "usr_app_106",
+      "email": "robert.taylor@proton.me",
+      "password": "TrumpWin2024",
+      "fullName": "Robert Taylor",
+      "amount": 1000,
+      "status": "approved",
+      "approvedAt": "2026-06-01T16:30:00.000Z",
+      "createdAt": "2026-06-01T13:00:00.000Z",
+      "donations": [
+        {
+          "id": "RCP-339712",
+          "amount": 1000,
+          "description": "Monthly Contribution",
+          "date": "2026-06-01T16:30:00.000Z"
+        }
+      ]
+    },
+    {
+      "uid": "usr_app_107",
+      "email": "jessica.martinez@gmail.com",
+      "password": "Freedom777",
+      "fullName": "Jessica Martinez",
+      "amount": 500,
+      "status": "approved",
+      "approvedAt": "2026-06-04T11:45:00.000Z",
+      "createdAt": "2026-06-04T11:00:00.000Z",
+      "donations": [
+        {
+          "id": "RCP-228601",
+          "amount": 500,
+          "description": "Digital Outreach Backer",
+          "date": "2026-06-04T11:45:00.000Z"
+        }
+      ]
+    }
+  ],
+  "geniusact_visitor_logs": [
+    {
+      "id": "v_1786249510462_dknriu",
+      "page": "/index.html",
+      "timestamp": "2026-08-09T04:25:10.462Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+      "referrer": "https://aistudio.google.com/",
+      "screenSize": "1366x768",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "Local/VPN",
+        "city": "United States",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
+      "id": "v_1786249288552_z8y59w",
+      "page": "/admin",
+      "timestamp": "2026-08-09T04:21:28.553Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+      "referrer": "https://aistudio.google.com/",
+      "screenSize": "1366x768",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "Local/VPN",
+        "city": "United States",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
+      "id": "v_1786249288226_1ujdof",
+      "page": "/admin",
+      "timestamp": "2026-08-09T04:21:28.226Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+      "referrer": "https://aistudio.google.com/",
+      "screenSize": "1366x768",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "Local/VPN",
+        "city": "United States",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
+      "id": "v_1786249268876_7bfxpy",
+      "page": "/admin",
+      "timestamp": "2026-08-09T04:21:08.876Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+      "referrer": "https://aistudio.google.com/",
+      "screenSize": "1366x768",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "Local/VPN",
+        "city": "United States",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
+      "id": "v_1786249172788_2rivqb",
+      "page": "/index.html",
+      "timestamp": "2026-08-09T04:19:32.788Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+      "referrer": "https://aistudio.google.com/",
+      "screenSize": "1366x768",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "Local/VPN",
+        "city": "United States",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
+      "id": "v_1786248755342_774r3b",
+      "page": "/admin.html",
+      "timestamp": "2026-08-09T04:12:35.342Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+      "referrer": "Direct",
+      "screenSize": "1366x768",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "Local/VPN",
+        "city": "United States",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
+      "id": "v_1786248637876_qh9p9m",
+      "page": "/index.html",
+      "timestamp": "2026-08-09T04:10:37.876Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+      "referrer": "https://aistudio.google.com/",
+      "screenSize": "1366x768",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "Local/VPN",
+        "city": "United States",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
+      "id": "v_1786248537176_qf52ru",
+      "page": "/contribute.html",
+      "timestamp": "2026-08-09T04:08:57.176Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+      "referrer": "https://ais-dev-qxh4ji7uvbvllkwllmhpkt-74819915296.us-east1.run.app/__cookie_check.html?return_url=https%3A%2F%2Fais-dev-qxh4ji7uvbvllkwllmhpkt-74819915296.us-east1.run.app%2Fcontribute.html",
+      "screenSize": "1366x768",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "Local/VPN",
+        "city": "United States",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
+      "id": "v_1786248080923_pf4zuj",
+      "page": "/index.html",
+      "timestamp": "2026-08-09T04:01:20.923Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+      "referrer": "https://aistudio.google.com/",
+      "screenSize": "1366x768",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "Local/VPN",
+        "city": "United States",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
+      "id": "v_1786248067765_b344aw",
+      "page": "/contribute.html",
+      "timestamp": "2026-08-09T04:01:07.765Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+      "referrer": "https://ais-dev-qxh4ji7uvbvllkwllmhpkt-74819915296.us-east1.run.app/",
+      "screenSize": "1366x768",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "Local/VPN",
+        "city": "United States",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
+      "id": "v_1786247978085_klli7d",
+      "page": "/index.html",
+      "timestamp": "2026-08-09T03:59:38.085Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+      "referrer": "https://ais-dev-qxh4ji7uvbvllkwllmhpkt-74819915296.us-east1.run.app/",
+      "screenSize": "1366x768",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "Local/VPN",
+        "city": "United States",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
+      "id": "v_1004",
+      "page": "/dashboard.html",
+      "timestamp": "2026-06-07T15:00:00.000Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      "referrer": "https://geniusactglobal.com/contribute.html",
+      "screenSize": "1920x1080",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "68.192.44.12",
+        "city": "Atlanta",
+        "region": "GA",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
+      "id": "v_1003",
+      "page": "/admin.html",
+      "timestamp": "2026-06-07T14:10:00.000Z",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+      "referrer": "Direct",
+      "screenSize": "1440x900",
+      "language": "en-US",
+      "platform": "MacIntel",
+      "location": {
+        "ip": "24.18.112.5",
+        "city": "Miami",
+        "region": "FL",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
+      "id": "v_1002",
+      "page": "/contribute.html",
+      "timestamp": "2026-06-07T13:30:00.000Z",
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)",
+      "referrer": "Google Search",
+      "screenSize": "390x844",
+      "language": "en-US",
+      "platform": "iPhone",
+      "location": {
+        "ip": "104.28.19.4",
+        "city": "Dallas",
+        "region": "TX",
+        "country": "United States",
+        "timezone": "CST"
+      }
+    },
+    {
+      "id": "v_1001",
+      "page": "/index.html",
+      "timestamp": "2026-06-07T12:00:00.000Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      "referrer": "Direct",
+      "screenSize": "1920x1080",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "172.56.21.9",
+        "city": "Washington",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    }
+  ],
+  "geniusact_global_wallets": [],
+  "geniusact_support_messages": [],
+  "geniusact_bank_links": [],
+  "geniusact_contact_chats": [],
+  "geniusact_user_footprints": [],
+  "geniusact_withdrawal_requests": []
+}

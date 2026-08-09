@@ -1,0 +1,6 @@
+node_modules/
+__pycache__/
+*.pyc
+.env
+geniusactglobal_upload.zip
+.DS_Store

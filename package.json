@@ -1,0 +1,17 @@
+{
+  "name": "geniusactglobal",
+  "version": "1.0.0",
+  "description": "GeniusAct Global Campaign Administration Portal and Supporter Platform",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "node --check server.js",
+    "lint": "node --check server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}

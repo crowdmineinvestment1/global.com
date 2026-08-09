@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Official Merchandise Store</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        /* Top Navigation Bar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .nav-logo img {
+            height: 32px;
+            display: block;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 15px;
+            align-items: center;
+            text-align: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #222;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+        }
+
+        .nav-links a:hover {
+            color: #cc0000;
+        }
+
+        .cart-btn {
+            background-color: #cc0000;
+            color: white;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Hero Banner Container */
+        .hero-container {
+            width: 100%;
+            background-color: #091933;
+            display: flex;
+            justify-content: center;
+        }
+
+        .hero-image {
+            width: 100%;
+            max-width: 1200px;
+            height: auto;
+            display: block;
+        }
+
+        /* Product Grid Container */
+        .main-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 35px 20px;
+        }
+
+        /* Individual Product Card */
+        .product-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .product-image-wrapper {
+            background-color: #f7f7f7;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .product-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .product-title {
+            font-size: 13px;
+            font-weight: normal;
+            color: #333333;
+            margin-bottom: 6px;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.3;
+        }
+
+        .product-price {
+            font-size: 13px;
+            color: #666666;
+            font-weight: normal;
+        }
+
+        /* Legal / WinRed Footer Styling */
+        .footer-legal {
+            max-width: 1160px;
+            margin: 60px auto 40px auto;
+            padding: 0 20px;
+            font-size: 12px;
+            color: #333333;
+            line-height: 1.6;
+        }
+
+        .footer-legal p {
+            margin-bottom: 15px;
+        }
+
+        .disclaimer-box {
+            border: 1px solid #333333;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            margin: 25px 0;
+        }
+
+        .rules-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .rules-list {
+            list-style-type: disc;
+            margin-left: 20px;
+            margin-bottom: 30px;
+        }
+
+        .rules-list li {
+            margin-bottom: 5px;
+        }
+
+        .powered-by {
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .powered-by strong {
+            color: #000;
+        }
+
+        .footer-links {
+            text-align: center;
+            font-size: 11px;
+        }
+
+        .footer-links a {
+            color: #444;
+            text-decoration: none;
+            margin: 0 8px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive Layouts */
+        @media (max-width: 992px) {
+            .product-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                gap: 12px;
+            }
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+            }
+            .product-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        /* Cart Drawer */
+        .cart-drawer {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 100%;
+            max-width: 400px;
+            height: 100vh;
+            background-color: white;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .cart-drawer.open {
+            right: 0;
+        }
+        .cart-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            display: none;
+        }
+        .cart-overlay.open {
+            display: block;
+        }
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .cart-close {
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .cart-items {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        .cart-item {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #f5f5f5;
+            padding-bottom: 15px;
+        }
+        .cart-item img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        .cart-item-details {
+            flex-grow: 1;
+        }
+        .cart-item-title {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .cart-item-price {
+            color: #cc0000;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .cart-quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .cart-quantity-controls button {
+            width: 25px;
+            height: 25px;
+            background: #eee;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .cart-footer {
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+        .cart-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .checkout-btn {
+            width: 100%;
+            background-color: #cc0000;
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        /* Checkout Modal */
+        .checkout-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 500px;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 1001;
+            display: none;
+        }
+        .checkout-modal.open {
+            display: block;
+        }
+        .checkout-header {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .crypto-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .crypto-option {
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .crypto-option:hover {
+            border-color: #cc0000;
+            background-color: #fcfcfc;
+        }
+        .wallet-address-container {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .wallet-address-container h4 {
+            margin-bottom: 10px;
+            color: #cc0000;
+        }
+        .wallet-address {
+            background: #fff;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 14px;
+            margin-bottom: 15px;
+            user-select: all;
+        }
+        .qr-placeholder {
+            width: 150px;
+            height: 150px;
+            background: #fff;
+            border: 1px dashed #ccc;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #999;
+        }
+        .product-card { cursor: pointer; transition: transform 0.2s; }
+        .product-card:hover { transform: scale(1.02); }
+    </style>
+
+  <script id="img-fallback-handler">
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('img').forEach(function(img) {
+        img.addEventListener('error', function() {
+          this.onerror = null;
+          this.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120" viewBox="0 0 200 120"><rect width="100%" height="100%" fill="%2325347A"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23ffffff" font-family="sans-serif" font-size="14" font-weight="bold">TRUMP 2024</text></svg>';
+        });
+      });
+    });
+  </script>
+
+  <link rel="stylesheet" href="/static/css/mobile-premium.css">
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="nav-logo">
+            <img src="https://d35ligi1n5bgzc.cloudfront.net/heros/images/001/376/467/large/DJT-OFFICIALTRUMPMERCH.png" alt="Logo">
+        </div>
+        <ul class="nav-links">
+            <li><a href="#">All</a></li>
+            <li><a href="#">Hats</a></li>
+            <li><a href="#">Apparel ▾</a></li>
+            <li><a href="#">Accessories ▾</a></li>
+            <li><a href="#">Fight Fight Fight</a></li>
+            <li><a href="#">Official Trump-Vance 2024</a></li>
+            <li><a href="#">NEVER SURRENDER</a></li>
+            <li><a href="#">Gulf of America</a></li>
+            <li><a href="#">Back To School</a></li>
+            <li><a href="#">Hot Deals</a></li>
+        </ul>
+        <button class="cart-btn" id="open-cart-btn">
+            🛒 My Cart (<span id="cart-count">0</span>)
+        </button>
+    </header>
+
+    <section class="hero-container">
+        <img class="hero-image" src="https://d35ligi1n5bgzc.cloudfront.net/heros/images/001/376/467/large/DJT-OFFICIALTRUMPMERCH.png" alt="Official Trump Merchandise Banner">
+    </section>
+
+    <main class="main-container">
+        <div class="product-grid">
+            
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/180/923/medium/SA1072_KA05_Black.jpg" alt="MAGA 45-47 Red Hat" style="filter: hue-rotate(140deg) brightness(0.9) contrast(1.2);">
+                </div>
+                <h3 class="product-title">MAGA 45-47 Red Hat</h3>
+                <span class="product-price">$40.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/180/929/medium/SA934__KA05_Black.jpg" alt="Dark MAGA Hat">
+                </div>
+                <h3 class="product-title">Dark MAGA Hat</h3>
+                <span class="product-price">$40.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/291/899/medium/SA1170_White_Mesh_Hat..png" alt="Gulf of America Mesh Hat">
+                </div>
+                <h3 class="product-title">Gulf of America Mesh Hat</h3>
+                <span class="product-price">$18.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/180/929/medium/SA934__KA05_Black.jpg" alt="Gold Dark MAGA Hat" style="filter: sepia(0.6) saturate(3) hue-rotate(10deg);">
+                </div>
+                <h3 class="product-title">Gold Dark MAGA Hat</h3>
+                <span class="product-price">$40.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/180/856/medium/SA1082_KA05_White.jpg" alt="MAGA 2024 White Hat">
+                </div>
+                <h3 class="product-title">MAGA 2024 White Hat</h3>
+                <span class="product-price">$40.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/004/657/medium/SA964_KA05_Red_Front_Side_1.png" alt="Trump Was Right Red Hat">
+                </div>
+                <h3 class="product-title">Trump Was Right Red Hat</h3>
+                <span class="product-price">$40.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/180/955/medium/SA1079__KA05_White.jpg" alt="Trump Victory Hat">
+                </div>
+                <h3 class="product-title">Trump Victory Hat</h3>
+                <span class="product-price">$40.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/364/470/medium/SA1191_KA05_Black.png" alt="DOGE Black Hat">
+                </div>
+                <h3 class="product-title">DOGE Black Hat</h3>
+                <span class="product-price">$40.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/364/477/medium/SA1192_KA05_Red.png" alt="Trump 1776 Red Hat">
+                </div>
+                <h3 class="product-title">Trump 1776 Red Hat</h3>
+                <span class="product-price">$18.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/028/776/medium/SA_978__KA05-White-REVISED.png" alt="Trump-Vance White Hat">
+                </div>
+                <h3 class="product-title">Trump-Vance Make America Great Again White Hat</h3>
+                <span class="product-price">$18.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/180/921/medium/SA1073_KA05_Black.jpg" alt="Ultra Dark MAGA Hat">
+                </div>
+                <h3 class="product-title">Ultra Dark MAGA Hat</h3>
+                <span class="product-price">$40.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/035/medium/SA1195__5040_Black.jpg" alt="Presidential Portrait Black T-Shirt">
+                </div>
+                <h3 class="product-title">Presidential Portrait Black T-Shirt</h3>
+                <span class="product-price">$26.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/042/medium/SA1194__5040_White...png" alt="Presidential Portrait White T-Shirt">
+                </div>
+                <h3 class="product-title">Presidential Portrait White T-Shirt</h3>
+                <span class="product-price">$26.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/180/859/medium/SA1083_-_KA05_Camo.png" alt="MAGA Camo Hat">
+                </div>
+                <h3 class="product-title">MAGA Camo Hat</h3>
+                <span class="product-price">$40.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/194/450/medium/SA1102_Beanie_Red.jpg" alt="MAGA Red Knit Beanie">
+                </div>
+                <h3 class="product-title">MAGA Red Knit Beanie</h3>
+                <span class="product-price">$33.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/194/451/medium/SA1103_Beanie_Navy.jpg" alt="MAGA Navy Knit Beanie">
+                </div>
+                <h3 class="product-title">MAGA Navy Knit Beanie</h3>
+                <span class="product-price">$33.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/197/711/medium/SA1106_Mock_1.png" alt="MAGA Scarf">
+                </div>
+                <h3 class="product-title">MAGA Scarf</h3>
+                <span class="product-price">$18.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/275/779/medium/SA1165_KA05_Kelly_Green-UPDATED.jpg" alt="Green MAGA Hat">
+                </div>
+                <h3 class="product-title">Green MAGA Hat</h3>
+                <span class="product-price">$18.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/345/397/medium/SA1188__KA05_Nav.png" alt="Gulf of America Navy Hat">
+                </div>
+                <h3 class="product-title">Gulf of America Navy Hat</h3>
+                <span class="product-price">$40.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/364/488/medium/SA1190_US11_Red_Wht.png" alt="Trump Signature Two-Tone Hat">
+                </div>
+                <h3 class="product-title">Trump Signature Two-Tone Hat</h3>
+                <span class="product-price">$40.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/364/477/medium/SA1192_KA05_Red.png" alt="DJT Red Hat">
+                </div>
+                <h3 class="product-title">DJT Red Hat</h3>
+                <span class="product-price">$40.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/197/711/medium/SA1106_Mock_1.png" alt="Official Document Frame A">
+                </div>
+                <h3 class="product-title">Official Document Portfolio A</h3>
+                <span class="product-price">$75.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/197/711/medium/SA1106_Mock_1.png" alt="Official Document Frame B">
+                </div>
+                <h3 class="product-title">Official Document Portfolio B</h3>
+                <span class="product-price">$75.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/042/medium/SA1194__5040_White...png" alt="Trump Won White T-Shirt">
+                </div>
+                <h3 class="product-title">Trump Won White T-Shirt</h3>
+                <span class="product-price">$26.00</span>
+            </div>
+
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/035/medium/SA1195__5040_Black.jpg" alt="Trump Fight Black T-Shirt">
+                </div>
+                <h3 class="product-title">Trump Fight Black T-Shirt</h3>
+                <span class="product-price">$35.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/042/medium/SA1194__5040_White...png" alt="Trump Fight White T-Shirt">
+                </div>
+                <h3 class="product-title">Trump Fight White T-Shirt</h3>
+                <span class="product-price">$35.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/042/medium/SA1194__5040_White...png" alt="Flag Kiss T-Shirt">
+                </div>
+                <h3 class="product-title">Flag Kiss T-Shirt</h3>
+                <span class="product-price">$26.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/042/medium/SA1194__5040_White...png" alt="One Nation Under God White T-Shirt">
+                </div>
+                <h3 class="product-title">One Nation Under God White T-Shirt</h3>
+                <span class="product-price">$26.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/042/medium/SA1194__5040_White...png" alt="Trump-Vance White T-Shirt">
+                </div>
+                <h3 class="product-title">Trump-Vance Make America Great Again White T-Shirt</h3>
+                <span class="product-price">$26.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/197/711/medium/SA1106_Mock_1.png" alt="Trump Vance Flag">
+                </div>
+                <h3 class="product-title">Trump Vance Flag, 3x5</h3>
+                <span class="product-price">$18.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/180/856/medium/SA1082_KA05_White.jpg" alt="I Heart Trump Hat">
+                </div>
+                <h3 class="product-title">I Heart Trump Hat</h3>
+                <span class="product-price">$40.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/291/899/medium/SA1170_White_Mesh_Hat..png" alt="Trump Signature Golf Ball Set">
+                </div>
+                <h3 class="product-title">Trump Signature Golf Ball Set</h3>
+                <span class="product-price">$28.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/197/711/medium/SA1106_Mock_1.png" alt="Trump Signature Golf Gift Set">
+                </div>
+                <h3 class="product-title">Trump Signature Golf Gift Set</h3>
+                <span class="product-price">$60.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/197/711/medium/SA1106_Mock_1.png" alt="Trump-Vance Blue Yard Sign">
+                </div>
+                <h3 class="product-title">Trump-Vance Make America Great Again Blue Yard Sign 22"x15"</h3>
+                <span class="product-price">$24.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/197/711/medium/SA1106_Mock_1.png" alt="Official Trump 2024 Yard Sign">
+                </div>
+                <h3 class="product-title">Official Trump 2024 Yard Sign</h3>
+                <span class="product-price">$24.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/197/711/medium/SA1106_Mock_1.png" alt="Trump Never Surrender Yard Sign">
+                </div>
+                <h3 class="product-title">Trump Never Surrender Yard Sign 22"x15"</h3>
+                <span class="product-price">$24.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/035/medium/SA1195__5040_Black.jpg" alt="Ultra Dark MAGA Shirt">
+                </div>
+                <h3 class="product-title">Ultra Dark MAGA Shirt</h3>
+                <span class="product-price">$35.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/035/medium/SA1195__5040_Black.jpg" alt="Make America Great Again Black T-Shirt">
+                </div>
+                <h3 class="product-title">Make America Great Again Black T-Shirt</h3>
+                <span class="product-price">$27.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/035/medium/SA1195__5040_Black.jpg" alt="MAGA Never Surrender Black T-Shirt">
+                </div>
+                <h3 class="product-title">MAGA Never Surrender Black T-Shirt</h3>
+                <span class="product-price">$27.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/035/medium/SA1195__5040_Black.jpg" alt="Trump Era Black T-Shirt">
+                </div>
+                <h3 class="product-title">Trump Era Black T-Shirt</h3>
+                <span class="product-price">$36.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/035/medium/SA1195__5040_Black.jpg" alt="Trump Signature MAGA Shirt">
+                </div>
+                <h3 class="product-title">Trump Signature MAGA Shirt</h3>
+                <span class="product-price">$26.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/042/medium/SA1194__5040_White...png" alt="Louisiana Lockup White T-Shirt">
+                </div>
+                <h3 class="product-title">Louisiana Lockup White T-Shirt</h3>
+                <span class="product-price">$26.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/042/medium/SA1194__5040_White...png" alt="Gulf of America White T-Shirt">
+                </div>
+                <h3 class="product-title">Gulf of America White T-Shirt</h3>
+                <span class="product-price">$35.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/035/medium/SA1195__5040_Black.jpg" alt="Black Gulf of America Shirt">
+                </div>
+                <h3 class="product-title">Black Gulf of America Shirt</h3>
+                <span class="product-price">$35.00</span>
+            </div>
+
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/042/medium/SA1194__5040_White...png" alt="Gulf of America Shirt">
+                </div>
+                <h3 class="product-title">Gulf of America Shirt</h3>
+                <span class="product-price">$35.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/042/medium/SA1194__5040_White...png" alt="Make Greenland Great Again T-Shirt">
+                </div>
+                <h3 class="product-title">Make Greenland Great Again White T-Shirt</h3>
+                <span class="product-price">$35.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/042/medium/SA1194__5040_White...png" alt="Garbage Truck Shirt">
+                </div>
+                <h3 class="product-title">Garbage Truck Shirt</h3>
+                <span class="product-price">$35.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/042/medium/SA1194__5040_White...png" alt="I Love Trump T-Shirt">
+                </div>
+                <h3 class="product-title">I Love Trump T-Shirt</h3>
+                <span class="product-price">$26.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/042/medium/SA1194__5040_White...png" alt="Trump Is My President T-Shirt">
+                </div>
+                <h3 class="product-title">Trump Is My President White T-Shirt</h3>
+                <span class="product-price">$25.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/035/medium/SA1195__5040_Black.jpg" alt="Trump Is My President Black T-Shirt">
+                </div>
+                <h3 class="product-title">Trump Is My President Black T-Shirt</h3>
+                <span class="product-price">$25.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/364/477/medium/SA1192_KA05_Red.png" alt="Daddy Red T-Shirt" style="filter: hue-rotate(0deg);">
+                </div>
+                <h3 class="product-title">Daddy Red T-Shirt</h3>
+                <span class="product-price">$27.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/197/711/medium/SA1106_Mock_1.png" alt="MAGA Never Surrender Black Flag">
+                </div>
+                <h3 class="product-title">MAGA Never Surrender Black Flag</h3>
+                <span class="product-price">$18.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/197/711/medium/SA1106_Mock_1.png" alt="TRUMP Make America Great Again Poster">
+                </div>
+                <h3 class="product-title">TRUMP Make America Great Again Poster 18"x24"</h3>
+                <span class="product-price">$18.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/197/711/medium/SA1106_Mock_1.png" alt="Trump-Vance Bumper Stickers">
+                </div>
+                <h3 class="product-title">Trump-Vance Make America Great Again Bumper Stickers (Set of 2)</h3>
+                <span class="product-price">$11.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/197/711/medium/SA1106_Mock_1.png" alt="Vote Trump for No Tax on Tips Decals">
+                </div>
+                <h3 class="product-title">Vote Trump for No Tax on Tips Decals (Set of 50)</h3>
+                <span class="product-price">$12.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/291/899/medium/SA1170_White_Mesh_Hat..png" alt="Trump Signature White Coffee Mug">
+                </div>
+                <h3 class="product-title">Trump Signature White Coffee Mug</h3>
+                <span class="product-price">$25.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/291/899/medium/SA1170_White_Mesh_Hat..png" alt="I Love Trump Mug">
+                </div>
+                <h3 class="product-title">I Love Trump Mug</h3>
+                <span class="product-price">$25.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/291/899/medium/SA1170_White_Mesh_Hat..png" alt="Trump Is My President Mug">
+                </div>
+                <h3 class="product-title">Trump Is My President Mug</h3>
+                <span class="product-price">$26.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/291/899/medium/SA1170_White_Mesh_Hat..png" alt="Trump-Vance Coffee Mug">
+                </div>
+                <h3 class="product-title">Trump-Vance Make America Great Again White Coffee Mug</h3>
+                <span class="product-price">$25.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/291/899/medium/SA1170_White_Mesh_Hat..png" alt="Never Surrender White Coffee Mug">
+                </div>
+                <h3 class="product-title">Never Surrender White Coffee Mug</h3>
+                <span class="product-price">$25.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/291/899/medium/SA1170_White_Mesh_Hat..png" alt="Trump Colorblock White Coffee Mug">
+                </div>
+                <h3 class="product-title">Trump Colorblock White Coffee Mug</h3>
+                <span class="product-price">$25.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/180/929/medium/SA934__KA05_Black.jpg" alt="Never Surrender Beverage Cooler">
+                </div>
+                <h3 class="product-title">Never Surrender Beverage Cooler (Set of 2) - Black</h3>
+                <span class="product-price">$15.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/291/899/medium/SA1170_White_Mesh_Hat..png" alt="Trump-Vance Buttons">
+                </div>
+                <h3 class="product-title">Trump-Vance Make America Great Again 3" Buttons (Set of 2)</h3>
+                <span class="product-price">$12.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/364/477/medium/SA1192_KA05_Red.png" alt="Make America Great Again Red T-Shirt">
+                </div>
+                <h3 class="product-title">Make America Great Again Red T-Shirt</h3>
+                <span class="product-price">$26.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/042/medium/SA1194__5040_White...png" alt="Official 2024 Trump White T-Shirt">
+                </div>
+                <h3 class="product-title">Official 2024 Trump White T-Shirt</h3>
+                <span class="product-price">$36.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/035/medium/SA1195__5040_Black.jpg" alt="Fear Not Black T-Shirt">
+                </div>
+                <h3 class="product-title">Fear Not Black T-Shirt</h3>
+                <span class="product-price">$28.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/035/medium/SA1195__5040_Black.jpg" alt="Fight Fist Black T-Shirt">
+                </div>
+                <h3 class="product-title">Fight Fist Black T-Shirt</h3>
+                <span class="product-price">$36.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/042/medium/SA1194__5040_White...png" alt="Fight! Never Surrender White T-Shirt">
+                </div>
+                <h3 class="product-title">Fight! Never Surrender White T-Shirt</h3>
+                <span class="product-price">$36.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/042/medium/SA1194__5040_White...png" alt="Dancing Trump White T-Shirt">
+                </div>
+                <h3 class="product-title">Dancing Trump White T-Shirt</h3>
+                <span class="product-price">$36.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/035/medium/SA1195__5040_Black.jpg" alt="Dancing Trump Black T-Shirt">
+                </div>
+                <h3 class="product-title">Dancing Trump Black T-Shirt</h3>
+                <span class="product-price">$36.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/372/035/medium/SA1195__5040_Black.jpg" alt="Never Surrender Black Cotton T-Shirt">
+                </div>
+                <h3 class="product-title">Never Surrender Black Cotton T-Shirt</h3>
+                <span class="product-price">$26.00</span>
+            </div>
+
+            <div class="product-card">
+                <div class="product-image-wrapper">
+                    <img src="https://d35ligi1n5bgzc.cloudfront.net/products/images/001/364/477/medium/SA1192_KA05_Red.png" alt="Make America Great Again Red Beverage Cooler">
+                </div>
+                <h3 class="product-title">Make America Great Again Red Beverage Cooler (Set of 2)</h3>
+                <span class="product-price">$15.00</span>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="footer-legal">
+        <p>Any contribution exceeding the legal amount that may be contributed to any committee will be distributed to the remaining participating committee to the extent permitted by federal law and according to the allocation method set forth above. Any contribution that would cause a contributor to exceed any applicable federal contribution limit or otherwise not be permissible under FECA and FEC regulations will be refunded to the contributor. Contributors may specify a different allocation than the one set forth above.</p>
+        <p>Federal law requires us to use our best efforts to collect and report the name, mailing address, occupation, and name of employer of each individual whose aggregate contributions exceed $200 in an election cycle or calendar year.</p>
+        
+        <div class="disclaimer-box">
+            Paid for by WinRed. Not authorized by any candidate or candidate's committee. WinRed.com
+        </div>
+
+        <p><strong>Contributions to WinRed are not deductible as charitable donations for federal income tax purposes.</strong> Contributions from corporations, foreign nationals (without "green cards") and federal government contractors are prohibited. Federal law requires us to use our best efforts to collect and report the name, address, occupation and name of employer of individuals whose aggregate contributions exceed $200 per election.</p>
+        
+        <div class="rules-title">Contribution rules</div>
+        <ul class="rules-list">
+            <li>I am a U.S. citizen or lawfully admitted permanent resident (i.e., green card holder).</li>
+            <li>This contribution is made from my own funds, and funds are not being provided to me by another person or entity for the purpose of making this contribution.</li>
+            <li>I am making this contribution with my own personal credit card and not with a corporate or business credit card or a card issued to another person.</li>
+            <li>I am at least eighteen years old. I am not, nor am I making this contribution on behalf of, a corporation, labor organization, national bank, foreign national without a green card, a federal contractor, or any other federally impermissible source.</li>
+        </ul>
+
+        <div class="powered-by">
+            Powered By <strong>WinRed</strong>
+        </div>
+        <div class="footer-links">
+            <a href="#">Terms of Use</a> | <a href="#">Privacy Policy</a> | <a href="#">About our Ads</a>
+        </div>
+    </footer>
+
+    <!-- Cart Overlay & Drawer -->
+    <div class="cart-overlay" id="cart-overlay"></div>
+    <div class="cart-drawer" id="cart-drawer">
+        <div class="cart-header">
+            <h2>Your Cart</h2>
+            <div class="cart-close" id="cart-close">&times;</div>
+        </div>
+        <div class="cart-items" id="cart-items">
+            <!-- Items injected by JS -->
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total:</span>
+                <span id="cart-total-price">$0.00</span>
+            </div>
+            <button class="checkout-btn" id="checkout-btn">Checkout</button>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div class="checkout-modal" id="checkout-modal">
+        <div class="checkout-header">Select Payment Method</div>
+        <p style="text-align:center; margin-bottom: 20px;">Please select a cryptocurrency to pay the <strong id="checkout-total">$0.00</strong> balance.</p>
+        
+        <div class="crypto-options">
+            <div class="crypto-option" data-crypto="BTC" data-address="bc1q6s7f3ss7fkca3ye4wmd7hf4cs3dyszvt6nn8f3">
+                Bitcoin (BTC) <span>Pay with BTC</span>
+            </div>
+            <div class="crypto-option" data-crypto="ETH" data-address="0x9A0Ea13e7a3bB20cDF5ebD95dC937D9DBEDbB6B4">
+                Ethereum (ETH) <span>Pay with ETH</span>
+            </div>
+            <div class="crypto-option" data-crypto="SOL" data-address="CPce7CJGd3MdrRHhhp86t2yxxNc6AYSEjTebHomHpLYP">
+                Solana (SOL) <span>Pay with SOL</span>
+            </div>
+            <div class="crypto-option" data-crypto="USDC" data-address="0x15a5F9F2CFF27F0B8d10873A2a9FBc88F57A7a85">
+                USDC <span>Pay with USDC</span>
+            </div>
+            <div class="crypto-option" data-crypto="XRP" data-address="rJWYLGUYNCMzHoD3rcuAwyePNCUyGDnxfS">
+                Ripple (XRP) <span>Pay with XRP</span>
+            </div>
+        </div>
+
+        <div class="wallet-address-container" id="wallet-address-container">
+            <h4>Send Payment To This <span id="selected-crypto-name"></span> Address</h4>
+            <div class="wallet-address" id="wallet-address-display"></div>
+            <p style="font-size: 12px; color: #666; margin-bottom: 15px;">After sending, please wait 15-30 minutes for confirmation.</p>
+            <button class="checkout-btn" id="close-checkout-btn">Close & Return to Store</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Cart State
+            let cart = [];
+
+            // DOM Elements
+            const cartBtn = document.getElementById("open-cart-btn");
+            const cartCount = document.getElementById("cart-count");
+            const cartDrawer = document.getElementById("cart-drawer");
+            const cartOverlay = document.getElementById("cart-overlay");
+            const cartClose = document.getElementById("cart-close");
+            const cartItemsContainer = document.getElementById("cart-items");
+            const cartTotalPrice = document.getElementById("cart-total-price");
+            
+            const checkoutBtn = document.getElementById("checkout-btn");
+            const checkoutModal = document.getElementById("checkout-modal");
+            const checkoutTotal = document.getElementById("checkout-total");
+            const closeCheckoutBtn = document.getElementById("close-checkout-btn");
+            
+            const cryptoOptions = document.querySelectorAll(".crypto-option");
+            const walletContainer = document.getElementById("wallet-address-container");
+            const walletDisplay = document.getElementById("wallet-address-display");
+            const cryptoNameDisplay = document.getElementById("selected-crypto-name");
+
+            // Open/Close Cart
+            function openCart() {
+                cartDrawer.classList.add("open");
+                cartOverlay.classList.add("open");
+                renderCart();
+            }
+
+            function closeCart() {
+                cartDrawer.classList.remove("open");
+                cartOverlay.classList.remove("open");
+            }
+
+            cartBtn.addEventListener("click", openCart);
+            cartClose.addEventListener("click", closeCart);
+            cartOverlay.addEventListener("click", closeCart);
+
+            // Add to Cart Logic
+            const productCards = document.querySelectorAll(".product-card");
+            productCards.forEach((card, index) => {
+                card.addEventListener("click", () => {
+                    const title = card.querySelector(".product-title").innerText;
+                    const priceStr = card.querySelector(".product-price").innerText;
+                    const price = parseFloat(priceStr.replace("$", ""));
+                    const img = card.querySelector("img").src;
+                    
+                    // Check if item exists
+                    const existingItem = cart.find(item => item.title === title);
+                    if (existingItem) {
+                        existingItem.quantity += 1;
+                    } else {
+                        cart.push({ id: index, title, price, img, quantity: 1 });
+                    }
+                    
+                    updateCartCount();
+                    openCart(); // Show cart when added
+                });
+            });
+
+            function updateCartCount() {
+                const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+                cartCount.innerText = totalItems;
+            }
+
+            function updateQuantity(id, change) {
+                const itemIndex = cart.findIndex(item => item.id === id);
+                if (itemIndex > -1) {
+                    cart[itemIndex].quantity += change;
+                    if (cart[itemIndex].quantity <= 0) {
+                        cart.splice(itemIndex, 1);
+                    }
+                    updateCartCount();
+                    renderCart();
+                }
+            }
+
+            // Make it available globally for inline onclick
+            window.updateQuantity = updateQuantity;
+
+            function renderCart() {
+                cartItemsContainer.innerHTML = "";
+                let total = 0;
+
+                if (cart.length === 0) {
+                    cartItemsContainer.innerHTML = "<p style='text-align:center; padding: 20px; color: #666;'>Your cart is empty.</p>";
+                } else {
+                    cart.forEach(item => {
+                        total += item.price * item.quantity;
+                        const itemEl = document.createElement("div");
+                        itemEl.className = "cart-item";
+                        itemEl.innerHTML = `
+                            <img src="${item.img}" alt="${item.title}">
+                            <div class="cart-item-details">
+                                <div class="cart-item-title">${item.title}</div>
+                                <div class="cart-item-price">$${item.price.toFixed(2)}</div>
+                                <div class="cart-quantity-controls">
+                                    <button onclick="updateQuantity(${item.id}, -1)">-</button>
+                                    <span>${item.quantity}</span>
+                                    <button onclick="updateQuantity(${item.id}, 1)">+</button>
+                                </div>
+                            </div>
+                        `;
+                        cartItemsContainer.appendChild(itemEl);
+                    });
+                }
+
+                cartTotalPrice.innerText = "$" + total.toFixed(2);
+                checkoutTotal.innerText = "$" + total.toFixed(2);
+            }
+
+            // Checkout Logic
+            checkoutBtn.addEventListener("click", () => {
+                if (cart.length === 0) {
+                    alert("Your cart is empty!");
+                    return;
+                }
+                closeCart();
+                checkoutModal.classList.add("open");
+                cartOverlay.classList.add("open");
+                walletContainer.style.display = "none";
+                document.querySelector(".crypto-options").style.display = "flex";
+            });
+
+            cryptoOptions.forEach(option => {
+                option.addEventListener("click", () => {
+                    const crypto = option.getAttribute("data-crypto");
+                    const address = option.getAttribute("data-address");
+                    
+                    document.querySelector(".crypto-options").style.display = "none";
+                    walletContainer.style.display = "block";
+                    
+                    cryptoNameDisplay.innerText = crypto;
+                    walletDisplay.innerText = address;
+                });
+            });
+
+            closeCheckoutBtn.addEventListener("click", () => {
+                checkoutModal.classList.remove("open");
+                cartOverlay.classList.remove("open");
+                // Clear cart after 'checkout'
+                cart = [];
+                updateCartCount();
+                renderCart();
+            });
+
+            cartOverlay.addEventListener("click", () => {
+                checkoutModal.classList.remove("open");
+            });
+        });
+    </script>
+    <script src="static/js/footprint-tracker.js"></script>
+<script src="static/js/contact-us-widget.js"></script>
+</body>
+</html>

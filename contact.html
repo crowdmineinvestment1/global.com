@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us — Official GENIUS Act Campaign Support Desk</title>
+    <meta name="description" content="Contact the official GENIUS Act Campaign Support Desk and Treasury Compliance Advisory Council.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23d32f2f'/><text x='50' y='70' font-size='70' font-family='Arial' font-weight='bold' fill='white' text-anchor='middle'>G</text></svg>">
+    
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --navy-dark: #0f172a;
+            --navy-main: #1e3a8a;
+            --navy-light: #2563eb;
+            --red-accent: #ef4444;
+            --gold-accent: #f59e0b;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #1e293b;
+            line-height: 1.6;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.75) 0%, rgba(15, 23, 42, 0.92) 100%), url('assets/img/image_2_5.png') center top / cover no-repeat fixed;
+            min-height: 100vh;
+        }
+
+        /* Top Header Nav */
+        .site-header {
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 2px solid #ef4444;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: white;
+        }
+        .brand-logo img {
+            height: 38px;
+        }
+        .brand-text {
+            font-weight: 900;
+            font-size: 1.15rem;
+            letter-spacing: 0.5px;
+            color: white;
+        }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            list-style: none;
+        }
+        .nav-links a {
+            color: #cbd5e1;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover {
+            color: white;
+        }
+        .btn-nav-contribute {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white !important;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-weight: 800 !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.82rem !important;
+        }
+
+        /* Hero Section */
+        .hero-banner {
+            max-width: 1200px;
+            margin: 40px auto 30px auto;
+            padding: 0 24px;
+            text-align: center;
+            color: white;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(30, 58, 138, 0.6);
+            border: 1px solid #3b82f6;
+            color: #60a5fa;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+        .hero-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 12px;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+        }
+        .hero-subtitle {
+            font-size: 1.1rem;
+            color: #94a3b8;
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        /* Main Container Grid */
+        .main-grid {
+            max-width: 1200px;
+            margin: 0 auto 60px auto;
+            padding: 0 24px;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 30px;
+        }
+
+        /* Form Card */
+        .contact-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+            border: 1px solid #cbd5e1;
+            overflow: hidden;
+        }
+        .contact-card-header {
+            background: linear-gradient(135deg, #0f172a, #1e3a8a);
+            color: white;
+            padding: 24px 30px;
+            border-bottom: 2px solid #ef4444;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .contact-card-header h2 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .contact-card-header p {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+        .contact-form-body {
+            padding: 30px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .form-group-full {
+            grid-column: span 2;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #0f172a;
+            margin-bottom: 6px;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            color: #0f172a;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: #1e3a8a;
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+        .btn-submit-contact {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+            color: white;
+            border: 2px solid #ef4444;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-submit-contact:hover {
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(30, 58, 138, 0.4);
+        }
+
+        /* Sidebar Info Cards */
+        .info-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .side-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            border: 1px solid #cbd5e1;
+        }
+        .side-card-title {
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #0f172a;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .info-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            font-size: 0.88rem;
+            color: #475569;
+        }
+        .info-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .info-list i {
+            color: #1e3a8a;
+            font-size: 1.1rem;
+            margin-top: 2px;
+        }
+
+        /* Callout Live Chat Banner */
+        .live-chat-callout {
+            background: linear-gradient(135deg, #0f172a, #1e3a8a);
+            color: white;
+            border: 2px solid #ef4444;
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        }
+        .live-chat-callout h3 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .live-chat-callout p {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 16px;
+        }
+
+        /* FAQ Section */
+        .faq-section {
+            max-width: 1200px;
+            margin: 0 auto 60px auto;
+            padding: 0 24px;
+        }
+        .faq-title {
+            text-align: center;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 900;
+            margin-bottom: 24px;
+        }
+        .faq-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .faq-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        .faq-card h4 {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+        .faq-card p {
+            font-size: 0.88rem;
+            color: #475569;
+            line-height: 1.5;
+        }
+
+        /* Footer */
+        .site-footer {
+            background: #0f172a;
+            border-top: 1px solid #334155;
+            color: #94a3b8;
+            padding: 40px 24px;
+            text-align: center;
+            font-size: 0.82rem;
+        }
+        .footer-disclaimer {
+            max-width: 900px;
+            margin: 0 auto 20px auto;
+            line-height: 1.5;
+            padding: 16px;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            background: #1e293b;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-group-full {
+                grid-column: span 1;
+            }
+            .hero-title {
+                font-size: 1.8rem;
+            }
+            .faq-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="site-header">
+        <div class="header-container">
+            <a href="index.html" class="brand-logo">
+                <img src="assets/img/image_1_4.png" alt="GENIUS Act Global Logo">
+                <span class="brand-text">GENIUS ACT GLOBAL</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="contribute.html">Contribute</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="contact.html" style="color:white; font-weight:800;">Contact Us</a></li>
+                <li><a href="login.html">Login</a></li>
+                <li><a href="contribute.html" class="btn-nav-contribute">Contribute Now</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <!-- Hero Banner -->
+    <section class="hero-banner">
+        <div class="hero-badge">
+            <i class="fas fa-shield-alt"></i> Official Campaign Support & Compliance Desk
+        </div>
+        <h1 class="hero-title">How Can Our Advisory Team Assist You?</h1>
+        <p class="hero-subtitle">
+            Whether you have questions regarding Section 407 GENIUS Act Treasury Whitelisting, contribution processing, yield distributions, or account verification, our dedicated team is standing by.
+        </p>
+    </section>
+
+    <!-- Main Grid: Form + Info Sidebar -->
+    <main class="main-grid">
+        
+        <!-- Contact Form Card -->
+        <div class="contact-card">
+            <div class="contact-card-header">
+                <div>
+                    <h2><i class="fas fa-paper-plane" style="color:#38bdf8; margin-right:8px;"></i> Submit a Direct Inquiry</h2>
+                    <p>Logged directly into the Campaign Compliance Officer database</p>
+                </div>
+                <span style="background:rgba(255,255,255,0.15); padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700;"><i class="fas fa-clock"></i> 24/7 Response</span>
+            </div>
+
+            <div class="contact-form-body">
+                <form id="contact-page-form" onsubmit="handleContactPageSubmit(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="contact-name">Full Name*</label>
+                            <input type="text" id="contact-name" placeholder="Enter your full legal name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contact-email">Email Address*</label>
+                            <input type="email" id="contact-email" placeholder="patriot@example.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contact-phone">Phone Number (Optional)</label>
+                            <input type="tel" id="contact-phone" placeholder="(555) 000-0000">
+                        </div>
+                        <div class="form-group">
+                            <label for="contact-subject">Inquiry Topic*</label>
+                            <select id="contact-subject" required>
+                                <option value="Treasury Whitelisting (Sec. 407)">Treasury Whitelisting (Sec. 407)</option>
+                                <option value="Contribution Settlement Proof">Contribution Settlement Proof</option>
+                                <option value="Weekly Yield Payout Inquiry">Weekly Yield Payout Inquiry</option>
+                                <option value="Bank Account Verification">Bank Account Verification</option>
+                                <option value="General Campaign Inquiry">General Campaign Inquiry</option>
+                            </select>
+                        </div>
+                        <div class="form-group form-group-full">
+                            <label for="contact-message">Message Details*</label>
+                            <textarea id="contact-message" rows="5" placeholder="Provide detailed information regarding your inquiry..." required></textarea>
+                        </div>
+                    </div>
+
+                    <div id="contact-form-status" style="margin-bottom:16px; font-weight:600; font-size:0.9rem; display:none; padding:12px; border-radius:8px;"></div>
+
+                    <button type="submit" id="contact-submit-btn" class="btn-submit-contact">
+                        <i class="fas fa-paper-plane"></i> Submit Official Inquiry
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sidebar Info -->
+        <aside class="info-sidebar">
+
+            <!-- Live Chat Callout -->
+            <div class="live-chat-callout">
+                <i class="fas fa-headset" style="font-size:2.5rem; color:#38bdf8; margin-bottom:12px;"></i>
+                <h3>Need Instant Assistance?</h3>
+                <p>Connect immediately with an online campaign support agent via our 24/7 Live Support Desk.</p>
+                <button class="contact-us-trigger-btn" style="position:static; width:100%; justify-content:center; margin:0;">
+                    <i class="fas fa-comments"></i> Launch Live Chat
+                </button>
+            </div>
+
+            <!-- Office Locations Card -->
+            <div class="side-card">
+                <h3 class="side-card-title"><i class="fas fa-building" style="color:#1e3a8a;"></i> Campaign Headquarters</h3>
+                <ul class="info-list">
+                    <li>
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <strong>National Campaign Executive Office</strong><br>
+                            1100 Pennsylvania Avenue NW<br>Washington, D.C. 20004
+                        </div>
+                    </li>
+                    <li>
+                        <i class="fas fa-landmark"></i>
+                        <div>
+                            <strong>Treasury Advisory Council</strong><br>
+                            Mar-a-Lago Executive Desk<br>Palm Beach, FL 33480
+                        </div>
+                    </li>
+                    <li>
+                        <i class="fas fa-envelope"></i>
+                        <div>
+                            <strong>Official Email Desk</strong><br>
+                            <a href="mailto:supportgeniusactglobal@gmail.com" style="color:#1e3a8a; font-weight:700;">supportgeniusactglobal@gmail.com</a>
+                        </div>
+                    </li>
+                    <li>
+                        <i class="fas fa-shield-alt"></i>
+                        <div>
+                            <strong>Federal Compliance ID</strong><br>
+                            FEC Committee ID: C00874921
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+        </aside>
+    </main>
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+        <h2 class="faq-title"><i class="fas fa-question-circle" style="color:#ef4444; margin-right:8px;"></i> Frequently Asked Questions</h2>
+        <div class="faq-grid">
+            <div class="faq-card">
+                <h4><i class="fas fa-certificate" style="color:#3b82f6; margin-right:6px;"></i> What is Section 407 Treasury Clearance?</h4>
+                <p>Section 407 specifies one-time identity and contribution audit requirements ensuring 100% US Dollar stablecoin backing and legally protected yield allocations for supporters.</p>
+            </div>
+            <div class="faq-card">
+                <h4><i class="fas fa-chart-line" style="color:#10b981; margin-right:6px;"></i> How are weekly yield profits calculated?</h4>
+                <p>Yield distributions accrue automatically on active account balances at a 32.00% weekly equivalent yield rate based on institutional short-term Treasury asset yields.</p>
+            </div>
+
+            <div class="faq-card">
+                <h4><i class="fas fa-user-shield" style="color:#6366f1; margin-right:6px;"></i> Is my personal information secure?</h4>
+                <p>All transmitted documents and communications use military-grade 256-bit SSL encryption and strict federal data privacy protocols.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="footer-disclaimer">
+            <strong>PAID FOR BY TRUMP NATIONAL COMMITTEE JFC & GENIUS ACT GLOBAL TREASURY INITIATIVE</strong><br>
+            Not authorized by any candidate or candidate's committee. Contributions or gifts to GeniusAct Global are not deductible as charitable contributions for federal income tax purposes.
+        </div>
+        <p>© 2026 GENIUS Act Global Treasury Initiative. All Rights Reserved.</p>
+    </footer>
+
+    <!-- Form Handler Script -->
+    <script>
+        // Auto fill if logged in user
+        document.addEventListener('DOMContentLoaded', () => {
+            const userStr = localStorage.getItem('geniusact_current_user');
+            if (userStr) {
+                try {
+                    const u = JSON.parse(userStr);
+                    if (u.fullName) document.getElementById('contact-name').value = u.fullName;
+                    if (u.email) document.getElementById('contact-email').value = u.email;
+                } catch(e) {}
+            }
+        });
+
+        async function handleContactPageSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('contact-name').value.trim();
+            const email = document.getElementById('contact-email').value.trim().toLowerCase();
+            const phone = document.getElementById('contact-phone').value.trim();
+            const subject = document.getElementById('contact-subject').value;
+            const message = document.getElementById('contact-message').value.trim();
+            const statusDiv = document.getElementById('contact-form-status');
+            const submitBtn = document.getElementById('contact-submit-btn');
+
+            if (!name || !email || !message) return;
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Submitting to Compliance Desk...`;
+
+            const newMsg = {
+                id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                userEmail: email,
+                userName: name,
+                userPhone: phone,
+                subject: subject,
+                message: `[Phone: ${phone || 'N/A'}] ${message}`,
+                timestamp: new Date().toISOString(),
+                status: 'pending',
+                reply: null,
+                replyTimestamp: null
+            };
+
+            // Save to geniusact_support_messages
+            let messages = JSON.parse(localStorage.getItem('geniusact_support_messages')) || [];
+            messages.push(newMsg);
+            localStorage.setItem('geniusact_support_messages', JSON.stringify(messages));
+
+            // Also save to geniusact_contact_chats so it appears in Live Chat Desk too!
+            let chats = JSON.parse(localStorage.getItem('geniusact_contact_chats')) || [];
+            const chatId = 'chat_' + email.replace(/[^a-z0-9]/g, '_');
+            let existingChat = chats.find(c => c.chatId === chatId || c.userEmail === email);
+            
+            const chatMsgObj = {
+                id: 'm_' + Date.now(),
+                sender: 'user',
+                text: `[${subject}]: ${message}`,
+                timestamp: newMsg.timestamp
+            };
+
+            if (existingChat) {
+                existingChat.messages.push(chatMsgObj);
+                existingChat.lastUpdated = newMsg.timestamp;
+                existingChat.unreadAdminCount = (existingChat.unreadAdminCount || 0) + 1;
+                existingChat.userName = name;
+            } else {
+                chats.push({
+                    chatId: chatId,
+                    userEmail: email,
+                    userName: name,
+                    isGuest: true,
+                    createdAt: newMsg.timestamp,
+                    lastUpdated: newMsg.timestamp,
+                    unreadAdminCount: 1,
+                    unreadUserCount: 0,
+                    messages: [chatMsgObj]
+                });
+            }
+            localStorage.setItem('geniusact_contact_chats', JSON.stringify(chats));
+
+            // Sync with backend cloud
+            if (window.cloudSyncFull) {
+                try { await window.cloudSyncFull(); } catch(err) {}
+            }
+
+            statusDiv.style.display = 'block';
+            statusDiv.style.backgroundColor = '#f0fdf4';
+            statusDiv.style.color = '#166534';
+            statusDiv.style.border = '1px solid #bbf7d0';
+            statusDiv.innerHTML = `✅ <strong>Inquiry Submitted!</strong> Ref #${newMsg.id.substring(4,10).toUpperCase()} has been forwarded to the Treasury Compliance Desk. An agent will reply shortly.`;
+
+            document.getElementById('contact-message').value = '';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<i class="fas fa-paper-plane"></i> Submit Official Inquiry`;
+        }
+    </script>
+
+    <!-- Cloud Sync & Live Contact Widget -->
+    <script src="static/js/sync-engine.js"></script>
+    <script src="static/js/footprint-tracker.js"></script>
+    <script src="static/js/contact-us-widget.js"></script>
+</body>
+</html>
