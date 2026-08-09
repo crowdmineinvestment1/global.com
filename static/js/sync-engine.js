@@ -18,23 +18,38 @@ const SYNC_KEYS = [
 const originalSetItem = localStorage.setItem.bind(localStorage);
 
 // Primary and fallback backend origins for static cross-domain hosting (GitHub Pages, custom domains)
-const BACKEND_ORIGINS = [
-  '', // Same-origin relative path first
-  'https://ais-pre-qxh4ji7uvbvllkwllmhpkt-74819915296.us-east1.run.app',
-  'https://ais-dev-qxh4ji7uvbvllkwllmhpkt-74819915296.us-east1.run.app'
-];
+const PRIMARY_CLOUD_BACKEND = 'https://ais-pre-qxh4ji7uvbvllkwllmhpkt-74819915296.us-east1.run.app';
+const SECONDARY_CLOUD_BACKEND = 'https://ais-dev-qxh4ji7uvbvllkwllmhpkt-74819915296.us-east1.run.app';
 
 window.getBackendOrigins = function() {
-  const origins = [...BACKEND_ORIGINS];
+  const isLocalOrRunApp = window.location.hostname === 'localhost' ||
+                          window.location.hostname === '127.0.0.1' ||
+                          window.location.hostname.endsWith('.run.app');
+
+  const origins = [];
+
   if (window.GENIUSACT_BACKEND_URL) {
-    origins.unshift(window.GENIUSACT_BACKEND_URL.replace(/\/$/, ''));
+    origins.push(window.GENIUSACT_BACKEND_URL.replace(/\/$/, ''));
   }
   try {
     const customBackend = localStorage.getItem('geniusact_backend_url');
     if (customBackend) {
-      origins.unshift(customBackend.replace(/\/$/, ''));
+      origins.push(customBackend.replace(/\/$/, ''));
     }
   } catch(e) {}
+
+  if (isLocalOrRunApp) {
+    origins.push(''); // Same-origin relative path first on Cloud Run
+    origins.push(PRIMARY_CLOUD_BACKEND);
+    origins.push(SECONDARY_CLOUD_BACKEND);
+  } else {
+    // Hosted on static domain (e.g. GitHub Pages / custom domain)
+    // Live Cloud Run backend MUST come first so POST/GET requests succeed directly!
+    origins.push(PRIMARY_CLOUD_BACKEND);
+    origins.push(SECONDARY_CLOUD_BACKEND);
+    origins.push('');
+  }
+
   return [...new Set(origins)];
 };
 
@@ -72,8 +87,8 @@ async function cloudFetch() {
 
   const origins = window.getBackendOrigins();
 
-  for (const origin of origins) {
-    for (const path of fetchEndpoints) {
+  for (const path of fetchEndpoints) {
+    for (const origin of origins) {
       const url = origin ? (origin + path) : path;
       try {
         const res = await fetch(url, { cache: 'no-store' });
@@ -94,7 +109,7 @@ async function cloudFetch() {
           }
         }
       } catch(err) {
-        // Try next endpoint
+        // Try next origin
       }
     }
   }
@@ -111,8 +126,8 @@ async function cloudPush(data) {
 
   const origins = window.getBackendOrigins();
 
-  for (const origin of origins) {
-    for (const path of pushEndpoints) {
+  for (const path of pushEndpoints) {
+    for (const origin of origins) {
       const url = origin ? (origin + path) : path;
       try {
         const res = await fetch(url, {
