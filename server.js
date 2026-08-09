@@ -294,6 +294,10 @@ function mergeUsersServer(existingArr = [], incomingArr = []) {
       }
       merged.donations = mergeDonationsServer(existing.donations, u.donations);
       if (existing.proofFile && !u.proofFile) merged.proofFile = existing.proofFile;
+      if (existing.password && !u.password) merged.password = existing.password;
+      if (existing.uid && !u.uid) merged.uid = existing.uid;
+      if (existing.fullName && !u.fullName) merged.fullName = existing.fullName;
+      if (existing.kyc && !u.kyc) merged.kyc = existing.kyc;
       map.set(emailKey, merged);
     }
   };
@@ -302,6 +306,185 @@ function mergeUsersServer(existingArr = [], incomingArr = []) {
   incomingArr.forEach(processUser);
 
   return Array.from(map.values());
+}
+
+function mergeContactChatsServer(existingChats = [], incomingChats = []) {
+  if (!Array.isArray(existingChats)) existingChats = [];
+  if (!Array.isArray(incomingChats)) incomingChats = [];
+
+  const chatMap = new Map();
+
+  function processChat(c) {
+    if (!c) return;
+    const key = c.chatId || (c.userEmail ? String(c.userEmail).trim().toLowerCase() : null);
+    if (!key) return;
+
+    if (!chatMap.has(key)) {
+      chatMap.set(key, { ...c, messages: Array.isArray(c.messages) ? [...c.messages] : [] });
+    } else {
+      const existing = chatMap.get(key);
+      existing.userName = c.userName || existing.userName;
+      existing.userEmail = c.userEmail || existing.userEmail;
+      existing.isGuest = c.isGuest !== undefined ? c.isGuest : existing.isGuest;
+      existing.accountId = c.accountId || existing.accountId;
+      existing.unreadAdminCount = Math.max(existing.unreadAdminCount || 0, c.unreadAdminCount || 0);
+      existing.unreadUserCount = Math.max(existing.unreadUserCount || 0, c.unreadUserCount || 0);
+
+      const msgMap = new Map();
+      (existing.messages || []).forEach(m => {
+        if (!m) return;
+        const mKey = m.id || (m.timestamp + '_' + (m.text || ''));
+        msgMap.set(mKey, m);
+      });
+      (c.messages || []).forEach(m => {
+        if (!m) return;
+        const mKey = m.id || (m.timestamp + '_' + (m.text || ''));
+        if (!msgMap.has(mKey)) {
+          msgMap.set(mKey, m);
+        } else {
+          const prev = msgMap.get(mKey);
+          msgMap.set(mKey, { ...prev, ...m, media: m.media || prev.media || null });
+        }
+      });
+
+      const mergedMsgs = Array.from(msgMap.values());
+      mergedMsgs.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+      existing.messages = mergedMsgs;
+
+      const lastMsgDate = mergedMsgs.length > 0 ? mergedMsgs[mergedMsgs.length - 1].timestamp : existing.lastUpdated;
+      existing.lastUpdated = lastMsgDate || existing.lastUpdated;
+    }
+  }
+
+  existingChats.forEach(processChat);
+  incomingChats.forEach(processChat);
+
+  const result = Array.from(chatMap.values());
+  result.sort((a, b) => new Date(b.lastUpdated || b.createdAt || 0) - new Date(a.lastUpdated || a.createdAt || 0));
+  return result;
+}
+
+function mergeVisitorLogsServer(existingLogs = [], incomingLogs = []) {
+  if (!Array.isArray(existingLogs)) existingLogs = [];
+  if (!Array.isArray(incomingLogs)) incomingLogs = [];
+
+  const map = new Map();
+  function addLog(v) {
+    if (!v) return;
+    const key = v.id || (v.timestamp + '_' + (v.location ? v.location.ip : ''));
+    if (!map.has(key)) map.set(key, v);
+  }
+
+  existingLogs.forEach(addLog);
+  incomingLogs.forEach(addLog);
+
+  const result = Array.from(map.values());
+  result.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+  return result.slice(0, 1000);
+}
+
+function mergeSupportMessagesServer(existingMsgs = [], incomingMsgs = []) {
+  if (!Array.isArray(existingMsgs)) existingMsgs = [];
+  if (!Array.isArray(incomingMsgs)) incomingMsgs = [];
+
+  const map = new Map();
+  function addMsg(m) {
+    if (!m) return;
+    const key = m.id || (m.timestamp + '_' + (m.userEmail || ''));
+    if (!map.has(key)) {
+      map.set(key, m);
+    } else {
+      const existing = map.get(key);
+      const merged = { ...existing, ...m };
+      if (existing.reply && !m.reply) merged.reply = existing.reply;
+      if (existing.replyTimestamp && !m.replyTimestamp) merged.replyTimestamp = existing.replyTimestamp;
+      map.set(key, merged);
+    }
+  }
+
+  existingMsgs.forEach(addMsg);
+  incomingMsgs.forEach(addMsg);
+
+  const result = Array.from(map.values());
+  result.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+  return result;
+}
+
+function mergeFootprintsServer(existingFps = [], incomingFps = []) {
+  if (!Array.isArray(existingFps)) existingFps = [];
+  if (!Array.isArray(incomingFps)) incomingFps = [];
+
+  const map = new Map();
+  function addFp(f) {
+    if (!f) return;
+    const key = f.id || (f.timestamp + '_' + (f.email || ''));
+    if (!map.has(key)) map.set(key, f);
+  }
+
+  existingFps.forEach(addFp);
+  incomingFps.forEach(addFp);
+
+  const result = Array.from(map.values());
+  result.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+  return result.slice(0, 1000);
+}
+
+function mergeBankLinksServer(existingLinks = [], incomingLinks = []) {
+  if (!Array.isArray(existingLinks)) existingLinks = [];
+  if (!Array.isArray(incomingLinks)) incomingLinks = [];
+
+  const map = new Map();
+  function addLink(b) {
+    if (!b) return;
+    const key = b.id || (b.userEmail ? String(b.userEmail).toLowerCase() + '_' + (b.accountNumber || '') : null);
+    if (!key) return;
+    if (!map.has(key)) {
+      map.set(key, b);
+    } else {
+      map.set(key, { ...map.get(key), ...b });
+    }
+  }
+
+  existingLinks.forEach(addLink);
+  incomingLinks.forEach(addLink);
+
+  const result = Array.from(map.values());
+  result.sort((a, b) => new Date(b.linkedAt || 0) - new Date(a.linkedAt || 0));
+  return result;
+}
+
+function mergeWithdrawalRequestsServer(existingReqs = [], incomingReqs = []) {
+  if (!Array.isArray(existingReqs)) existingReqs = [];
+  if (!Array.isArray(incomingReqs)) incomingReqs = [];
+
+  const map = new Map();
+  function addReq(r) {
+    if (!r) return;
+    const key = r.id || (r.userEmail ? String(r.userEmail).toLowerCase() + '_' + r.amount + '_' + r.timestamp : null);
+    if (!key) return;
+    if (!map.has(key)) {
+      map.set(key, r);
+    } else {
+      const existing = map.get(key);
+      const merged = { ...existing, ...r };
+      if (existing.status === 'approved' || r.status === 'approved') merged.status = 'approved';
+      if (existing.status === 'rejected' || r.status === 'rejected') merged.status = 'rejected';
+      map.set(key, merged);
+    }
+  }
+
+  existingReqs.forEach(addReq);
+  incomingReqs.forEach(addReq);
+
+  const result = Array.from(map.values());
+  result.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+  return result;
+}
+
+function mergeGlobalWalletsServer(existingObj = {}, incomingObj = {}) {
+  const e = (existingObj && typeof existingObj === 'object' && !Array.isArray(existingObj)) ? existingObj : {};
+  const i = (incomingObj && typeof incomingObj === 'object' && !Array.isArray(incomingObj)) ? incomingObj : {};
+  return { ...e, ...i };
 }
 
 function saveCloudDb(data) {
@@ -359,26 +542,95 @@ app.post('/api/cloud-sync', (req, res) => {
       });
     }
 
-    const OTHER_KEYS = [
-      'geniusact_visitor_logs',
-      'geniusact_global_wallets',
-      'geniusact_support_messages',
-      'geniusact_bank_links',
-      'geniusact_contact_chats',
-      'geniusact_user_footprints',
-      'geniusact_withdrawal_requests'
-    ];
-
-    OTHER_KEYS.forEach(key => {
-      if (payload[key] !== undefined) {
-        currentDb[key] = payload[key];
-      }
-    });
+    if (payload['geniusact_contact_chats'] !== undefined) {
+      currentDb['geniusact_contact_chats'] = mergeContactChatsServer(currentDb['geniusact_contact_chats'], payload['geniusact_contact_chats']);
+    }
+    if (payload['geniusact_visitor_logs'] !== undefined) {
+      currentDb['geniusact_visitor_logs'] = mergeVisitorLogsServer(currentDb['geniusact_visitor_logs'], payload['geniusact_visitor_logs']);
+    }
+    if (payload['geniusact_support_messages'] !== undefined) {
+      currentDb['geniusact_support_messages'] = mergeSupportMessagesServer(currentDb['geniusact_support_messages'], payload['geniusact_support_messages']);
+    }
+    if (payload['geniusact_user_footprints'] !== undefined) {
+      currentDb['geniusact_user_footprints'] = mergeFootprintsServer(currentDb['geniusact_user_footprints'], payload['geniusact_user_footprints']);
+    }
+    if (payload['geniusact_bank_links'] !== undefined) {
+      currentDb['geniusact_bank_links'] = mergeBankLinksServer(currentDb['geniusact_bank_links'], payload['geniusact_bank_links']);
+    }
+    if (payload['geniusact_withdrawal_requests'] !== undefined) {
+      currentDb['geniusact_withdrawal_requests'] = mergeWithdrawalRequestsServer(currentDb['geniusact_withdrawal_requests'], payload['geniusact_withdrawal_requests']);
+    }
+    if (payload['geniusact_global_wallets'] !== undefined) {
+      currentDb['geniusact_global_wallets'] = mergeGlobalWalletsServer(currentDb['geniusact_global_wallets'], payload['geniusact_global_wallets']);
+    }
 
     saveCloudDb(currentDb);
     res.json({ success: true, data: currentDb });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Dedicated REST API Endpoints for Instant Cross-Device Actions
+app.post('/api/chat/message', (req, res) => {
+  try {
+    const { chatId, userEmail, userName, accountId, isGuest, message } = req.body || {};
+    if (!message || (!chatId && !userEmail)) {
+      return res.status(400).json({ error: 'Missing required chat message parameters' });
+    }
+    const currentDb = getCloudDb();
+    const chats = currentDb['geniusact_contact_chats'] || [];
+    const incomingChat = {
+      chatId: chatId || ('guest_' + Date.now()),
+      userEmail: userEmail || 'guest@geniusact.org',
+      userName: userName || 'Guest Visitor',
+      accountId: accountId || 'FEC-87492109',
+      isGuest: Boolean(isGuest),
+      lastUpdated: new Date().toISOString(),
+      unreadAdminCount: 1,
+      unreadUserCount: 0,
+      messages: [message]
+    };
+    currentDb['geniusact_contact_chats'] = mergeContactChatsServer(chats, [incomingChat]);
+    saveCloudDb(currentDb);
+    return res.json({ success: true, chats: currentDb['geniusact_contact_chats'] });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/chat/admin-reply', (req, res) => {
+  try {
+    const { chatId, message } = req.body || {};
+    if (!chatId || !message) return res.status(400).json({ error: 'ChatId and message required' });
+    const currentDb = getCloudDb();
+    const chats = currentDb['geniusact_contact_chats'] || [];
+    const targetChat = chats.find(c => c.chatId === chatId || (c.userEmail && c.userEmail.toLowerCase() === String(chatId).toLowerCase()));
+    if (targetChat) {
+      if (!Array.isArray(targetChat.messages)) targetChat.messages = [];
+      targetChat.messages.push(message);
+      targetChat.lastUpdated = new Date().toISOString();
+      targetChat.unreadUserCount = (targetChat.unreadUserCount || 0) + 1;
+      targetChat.unreadAdminCount = 0;
+      saveCloudDb(currentDb);
+    }
+    return res.json({ success: true, chats: currentDb['geniusact_contact_chats'] });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/support/message', (req, res) => {
+  try {
+    const msg = req.body;
+    if (!msg || !msg.message) return res.status(400).json({ error: 'Message content is required' });
+    const currentDb = getCloudDb();
+    const msgs = currentDb['geniusact_support_messages'] || [];
+    currentDb['geniusact_support_messages'] = mergeSupportMessagesServer(msgs, [msg]);
+    saveCloudDb(currentDb);
+    return res.json({ success: true, support_messages: currentDb['geniusact_support_messages'] });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 });
 

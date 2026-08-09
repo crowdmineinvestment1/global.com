@@ -612,6 +612,26 @@
             }
             localStorage.setItem('geniusact_contact_chats', JSON.stringify(chats));
 
+            // Direct REST API calls to server for instant multi-device sync
+            fetch('/api/support/message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newMsg)
+            }).catch(err => console.warn('Direct support message API call error:', err));
+
+            fetch('/api/chat/message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chatId: chatId,
+                    userEmail: email,
+                    userName: name,
+                    accountId: 'FEC-87492109',
+                    isGuest: true,
+                    message: chatMsgObj
+                })
+            }).catch(err => console.warn('Direct chat API call error:', err));
+
             // Sync with backend cloud
             if (window.cloudSyncFull) {
                 try { await window.cloudSyncFull(); } catch(err) {}

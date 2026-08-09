@@ -663,6 +663,20 @@
 
             localStorage.setItem('geniusact_contact_chats', JSON.stringify(allChats));
 
+            // Direct REST call to server for instant multi-device sync
+            fetch('/api/chat/message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chatId: userInfo.chatId,
+                    userEmail: userInfo.email || 'guest@geniusact.org',
+                    userName: userInfo.name || 'Guest Visitor',
+                    accountId: accountId,
+                    isGuest: userInfo.isGuest,
+                    message: newMsg
+                })
+            }).catch(err => console.warn('Direct chat API call fallback to cloudSync:', err));
+
             // Reset media and input
             selectedPendingMedia = null;
             const fileInput = document.getElementById('chat-file-input');

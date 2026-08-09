@@ -1953,16 +1953,27 @@ async function sendAdminChatMessage() {
   const idx = chats.findIndex(c => c.chatId === activeAdminChatId);
   if (idx > -1) {
     const now = new Date().toISOString();
-    chats[idx].messages.push({
+    const newMsg = {
       id: 'm_' + Date.now(),
       sender: 'admin',
       text: text,
       media: adminPendingMedia ? { ...adminPendingMedia } : null,
       timestamp: now
-    });
+    };
+    chats[idx].messages.push(newMsg);
     chats[idx].lastUpdated = now;
     chats[idx].unreadUserCount = (chats[idx].unreadUserCount || 0) + 1;
     localStorage.setItem('geniusact_contact_chats', JSON.stringify(chats));
+
+    // Direct REST API call for instant multi-device sync
+    fetch('/api/chat/admin-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chatId: activeAdminChatId,
+        message: newMsg
+      })
+    }).catch(err => console.warn('Direct admin reply API call error:', err));
 
     if (window.cloudSyncFull) {
       try { await window.cloudSyncFull(); } catch (e) { }
