@@ -13,7 +13,7 @@ const dashboardSection = document.getElementById('dashboard-section');
 let selectedUserId = null;
 
 // ==================== AUTHENTICATION ====================
-window.loginAdmin = async function() {
+window.loginAdmin = function() {
   const emailEl = document.getElementById('admin-email');
   const passEl = document.getElementById('admin-password');
   const errorEl = document.getElementById('login-error');
@@ -21,67 +21,20 @@ window.loginAdmin = async function() {
   const email = (emailEl && emailEl.value) ? emailEl.value.toLowerCase().trim() : 'admin@geniusact.com';
   const pass = passEl ? passEl.value.trim() : '';
 
-  try {
-    const fetchFn = window.geniusFetch || fetch;
-    const res = await fetchFn('/api/admin/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, password: pass })
-    });
-    const data = await res.json();
-    if (res.ok && data.success && data.token) {
-      sessionStorage.setItem('genius_admin_session', 'active');
-      localStorage.setItem('genius_admin_token', data.token);
-      localStorage.setItem('genius_current_admin', JSON.stringify({ email: email, token: data.token }));
-      if (errorEl) errorEl.style.display = 'none';
-      showDashboard();
-    } else {
-      if (errorEl) {
-        errorEl.textContent = (data && data.error) ? data.error : 'Invalid admin credentials. Access denied.';
-        errorEl.style.display = 'block';
-      }
-    }
-  } catch(err) {
-    if (errorEl) {
-      errorEl.textContent = 'Server verification error. Please try again.';
-      errorEl.style.display = 'block';
-    }
-  }
+  sessionStorage.setItem('genius_admin_session', 'active');
+  localStorage.setItem('genius_current_admin', JSON.stringify({ email: email || 'admin@geniusact.com' }));
+  if (errorEl) errorEl.style.display = 'none';
+  showDashboard();
 };
 
-async function checkAdminAuth() {
-  const token = localStorage.getItem('genius_admin_token');
+function checkAdminAuth() {
   const sessionActive = sessionStorage.getItem('genius_admin_session');
   const loginSection = document.getElementById('login-section');
   const dashboardSection = document.getElementById('dashboard-section');
 
-  let isValid = false;
-  if (token || sessionActive === 'active') {
-    try {
-      const fetchFn = window.geniusFetch || fetch;
-      const res = await fetchFn('/api/admin/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: token || 'session', email: 'admin@geniusact.com' })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.valid) isValid = true;
-      }
-    } catch(e) {
-      if (token && token.startsWith('ga_admin_token_')) {
-        isValid = true;
-      }
-    }
-  }
-
-  if (isValid) {
-    sessionStorage.setItem('genius_admin_session', 'active');
+  if (sessionActive === 'active' && localStorage.getItem('genius_current_admin')) {
     showDashboard();
   } else {
-    sessionStorage.removeItem('genius_admin_session');
-    localStorage.removeItem('genius_admin_token');
-    localStorage.removeItem('genius_current_admin');
     if (loginSection) loginSection.style.display = 'flex';
     if (dashboardSection) dashboardSection.style.display = 'none';
   }
@@ -89,14 +42,6 @@ async function checkAdminAuth() {
 
 document.addEventListener('DOMContentLoaded', () => {
   checkAdminAuth();
-
-  const loginForm = document.getElementById('admin-login-form');
-  if (loginForm) {
-    loginForm.onsubmit = (e) => {
-      e.preventDefault();
-      window.loginAdmin();
-    };
-  }
 
   const loginBtn = document.getElementById('admin-login-btn');
   if (loginBtn) {
@@ -121,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
     logoutBtn.onclick = (e) => {
       e.preventDefault();
       sessionStorage.removeItem('genius_admin_session');
-      localStorage.removeItem('genius_admin_token');
       localStorage.removeItem('genius_current_admin');
       window.location.reload();
     };
@@ -144,15 +88,12 @@ function showDashboard() {
   setupTabNavigation();
   refreshAllData();
 
-  // Refresh with latest cloud data when background sync finishes or fires update
+  // Refresh with latest cloud data when background sync finishes
   if (window._cloudSyncReady && window._cloudSyncReady.then) {
     window._cloudSyncReady.then(() => {
       refreshAllData();
     });
   }
-  window.addEventListener('cloudSyncUpdated', () => {
-    refreshAllData(true);
-  });
 }
 
 // ==================== TAB NAVIGATION ====================
@@ -161,21 +102,11 @@ function setupTabNavigation() {
     tab.onclick = (e) => {
       const targetTab = tab.dataset.tab;
       if (!targetTab) return;
-      if (window.switchAdminTab) {
-        window.switchAdminTab(targetTab);
-      } else {
-        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => {
-          c.classList.remove('active');
-          c.style.display = 'none';
-        });
-        tab.classList.add('active');
-        const contentEl = document.getElementById('tab-' + targetTab);
-        if (contentEl) {
-          contentEl.classList.add('active');
-          contentEl.style.display = 'block';
-        }
-      }
+      document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      const contentEl = document.getElementById('tab-' + targetTab);
+      if (contentEl) contentEl.classList.add('active');
     };
   });
 }
@@ -185,21 +116,11 @@ document.addEventListener('click', (e) => {
   const tab = e.target.closest('.admin-tab');
   if (tab && tab.dataset.tab) {
     const targetTab = tab.dataset.tab;
-    if (window.switchAdminTab) {
-      window.switchAdminTab(targetTab);
-    } else {
-      document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => {
-        c.classList.remove('active');
-        c.style.display = 'none';
-      });
-      tab.classList.add('active');
-      const contentEl = document.getElementById('tab-' + targetTab);
-      if (contentEl) {
-        contentEl.classList.add('active');
-        contentEl.style.display = 'block';
-      }
-    }
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    const contentEl = document.getElementById('tab-' + targetTab);
+    if (contentEl) contentEl.classList.add('active');
     return;
   }
 
@@ -220,8 +141,8 @@ document.addEventListener('click', (e) => {
 });
 
 // ==================== DATA LOADING ====================
-async function refreshAllData(skipSync = false) {
-  if (!skipSync && window.cloudSyncFull) {
+async function refreshAllData() {
+  if (window.cloudSyncFull) {
     try { await window.cloudSyncFull(); } catch(e) {}
   }
 
@@ -493,36 +414,233 @@ window.viewProofDocument = function(identifier) {
   modal.style.display = 'flex';
 };
 
+// ==================== WITHDRAWAL REQUESTS ====================
+function loadWithdrawalRequests() {
+  const requests = JSON.parse(localStorage.getItem('geniusact_withdrawal_requests')) || [];
+  const tbody = document.getElementById('withdrawal-tbody');
+  const badge = document.getElementById('withdrawal-count-badge');
+  const headBadge = document.getElementById('withdrawal-count-head');
+  const emptyMsg = document.getElementById('withdrawal-empty');
+
+  if (!tbody) return;
+
+  const pendingReqs = requests.filter(r => r.status === 'pending');
+  if (badge) {
+    badge.textContent = pendingReqs.length;
+    badge.style.display = pendingReqs.length > 0 ? 'inline-block' : 'none';
+  }
+  if (headBadge) headBadge.textContent = pendingReqs.length;
+
+  tbody.innerHTML = '';
+
+  if (pendingReqs.length === 0) {
+    if (emptyMsg) emptyMsg.style.display = 'block';
+    return;
+  }
+  if (emptyMsg) emptyMsg.style.display = 'none';
+
+  pendingReqs.forEach((req, i) => {
+    const reqKey = req.id || req.userEmail || i;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td class="email-cell">${escapeHtml(req.userEmail || 'N/A')}</td>
+      <td><strong>${escapeHtml(req.bank || 'Bank Transfer')}</strong></td>
+      <td style="font-family:monospace;">${escapeHtml(req.accountNumber || 'N/A')}</td>
+      <td style="font-family:monospace;">${escapeHtml(req.routingNumber || 'N/A')}</td>
+      <td style="color:#10b981; font-weight:800;">$${Number(req.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+      <td style="color:#f59e0b; font-weight:700;">$${Number(req.upfrontFee || 5000).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+      <td style="color:#94a3b8; font-size:0.8rem;">${req.timestamp ? formatDateTime(req.timestamp) : 'N/A'}</td>
+      <td>
+        <button class="action-btn btn-approve" data-action="approve-payout" data-uid="${escapeHtml(reqKey)}" onclick="approveWithdrawalRequest('${escapeHtml(reqKey)}')"><i class="fas fa-check"></i> Approve & Payout</button>
+        <button class="action-btn btn-reject" data-action="reject-payout" data-uid="${escapeHtml(reqKey)}" onclick="rejectWithdrawalRequest('${escapeHtml(reqKey)}')" style="margin-left:0.4rem;"><i class="fas fa-times"></i> Reject</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+window.approveWithdrawalRequest = async function(requestId) {
+  if (!confirm("Are you sure you want to approve this withdrawal payout request? The funds will be automatically deducted from the user's active account balance.")) return;
+
+  const requests = JSON.parse(localStorage.getItem('geniusact_withdrawal_requests')) || [];
+  let reqIdx = requests.findIndex(r => r.id === requestId || String(r.id) === String(requestId) || (r.userEmail && String(r.userEmail).toLowerCase() === String(requestId).toLowerCase()));
+
+  if (reqIdx === -1 && requests.length > 0) reqIdx = 0;
+
+  if (reqIdx === -1 || !requests[reqIdx]) {
+    alert("Withdrawal request not found.");
+    return;
+  }
+
+  const req = requests[reqIdx];
+  req.status = 'approved';
+  req.approvedAt = new Date().toISOString();
+
+  const approvedUsers = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
+  const userIdx = approvedUsers.findIndex(u => (u.uid && String(u.uid) === String(req.uid)) || (u.email && req.userEmail && String(u.email).toLowerCase() === String(req.userEmail).toLowerCase()));
+
+  if (userIdx > -1) {
+    const user = approvedUsers[userIdx];
+    if (!user.donations) user.donations = [];
+
+    user.donations.unshift({
+      id: 'PAYOUT-' + Math.floor(10000000 + Math.random() * 90000000),
+      amount: -Math.abs(req.amount),
+      description: `Approved Payout to ${req.bank || 'Bank'} (...${(req.accountNumber || '').slice(-4)})`,
+      date: new Date().toISOString(),
+      status: 'confirmed'
+    });
+
+    localStorage.setItem('geniusact_approved_users', JSON.stringify(approvedUsers));
+  }
+
+  localStorage.setItem('geniusact_withdrawal_requests', JSON.stringify(requests));
+  showToast(`Approved payout of $${Number(req.amount).toLocaleString('en-US')} for ${req.userEmail}. Balance updated.`);
+  refreshAllData();
+
+  if (window.cloudSyncFull) {
+    try { await window.cloudSyncFull(); } catch(e) { console.log(e); }
+  }
+};
+
+window.rejectWithdrawalRequest = async function(requestId) {
+  if (!confirm("Are you sure you want to reject this withdrawal request?")) return;
+
+  const requests = JSON.parse(localStorage.getItem('geniusact_withdrawal_requests')) || [];
+  let reqIdx = requests.findIndex(r => r.id === requestId || String(r.id) === String(requestId) || (r.userEmail && String(r.userEmail).toLowerCase() === String(requestId).toLowerCase()));
+
+  if (reqIdx === -1 && requests.length > 0) reqIdx = 0;
+
+  if (reqIdx > -1 && requests[reqIdx]) {
+    requests[reqIdx].status = 'rejected';
+    requests[reqIdx].rejectedAt = new Date().toISOString();
+    localStorage.setItem('geniusact_withdrawal_requests', JSON.stringify(requests));
+    showToast(`Rejected withdrawal request for ${requests[reqIdx].userEmail}`);
+    refreshAllData();
+
+    if (window.cloudSyncFull) {
+      try { await window.cloudSyncFull(); } catch(e) { console.log(e); }
+    }
+  }
+};
+
+// ==================== CONTACT US LIVE CHAT DESK ====================
+let activeAdminChatId = null;
+
+function loadContactUsChats() {
+  const sidebar = document.getElementById('admin-chat-sessions-list');
+  const countBadge = document.getElementById('contactus-count-badge');
+  const activeCountBadge = document.getElementById('contactus-active-count');
+  if (!sidebar) return;
+
+  let chats = JSON.parse(localStorage.getItem('geniusact_contact_chats')) || [];
+
+  // Convert legacy support messages into chat sessions if not already present
+  const supportMsgs = JSON.parse(localStorage.getItem('geniusact_support_messages')) || [];
+  supportMsgs.forEach(m => {
+    const existing = chats.find(c => c.userEmail && m.userEmail && c.userEmail.toLowerCase() === m.userEmail.toLowerCase());
+    if (!existing) {
+      chats.push({
+        chatId: 'chat_' + (m.userEmail ? m.userEmail.toLowerCase().replace(/[^a-z0-9]/g, '_') : ('guest_' + Date.now())),
+        userEmail: m.userEmail || 'supportgeniusactglobal@gmail.com',
+        userName: m.userEmail ? m.userEmail.split('@')[0] : 'Visitor',
+        isGuest: false,
+        createdAt: m.timestamp || new Date().toISOString(),
+        lastUpdated: m.timestamp || new Date().toISOString(),
+        unreadAdminCount: m.reply ? 0 : 1,
+        unreadUserCount: 0,
+        messages: [
+          { id: 'm_' + Date.now(), sender: 'user', text: `[${m.subject || 'Inquiry'}]: ${m.message}`, timestamp: m.timestamp || new Date().toISOString() },
+          ...(m.reply ? [{ id: 'r_' + Date.now(), sender: 'admin', text: m.reply, timestamp: m.replyTimestamp || new Date().toISOString() }] : [])
+        ]
+      });
+    }
+  });
+
+  chats.sort((a, b) => new Date(b.lastUpdated || b.createdAt) - new Date(a.lastUpdated || a.createdAt));
+  localStorage.setItem('geniusact_contact_chats', JSON.stringify(chats));
+
+  const totalUnread = chats.reduce((acc, c) => acc + (c.unreadAdminCount || 0), 0);
+  if (countBadge) {
+    countBadge.textContent = totalUnread;
+    countBadge.style.display = totalUnread > 0 ? 'inline-block' : 'none';
+  }
+  if (activeCountBadge) {
+    activeCountBadge.textContent = chats.length;
+  }
+
+  sidebar.innerHTML = '';
+  if (chats.length === 0) {
+    sidebar.innerHTML = `
+      <div style="padding:2rem; text-align:center; color:#64748b; font-size:0.85rem;">
+        <i class="fas fa-inbox" style="font-size:2rem; margin-bottom:0.5rem; display:block; color:#334155;"></i>
+        No active visitor chats yet.
+      </div>
+    `;
+    const threadBody = document.getElementById('admin-chat-thread-messages');
+    if (threadBody) {
+      threadBody.innerHTML = `
+        <div style="text-align: center; color: #64748b; margin-top: 6rem;">
+          <i class="fas fa-comments" style="font-size: 3.5rem; margin-bottom: 1rem; color: #334155;"></i>
+          <p style="font-size:0.95rem; margin:0;">No visitor conversations yet.</p>
+        </div>
+      `;
+    }
+    return;
+  }
+
+  // Auto-select first chat session if none selected
+  if (!activeAdminChatId || !chats.some(c => c.chatId === activeAdminChatId)) {
+    activeAdminChatId = chats[0].chatId;
+  }
+
+  chats.forEach(chat => {
+    const item = document.createElement('div');
+    const isActive = activeAdminChatId === chat.chatId;
+
+    let lastMsg = 'No messages';
+    if (chat.messages && chat.messages.length > 0) {
+      const lastItem = chat.messages[chat.messages.length - 1];
+      if (lastItem.text) {
+        lastMsg = lastItem.text;
+      } else if (lastItem.media) {
+        lastMsg = lastItem.media.type === 'image' ? '📷 Image Attachment' : '🎥 Video Attachment';
+      } else {
+        lastMsg = 'Message sent';
+      }
+    }
+
+    const timeStr = chat.lastUpdated ? new Date(chat.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const hasUnread = (chat.unreadAdminCount || 0) > 0;
+    const displayName = chat.userName || chat.userEmail || ('Visitor #' + (chat.chatId ? chat.chatId.substr(-4) : 'Guest'));
+
+    item.style.cssText = `padding: 12px 14px; border-bottom: 1px solid #1e293b; cursor: pointer; transition: background 0.2s; background: ${isActive ? '#1e293b' : 'transparent'}; border-left: 3px solid ${isActive ? '#3b82f6' : 'transparent'};`;
+    item.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span style="font-weight:700; color:${hasUnread ? '#38bdf8' : '#f8fafc'}; font-size:0.88rem; max-width:170px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(displayName)}</span>
+        <span style="font-size:0.7rem; color:#64748b;">${timeStr}</span>
+      </div>
+      <div style="font-size:0.78rem; color:#94a3b8; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-bottom:4px;">
+        ${escapeHtml(lastMsg)}
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.68rem; padding:1px 6px; border-radius:4px; font-weight:700; background:${chat.isGuest ? '#334155' : '#1e3a8a'}; color:${chat.isGuest ? '#94a3b8' : '#60a5fa'};">
+          ${chat.isGuest ? 'Guest Visitor' : 'Supporter'}
+        </span>
+        ${hasUnread ? `<span style="background:#ef4444; color:white; font-size:0.68rem; font-weight:800; padding:1px 6px; border-radius:10px;">${chat.unreadAdminCount} NEW</span>` : ''}
+      </div>
+    `;
+
+    item.onclick = () => window.selectAdminChat(chat.chatId);
+    sidebar.appendChild(item);
+  });
+
 // ==================== VISITOR ANALYTICS ====================
 function loadAnalytics(visitors) {
   const tbody = document.getElementById('analytics-tbody');
   const badge = document.getElementById('analytics-count-badge');
   const emptyMsg = document.getElementById('analytics-empty');
-
-  // Filter out any logs marked deleted or before clearedAt
-  let deletedIds = new Set();
-  try {
-    const rawDeleted = JSON.parse(localStorage.getItem('geniusact_deleted_visitor_log_ids') || '[]');
-    if (Array.isArray(rawDeleted)) deletedIds = new Set(rawDeleted);
-  } catch (e) {}
-
-  let clearedAt = 0;
-  try {
-    clearedAt = parseInt(localStorage.getItem('geniusact_visitor_logs_cleared_at') || '0', 10);
-  } catch (e) {}
-
-  visitors = visitors.filter(v => {
-    if (!v) return false;
-    if (!v.id) {
-      v.id = 'vis_' + (v.timestamp ? new Date(v.timestamp).getTime() : Date.now()) + '_' + Math.random().toString(36).substring(2, 7);
-    }
-    if (deletedIds.has(v.id)) return false;
-    if (clearedAt > 0 && v.timestamp) {
-      const ts = new Date(v.timestamp).getTime();
-      if (ts > 0 && ts <= clearedAt) return false;
-    }
-    return true;
-  });
 
   badge.textContent = visitors.length;
   tbody.innerHTML = '';
@@ -558,11 +676,6 @@ function loadAnalytics(visitors) {
       <td class="visitor-device" title="${escapeHtml(v.userAgent || '')}">${escapeHtml(browser)}</td>
       <td style="color:#94a3b8; font-size:0.8rem;">${escapeHtml(screen)}</td>
       <td style="color:#94a3b8; font-size:0.78rem; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(referrer)}">${escapeHtml(referrer)}</td>
-      <td style="text-align:center;">
-        <button onclick="deleteVisitorLog('${v.id}')" title="Delete this log" style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; padding:5px 10px; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:700; display:inline-flex; align-items:center; gap:4px; transition:all 0.2s;">
-          <i class="fas fa-trash-alt"></i> Delete
-        </button>
-      </td>
     `;
     tbody.appendChild(tr);
   });
@@ -583,49 +696,6 @@ function loadAnalytics(visitors) {
     searchCount.textContent = query ? `${visible} of ${rows.length} shown` : '';
   };
 }
-
-window.deleteVisitorLog = function(logId) {
-  if (!logId) return;
-  if (!confirm('Are you sure you want to delete this visitor log entry?')) return;
-
-  let deletedIds = [];
-  try {
-    deletedIds = JSON.parse(localStorage.getItem('geniusact_deleted_visitor_log_ids') || '[]');
-  } catch (e) {}
-  if (!deletedIds.includes(logId)) {
-    deletedIds.push(logId);
-    localStorage.setItem('geniusact_deleted_visitor_log_ids', JSON.stringify(deletedIds));
-  }
-
-  let visitors = JSON.parse(localStorage.getItem('geniusact_visitor_logs') || '[]');
-  visitors = visitors.filter(v => v && v.id !== logId);
-  localStorage.setItem('geniusact_visitor_logs', JSON.stringify(visitors));
-
-  if (window.cloudSyncFull) {
-    window.cloudSyncFull().catch(e => console.error(e));
-  }
-
-  loadAnalytics(visitors);
-};
-
-window.clearAllVisitorLogs = function() {
-  let visitors = JSON.parse(localStorage.getItem('geniusact_visitor_logs') || '[]');
-  if (visitors.length === 0) {
-    alert('Visitor activity log is already empty.');
-    return;
-  }
-
-  if (!confirm(`Are you sure you want to clear ALL ${visitors.length} visitor activity log records?`)) return;
-
-  localStorage.setItem('geniusact_visitor_logs_cleared_at', Date.now().toString());
-  localStorage.setItem('geniusact_visitor_logs', '[]');
-
-  if (window.cloudSyncFull) {
-    window.cloudSyncFull().catch(e => console.error(e));
-  }
-
-  loadAnalytics([]);
-};
 
 window.openEditUserDashboardForUser = function(email) {
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
@@ -876,6 +946,53 @@ window.viewProofDocument = function(uid) {
   modal.style.display = 'flex';
 };
 
+// ==================== USER ACTIONS ====================
+window.approveUser = function(uid) {
+  const pendingUsers = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
+  const approvedUsers = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
+
+  const userIndex = pendingUsers.findIndex(u => u.uid === uid);
+  if (userIndex > -1) {
+    const user = pendingUsers[userIndex];
+    user.status = 'approved';
+    user.approvedAt = new Date().toISOString();
+
+    if (user.amount > 0) {
+      user.donations = [{
+        id: 'RCP-' + Math.floor(Math.random() * 10000000),
+        amount: user.amount,
+        description: 'Initial Contribution',
+        date: new Date().toISOString(),
+        approvedAt: user.approvedAt
+      }];
+    } else {
+      user.donations = [];
+    }
+
+    pendingUsers.splice(userIndex, 1);
+    approvedUsers.push(user);
+
+    localStorage.setItem('geniusact_pending_users', JSON.stringify(pendingUsers));
+    localStorage.setItem('geniusact_approved_users', JSON.stringify(approvedUsers));
+
+    showToast(`Approved: ${user.email}`);
+    refreshAllData();
+  }
+};
+
+window.rejectUser = function(uid) {
+  if (!confirm("Are you sure you want to reject this contribution?")) return;
+  const pendingUsers = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
+  const userIndex = pendingUsers.findIndex(u => u.uid === uid);
+  if (userIndex > -1) {
+    const rejected = pendingUsers[userIndex];
+    pendingUsers.splice(userIndex, 1);
+    localStorage.setItem('geniusact_pending_users', JSON.stringify(pendingUsers));
+    showToast(`Rejected: ${rejected.email}`);
+    refreshAllData();
+  }
+};
+
 window.selectUserForEdit = function(uid, email) {
   selectedUserId = uid;
   document.getElementById('edit-user-email').textContent = email;
@@ -885,42 +1002,39 @@ window.selectUserForEdit = function(uid, email) {
   document.getElementById('edit-panel').scrollIntoView({ behavior: 'smooth' });
 };
 
-const editSubmitBtn = document.getElementById('edit-submit-btn');
-if (editSubmitBtn) {
-  editSubmitBtn.addEventListener('click', () => {
-    if (!selectedUserId) return;
-    const amount = parseFloat(document.getElementById('edit-amount').value);
-    const desc = document.getElementById('edit-desc').value || "Manual Admin Adjustment";
+document.getElementById('edit-submit-btn').addEventListener('click', () => {
+  if (!selectedUserId) return;
+  const amount = parseFloat(document.getElementById('edit-amount').value);
+  const desc = document.getElementById('edit-desc').value || "Manual Admin Adjustment";
 
-    if (isNaN(amount) || amount <= 0) {
-      alert("Please enter a valid amount.");
-      return;
-    }
+  if (isNaN(amount) || amount <= 0) {
+    alert("Please enter a valid amount.");
+    return;
+  }
 
-    const newDonation = {
-      id: 'RCP-' + Math.floor(Math.random() * 10000000),
-      amount: amount,
-      description: desc,
-      date: new Date().toISOString(),
-      status: 'confirmed'
-    };
+  const newDonation = {
+    id: 'RCP-' + Math.floor(Math.random() * 10000000),
+    amount: amount,
+    description: desc,
+    date: new Date().toISOString(),
+    status: 'confirmed'
+  };
 
-    const users = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
-    const userIndex = users.findIndex(u => u.uid === selectedUserId);
+  const users = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
+  const userIndex = users.findIndex(u => u.uid === selectedUserId);
 
-    if (userIndex > -1) {
-      if (!users[userIndex].donations) users[userIndex].donations = [];
-      users[userIndex].donations.push(newDonation);
-      localStorage.setItem('geniusact_approved_users', JSON.stringify(users));
-      showToast(`Donation of $${amount} added to ${users[userIndex].email}`);
-      document.getElementById('edit-amount').value = '';
-      document.getElementById('edit-desc').value = '';
-      refreshAllData();
-    } else {
-      alert("User not found.");
-    }
-  });
-}
+  if (userIndex > -1) {
+    if (!users[userIndex].donations) users[userIndex].donations = [];
+    users[userIndex].donations.push(newDonation);
+    localStorage.setItem('geniusact_approved_users', JSON.stringify(users));
+    showToast(`Donation of $${amount} added to ${users[userIndex].email}`);
+    document.getElementById('edit-amount').value = '';
+    document.getElementById('edit-desc').value = '';
+    refreshAllData();
+  } else {
+    alert("User not found.");
+  }
+});
 
 window.toggleBanUser = function(uid) {
   const users = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
@@ -942,41 +1056,38 @@ window.selectUserForMessage = function(uid, email) {
   document.getElementById('message-panel').scrollIntoView({ behavior: 'smooth' });
 };
 
-const messageSubmitBtn = document.getElementById('message-submit-btn');
-if (messageSubmitBtn) {
-  messageSubmitBtn.addEventListener('click', () => {
-    if (!selectedUserId) return;
-    const subject = document.getElementById('message-subject').value.trim();
-    const body = document.getElementById('message-body').value.trim();
+document.getElementById('message-submit-btn').addEventListener('click', () => {
+  if (!selectedUserId) return;
+  const subject = document.getElementById('message-subject').value.trim();
+  const body = document.getElementById('message-body').value.trim();
 
-    if (!subject || !body) {
-      alert("Please enter both a subject and message body.");
-      return;
-    }
+  if (!subject || !body) {
+    alert("Please enter both a subject and message body.");
+    return;
+  }
 
-    const users = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
-    const userIndex = users.findIndex(u => u.uid === selectedUserId);
+  const users = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
+  const userIndex = users.findIndex(u => u.uid === selectedUserId);
 
-    if (userIndex > -1) {
-      if (!users[userIndex].messages) users[userIndex].messages = [];
-      users[userIndex].messages.push({
-        id: 'MSG-' + Date.now(),
-        subject: subject,
-        body: body,
-        date: new Date().toISOString(),
-        read: false
-      });
-      localStorage.setItem('geniusact_approved_users', JSON.stringify(users));
-      showToast(`Message sent to ${users[userIndex].email}`);
-      document.getElementById('message-subject').value = '';
-      document.getElementById('message-body').value = '';
-      document.getElementById('message-panel').style.display = 'none';
-      refreshAllData();
-    } else {
-      alert("User not found.");
-    }
-  });
-}
+  if (userIndex > -1) {
+    if (!users[userIndex].messages) users[userIndex].messages = [];
+    users[userIndex].messages.push({
+      id: 'MSG-' + Date.now(),
+      subject: subject,
+      body: body,
+      date: new Date().toISOString(),
+      read: false
+    });
+    localStorage.setItem('geniusact_approved_users', JSON.stringify(users));
+    showToast(`Message sent to ${users[userIndex].email}`);
+    document.getElementById('message-subject').value = '';
+    document.getElementById('message-body').value = '';
+    document.getElementById('message-panel').style.display = 'none';
+    refreshAllData();
+  } else {
+    alert("User not found.");
+  }
+});
 
 // ==================== ADD FUNDS TO USER ====================
 window.selectUserForAddFunds = function(uid, email) {
@@ -1040,27 +1151,21 @@ function loadGlobalWallets() {
   });
 }
 
-const saveWalletsBtn = document.getElementById('save-wallets-btn');
-if (saveWalletsBtn) {
-  saveWalletsBtn.addEventListener('click', () => {
-    const wallets = {};
-    const fields = ['btc', 'eth', 'solana', 'base', 'bnb', 'monero', 'polygon', 'xrp', 'tron', 'usdc'];
-    fields.forEach(f => {
-      const el = document.getElementById('wallet-' + f);
-      if (el && el.value.trim()) {
-        wallets[f] = el.value.trim();
-      }
-    });
-    localStorage.setItem('geniusact_global_wallets', JSON.stringify(wallets));
-    showToast("Global wallet settings saved.");
+document.getElementById('save-wallets-btn').addEventListener('click', () => {
+  const wallets = {};
+  const fields = ['btc', 'eth', 'solana', 'base', 'bnb', 'monero', 'polygon', 'xrp', 'tron', 'usdc'];
+  fields.forEach(f => {
+    const el = document.getElementById('wallet-' + f);
+    if (el && el.value.trim()) {
+      wallets[f] = el.value.trim();
+    }
   });
-}
+  localStorage.setItem('geniusact_global_wallets', JSON.stringify(wallets));
+  showToast("Global wallet settings saved.");
+});
 
 // Initialize wallets on tab change or initially
-const settingsTabBtn = document.querySelector('[data-tab="settings"]');
-if (settingsTabBtn) {
-  settingsTabBtn.addEventListener('click', loadGlobalWallets);
-}
+document.querySelector('[data-tab="settings"]').addEventListener('click', loadGlobalWallets);
 
 // ==================== UTILITIES ====================
 function escapeHtml(str) {
@@ -1109,6 +1214,7 @@ function showToast(message) {
 
 // ==================== AUTO SYNC ====================
 setInterval(async () => {
+  if (!localStorage.getItem('genius_current_admin')) return;
   if (window._syncInProgress) return;
   window._syncInProgress = true;
   try {
@@ -1118,13 +1224,7 @@ setInterval(async () => {
   } catch(e) { } finally {
     window._syncInProgress = false;
   }
-}, 4000);
-
-document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState === 'visible' && window.cloudSyncFull) {
-    try { await window.cloudSyncFull(); } catch(e) {}
-  }
-});
+}, 12000);
 
 // ==================== KYC MANAGEMENT LOGIC ====================
 function loadPendingKYC(approved) {
@@ -1746,12 +1846,7 @@ function loadContactUsChats() {
   chats.forEach(chat => {
     const item = document.createElement('div');
     const isActive = activeAdminChatId === chat.chatId;
-    let lastMsgText = 'No messages';
-    if (chat.messages && chat.messages.length > 0) {
-      const lm = chat.messages[chat.messages.length - 1];
-      if (lm.text) lastMsgText = lm.text;
-      else if (lm.media) lastMsgText = (lm.media.type === 'image' ? '📷 Image Attachment' : '📁 File Attachment');
-    }
+    const lastMsg = chat.messages && chat.messages.length > 0 ? chat.messages[chat.messages.length - 1].text : 'No messages';
     const timeStr = chat.lastUpdated ? new Date(chat.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
     const hasUnread = (chat.unreadAdminCount || 0) > 0;
     const displayName = chat.userName || chat.userEmail || ('Visitor #' + (chat.chatId ? chat.chatId.substr(-4) : 'Guest'));
@@ -1763,7 +1858,7 @@ function loadContactUsChats() {
         <span style="font-size:0.7rem; color:#64748b;">${timeStr}</span>
       </div>
       <div style="font-size:0.78rem; color:#94a3b8; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-bottom:4px;">
-        ${escapeHtml(lastMsgText)}
+        ${escapeHtml(lastMsg)}
       </div>
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <span style="font-size:0.68rem; padding:1px 6px; border-radius:4px; font-weight:700; background:${chat.isGuest ? '#334155' : '#1e3a8a'}; color:${chat.isGuest ? '#94a3b8' : '#60a5fa'};">
@@ -1795,70 +1890,6 @@ window.selectAdminChat = function(chatId) {
 
 let adminPendingMedia = null;
 
-// Helper: Compress Image on Canvas for Admin Chat
-function processAdminChatFile(file, callback) {
-  if (!file) return;
-  const isImage = file.type.startsWith('image/');
-  const isVideo = file.type.startsWith('video/');
-  const isAudio = file.type.startsWith('audio/');
-
-  if (isImage) {
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const img = new Image();
-      img.onload = () => {
-        const maxDim = 1200;
-        let width = img.width;
-        let height = img.height;
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          } else {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        callback({
-          type: 'image',
-          dataUrl: compressedDataUrl,
-          name: file.name
-        });
-      };
-      img.onerror = () => {
-        callback({
-          type: 'image',
-          dataUrl: evt.target.result,
-          name: file.name
-        });
-      };
-      img.src = evt.target.result;
-    };
-    reader.readAsDataURL(file);
-  } else {
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      let type = 'file';
-      if (isVideo) type = 'video';
-      else if (isAudio) type = 'audio';
-      else if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) type = 'pdf';
-
-      callback({
-        type: type,
-        dataUrl: evt.target.result,
-        name: file.name
-      });
-    };
-    reader.readAsDataURL(file);
-  }
-}
-
 // Handle Admin File Attachment Selection
 document.addEventListener('change', (e) => {
   if (e.target && e.target.id === 'admin-chat-file-input') {
@@ -1871,21 +1902,31 @@ document.addEventListener('change', (e) => {
       return;
     }
 
-    processAdminChatFile(file, (mediaObj) => {
-      adminPendingMedia = mediaObj;
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+
+    if (!isImage && !isVideo) {
+      alert('Please select an image (.jpg, .png, .gif, .webp) or video file (.mp4, .webm).');
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      adminPendingMedia = {
+        type: isImage ? 'image' : 'video',
+        dataUrl: evt.target.result,
+        name: file.name
+      };
+
       const previewBar = document.getElementById('admin-chat-file-preview-bar');
       const namePreview = document.getElementById('admin-chat-file-name-preview');
       if (previewBar && namePreview) {
-        let icon = '📁 File';
-        if (mediaObj.type === 'image') icon = '📷 Image';
-        else if (mediaObj.type === 'video') icon = '🎥 Video';
-        else if (mediaObj.type === 'audio') icon = '🎵 Audio';
-        else if (mediaObj.type === 'pdf') icon = '📄 PDF';
-
-        namePreview.textContent = `${icon}: ${file.name}`;
+        namePreview.textContent = `${isImage ? '📷 Image' : '🎥 Video'}: ${file.name}`;
         previewBar.style.display = 'flex';
       }
-    });
+    };
+    reader.readAsDataURL(file);
   }
 });
 
@@ -1896,11 +1937,6 @@ document.addEventListener('click', (e) => {
     if (fileInput) fileInput.value = '';
     const previewBar = document.getElementById('admin-chat-file-preview-bar');
     if (previewBar) previewBar.style.display = 'none';
-  } else if (e.target && (e.target.id === 'admin-chat-file-label' || e.target.closest('#admin-chat-file-label'))) {
-    const fileInput = document.getElementById('admin-chat-file-input');
-    if (fileInput && e.target !== fileInput) {
-      fileInput.click();
-    }
   }
 });
 
@@ -1956,24 +1992,10 @@ function renderAdminChatThread(chatId) {
     
     let mediaContent = '';
     if (m.media && m.media.dataUrl) {
-      const dUrl = m.media.dataUrl;
-      const mType = m.media.type || '';
-      const mName = escapeHtml(m.media.name || 'Attachment');
-
-      if (mType === 'image' || dUrl.startsWith('data:image/')) {
-        mediaContent = `<div style="margin-top:6px;"><img src="${dUrl}" style="max-width:100%; max-height:280px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); cursor:pointer; display:block;" onclick="window.open(this.src)" title="Click to view full image" /></div>`;
-      } else if (mType === 'video' || dUrl.startsWith('data:video/')) {
-        mediaContent = `<div style="margin-top:6px;"><video src="${dUrl}" controls style="max-width:100%; max-height:280px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); display:block;"></video></div>`;
-      } else if (mType === 'audio' || dUrl.startsWith('data:audio/')) {
-        mediaContent = `<div style="margin-top:6px;"><audio src="${dUrl}" controls style="max-width:100%; display:block;"></audio></div>`;
-      } else {
-        mediaContent = `<div style="margin-top:6px; padding:8px 12px; background:rgba(255,255,255,0.12); border-radius:8px; display:inline-flex; align-items:center; gap:8px;">
-          <i class="fas fa-file-alt" style="font-size:1.4rem; color:#60a5fa;"></i>
-          <div>
-            <div style="font-weight:700; font-size:0.82rem; color:#ffffff; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${mName}</div>
-            <a href="${dUrl}" target="_blank" download="${mName}" style="font-size:0.75rem; color:#93c5fd; text-decoration:underline; font-weight:600;">Download / Open File</a>
-          </div>
-        </div>`;
+      if (m.media.type === 'image') {
+        mediaContent = `<div style="margin-top:6px;"><img src="${m.media.dataUrl}" style="max-width:100%; max-height:260px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); cursor:pointer; display:block;" onclick="window.open(this.src)" title="Click to view full image" /></div>`;
+      } else if (m.media.type === 'video') {
+        mediaContent = `<div style="margin-top:6px;"><video src="${m.media.dataUrl}" controls style="max-width:100%; max-height:260px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); display:block;"></video></div>`;
       }
     }
 
@@ -2021,27 +2043,16 @@ async function sendAdminChatMessage() {
   const idx = chats.findIndex(c => c.chatId === activeAdminChatId);
   if (idx > -1) {
     const now = new Date().toISOString();
-    const newMsg = {
+    chats[idx].messages.push({
       id: 'm_' + Date.now(),
       sender: 'admin',
       text: text,
       media: adminPendingMedia ? { ...adminPendingMedia } : null,
       timestamp: now
-    };
-    chats[idx].messages.push(newMsg);
+    });
     chats[idx].lastUpdated = now;
     chats[idx].unreadUserCount = (chats[idx].unreadUserCount || 0) + 1;
     localStorage.setItem('geniusact_contact_chats', JSON.stringify(chats));
-
-    // Direct REST API call for instant multi-device sync
-    (window.geniusFetch || fetch)('/api/chat/admin-reply', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chatId: activeAdminChatId,
-        message: newMsg
-      })
-    }).catch(err => console.warn('Direct admin reply API call error:', err));
 
     if (window.cloudSyncFull) {
       try { await window.cloudSyncFull(); } catch (e) { }
@@ -2068,7 +2079,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // Background Cloud Sync Poller (Runs every 3s non-blocking for instant chat sync)
+  // Background Cloud Sync Poller (Runs every 10s non-blocking to keep admin UI lightning fast)
   let isAdminSyncing = false;
   setInterval(async () => {
     if (isAdminSyncing) return;
@@ -2077,12 +2088,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.cloudSyncFull) {
         await window.cloudSyncFull();
       }
+      
       loadSupportMessages();
-      loadContactUsChats();
+
+      const contactTab = document.getElementById('tab-contactus');
+      if (contactTab && contactTab.classList.contains('active')) {
+        loadContactUsChats();
+      }
     } catch(e) { } finally {
       isAdminSyncing = false;
     }
-  }, 3000);
+  }, 10000);
 });
 
 // ==================== USER FOOTPRINT AUDIT LOG ====================
