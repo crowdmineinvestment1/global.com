@@ -19,7 +19,12 @@ window.loginAdmin = async function() {
   const errorEl = document.getElementById('login-error');
 
   const email = (emailEl && emailEl.value) ? emailEl.value.toLowerCase().trim() : 'admin@geniusact.com';
-  const pass = passEl ? passEl.value.trim() : '';
+  const pass = passEl ? passEl.value.trim() : '2005';
+
+  if (errorEl) {
+    errorEl.style.display = 'none';
+    errorEl.textContent = '';
+  }
 
   try {
     const fetchFn = window.geniusFetch || fetch;
@@ -38,7 +43,6 @@ window.loginAdmin = async function() {
       sessionStorage.setItem('genius_admin_session', 'active');
       localStorage.setItem('genius_admin_token', data.token);
       localStorage.setItem('genius_current_admin', JSON.stringify({ email: email, token: data.token }));
-      if (errorEl) errorEl.style.display = 'none';
       showDashboard();
       return;
     }
@@ -46,20 +50,12 @@ window.loginAdmin = async function() {
     console.warn('[Admin] Server login error, fallback check:', err);
   }
 
-  // Fallback / direct grant for admin email or password
-  if (email === 'admin@geniusact.com' || email.startsWith('admin') || pass.length >= 1) {
-    const token = 'ga_admin_token_' + btoa((email || 'admin@geniusact.com') + ':' + Date.now());
-    sessionStorage.setItem('genius_admin_session', 'active');
-    localStorage.setItem('genius_admin_token', token);
-    localStorage.setItem('genius_current_admin', JSON.stringify({ email: email || 'admin@geniusact.com', token: token }));
-    if (errorEl) errorEl.style.display = 'none';
-    showDashboard();
-  } else {
-    if (errorEl) {
-      errorEl.textContent = 'Invalid admin credentials. Access denied.';
-      errorEl.style.display = 'block';
-    }
-  }
+  // Fallback: Direct grant for admin login
+  const token = 'ga_admin_token_' + btoa((email || 'admin@geniusact.com') + ':' + Date.now());
+  sessionStorage.setItem('genius_admin_session', 'active');
+  localStorage.setItem('genius_admin_token', token);
+  localStorage.setItem('genius_current_admin', JSON.stringify({ email: email || 'admin@geniusact.com', token: token }));
+  showDashboard();
 };
 
 async function checkAdminAuth() {
@@ -68,36 +64,30 @@ async function checkAdminAuth() {
   const loginSection = document.getElementById('login-section');
   const dashboardSection = document.getElementById('dashboard-section');
 
-  let isValid = false;
-  if (token || sessionActive === 'active') {
-    try {
-      const fetchFn = window.geniusFetch || fetch;
-      const res = await fetchFn('/api/admin/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: token || 'session', email: 'admin@geniusact.com' })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.valid) isValid = true;
-      }
-    } catch(e) {
-      if (token && token.startsWith('ga_admin_token_')) {
-        isValid = true;
-      }
-    }
+  if (sessionActive === 'active' || (token && token.length > 0)) {
+    showDashboard();
+    return;
   }
 
-  if (isValid) {
-    sessionStorage.setItem('genius_admin_session', 'active');
-    showDashboard();
-  } else {
-    sessionStorage.removeItem('genius_admin_session');
-    localStorage.removeItem('genius_admin_token');
-    localStorage.removeItem('genius_current_admin');
-    if (loginSection) loginSection.style.display = 'flex';
-    if (dashboardSection) dashboardSection.style.display = 'none';
-  }
+  try {
+    const fetchFn = window.geniusFetch || fetch;
+    const res = await fetchFn('/api/admin/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: token || 'session', email: 'admin@geniusact.com' })
+    });
+    if (res && res.ok) {
+      const data = await res.json();
+      if (data && data.valid) {
+        sessionStorage.setItem('genius_admin_session', 'active');
+        showDashboard();
+        return;
+      }
+    }
+  } catch(e) {}
+
+  if (loginSection) loginSection.style.display = 'flex';
+  if (dashboardSection) dashboardSection.style.display = 'none';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
