@@ -1769,9 +1769,38 @@
           return;
         }
 
-        // Direct Server API Registration Call
+        const newUserObj = {
+          uid: 'usr_pnd_' + Date.now(),
+          email: email,
+          password: password,
+          fullName: email.split('@')[0],
+          amount: parseFloat(amount) || 0,
+          date: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          proofFile: window.submittedProofData || null,
+          status: 'pending',
+          donations: [
+            {
+              id: 'RCP-' + Math.floor(Math.random() * 10000000),
+              amount: parseFloat(amount) || 0,
+              description: 'Initial Campaign Contribution',
+              date: new Date().toISOString(),
+              proofFile: window.submittedProofData || null
+            }
+          ]
+        };
+
+        const existingPendingIdx = pendingUsers.findIndex(u => u.email && u.email.toLowerCase() === email);
+        if (existingPendingIdx === -1) {
+          pendingUsers.push(newUserObj);
+        } else {
+          pendingUsers[existingPendingIdx] = { ...pendingUsers[existingPendingIdx], ...newUserObj };
+        }
+        localStorage.setItem('geniusact_pending_users', JSON.stringify(pendingUsers));
+
+        // Direct Server API Registration Call (optional background call)
         try {
-          const regRes = await (window.geniusFetch || fetch)('/api/register', {
+          (window.geniusFetch || fetch)('/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1781,43 +1810,13 @@
               proofFile: window.submittedProofData || null,
               fullName: email.split('@')[0]
             })
-          });
-          const regData = await regRes.json();
-          if (regData && regData.user) {
-            const newUserObj = regData.user;
-            const existingPendingIdx = pendingUsers.findIndex(u => u.email && u.email.toLowerCase() === email);
-            if (existingPendingIdx === -1) {
-              pendingUsers.push(newUserObj);
-              localStorage.setItem('geniusact_pending_users', JSON.stringify(pendingUsers));
-            }
-          }
-        } catch (serverErr) {
-          console.warn('Server registration call fallback to client storage:', serverErr);
-          const newUserObj = {
-            uid: Date.now().toString(),
-            email: email,
-            password: password,
-            amount: parseFloat(amount) || 0,
-            date: new Date().toISOString(),
-            proofFile: window.submittedProofData || null,
-            status: 'pending',
-            donations: [
-              {
-                id: 'RCP-' + Math.floor(Math.random() * 10000000),
-                amount: parseFloat(amount) || 0,
-                description: 'Initial Campaign Contribution',
-                date: new Date().toISOString(),
-                proofFile: window.submittedProofData || null
-              }
-            ]
-          };
-          pendingUsers.push(newUserObj);
-          localStorage.setItem('geniusact_pending_users', JSON.stringify(pendingUsers));
-        }
+          }).catch(() => {});
+        } catch (serverErr) {}
 
         if (window.cloudSyncFull) {
           try {
             await window.cloudSyncFull();
+            window.dispatchEvent(new CustomEvent('cloudSyncUpdated', { detail: {} }));
           } catch (e) {
             console.log('Cloud sync error:', e);
           }
