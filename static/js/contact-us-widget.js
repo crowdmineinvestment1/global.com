@@ -502,11 +502,12 @@
 
     function getChatData() {
         const userInfo = getUserInfo();
+        const guestId = localStorage.getItem('geniusact_guest_chat_id');
         const allChats = JSON.parse(localStorage.getItem('geniusact_contact_chats')) || [];
         let chat = allChats.find(c => 
-            c.chatId === userInfo.chatId || 
-            (userInfo.email && c.userEmail && c.userEmail.toLowerCase() === userInfo.email.toLowerCase()) ||
-            (!userInfo.isGuest && c.userEmail && userInfo.email && c.userEmail.toLowerCase() === userInfo.email.toLowerCase())
+            (c.chatId && c.chatId === userInfo.chatId) || 
+            (guestId && c.chatId === guestId) ||
+            (userInfo.email && c.userEmail && c.userEmail.trim().toLowerCase() === userInfo.email.trim().toLowerCase())
         );
         return { allChats, chat, userInfo };
     }
