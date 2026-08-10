@@ -167,37 +167,45 @@
           try {
             const res = await (window.geniusFetch || fetch)('/api/register', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                email,
-                password,
-                fullName,
-                amount
-              })
-            });
-            const data = await res.json();
-            if (!res.ok && data.error && !data.error.includes('already pending')) {
-              throw new Error(data.error);
-            }
+            let newUser = {
+              uid: 'usr_pnd_' + Date.now(),
+              email,
+              password,
+              fullName: fullName || email.split('@')[0],
+              amount: parseFloat(amount) || 0,
+              date: new Date().toISOString(),
+              createdAt: new Date().toISOString(),
+              status: 'pending',
+              donations: [{ id: 'RCP-' + Math.floor(Math.random() * 10000000), amount: parseFloat(amount) || 0, description: 'Initial Contribution', date: new Date().toISOString() }]
+            };
 
-            // Sync locally as well
-            const pending = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
-            if (!pending.some(u => u.email && u.email.toLowerCase() === email)) {
-              pending.push(data.user || {
-                uid: Date.now().toString(),
-                email,
-                password,
-                fullName: fullName || email.split('@')[0],
-                amount,
-                date: new Date().toISOString(),
-                status: 'pending',
-                donations: [{ id: 'RCP-' + Math.floor(Math.random() * 10000000), amount, description: 'Initial Contribution', date: new Date().toISOString() }]
+            try {
+              const res = await (window.geniusFetch || fetch)('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, fullName, amount: parseFloat(amount) || 0 })
               });
-              localStorage.setItem('geniusact_pending_users', JSON.stringify(pending));
+              const data = await res.json();
+              if (data && data.user) {
+                newUser = data.user;
+              }
+            } catch(e) {}
+
+            // Save locally & sync to cloud
+            const pending = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
+            const existingIdx = pending.findIndex(u => u.email && u.email.toLowerCase() === email);
+            if (existingIdx === -1) {
+              pending.push(newUser);
+            } else {
+              pending[existingIdx] = { ...pending[existingIdx], ...newUser };
             }
+            localStorage.setItem('geniusact_pending_users', JSON.stringify(pending));
 
             if (window.cloudSyncFull) {
-              try { await window.cloudSyncFull(); } catch(e) {}
+              try {
+                await window.cloudSyncFull();
+                window.dispatchEvent(new CustomEvent('cloudSyncUpdated', { detail: {} }));
+              } catch(e) {}
             }
 
             msg.style.color = '#16a34a';
