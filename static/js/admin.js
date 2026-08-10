@@ -1786,6 +1786,7 @@ function loadContactUsChats() {
 }
 
 window.selectAdminChat = function(chatId) {
+  window._forceChatScrollBottom = true;
   activeAdminChatId = chatId;
   let chats = JSON.parse(localStorage.getItem('geniusact_contact_chats')) || [];
   const chat = chats.find(c => c.chatId === chatId);
@@ -1956,6 +1957,10 @@ function renderAdminChatThread(chatId) {
     return;
   }
 
+  const isNearBottom = threadBody.scrollHeight - threadBody.scrollTop - threadBody.clientHeight < 120;
+  const isFirstLoadOrSwitched = window._lastRenderedChatId !== activeAdminChatId || window._forceChatScrollBottom;
+  window._lastRenderedChatId = activeAdminChatId;
+
   threadBody.innerHTML = msgs.map(m => {
     const isAdmin = m.sender === 'admin';
     const timeStr = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
@@ -1998,11 +2003,14 @@ function renderAdminChatThread(chatId) {
     `;
   }).join('');
 
-  setTimeout(() => {
-    if (threadBody) {
-      threadBody.scrollTop = threadBody.scrollHeight;
-    }
-  }, 50);
+  if (isNearBottom || isFirstLoadOrSwitched) {
+    setTimeout(() => {
+      if (threadBody) {
+        threadBody.scrollTop = threadBody.scrollHeight;
+      }
+    }, 50);
+    window._forceChatScrollBottom = false;
+  }
 }
 
 window.deleteAdminChatSession = async function(chatId) {
@@ -2078,6 +2086,7 @@ async function sendAdminChatMessage() {
     if (previewBar) previewBar.style.display = 'none';
 
     if (input) input.value = '';
+    window._forceChatScrollBottom = true;
     loadContactUsChats();
   }
 }

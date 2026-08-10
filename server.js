@@ -230,41 +230,6 @@ function getDefaultVisitorLogs() {
   ];
 }
 
-function getCloudDb() {
-  let dbData = null;
-  if (fs.existsSync(CLOUD_DB_FILE)) {
-    try {
-      const content = fs.readFileSync(CLOUD_DB_FILE, 'utf8');
-      dbData = JSON.parse(content);
-    } catch (e) {
-      console.error('[Server] Error reading cloud_database.json:', e);
-    }
-  }
-
-  if (!dbData || typeof dbData !== 'object') {
-    dbData = {};
-  }
-
-  if (!Array.isArray(dbData.geniusact_approved_users)) {
-    dbData.geniusact_approved_users = getDefaultApprovedUsers();
-  }
-  if (!Array.isArray(dbData.geniusact_pending_users)) {
-    dbData.geniusact_pending_users = getDefaultPendingUsers();
-  }
-  if (!Array.isArray(dbData.geniusact_visitor_logs)) {
-    dbData.geniusact_visitor_logs = getDefaultVisitorLogs();
-  }
-  if (!dbData.geniusact_global_wallets) dbData.geniusact_global_wallets = {};
-  if (!Array.isArray(dbData.geniusact_support_messages)) dbData.geniusact_support_messages = [];
-  if (!Array.isArray(dbData.geniusact_bank_links)) dbData.geniusact_bank_links = [];
-  if (!Array.isArray(dbData.geniusact_contact_chats)) dbData.geniusact_contact_chats = [];
-  if (!Array.isArray(dbData.geniusact_user_footprints)) dbData.geniusact_user_footprints = [];
-  if (!Array.isArray(dbData.geniusact_withdrawal_requests)) dbData.geniusact_withdrawal_requests = [];
-
-  saveCloudDb(dbData);
-  return dbData;
-}
-
 function mergeDonationsServer(d1 = [], d2 = []) {
   if (!Array.isArray(d1)) d1 = [];
   if (!Array.isArray(d2)) d2 = [];
@@ -500,15 +465,61 @@ function mergeGlobalWalletsServer(existingObj = {}, incomingObj = {}) {
 
 function saveCloudDb(data) {
   try {
+    if (!data || typeof data !== 'object') return;
+    global._serverMemoryDbCache = data;
     fs.writeFileSync(CLOUD_DB_FILE, JSON.stringify(data, null, 2), 'utf8');
   } catch (e) {
     console.error('[Server] Error saving cloud_database.json:', e);
   }
 }
 
-// ==================== ROUTES ====================
+function getCloudDb() {
+  let dbData = null;
+  if (fs.existsSync(CLOUD_DB_FILE)) {
+    try {
+      const content = fs.readFileSync(CLOUD_DB_FILE, 'utf8');
+      if (content && content.trim()) {
+        dbData = JSON.parse(content);
+      }
+    } catch (e) {
+      console.error('[Server] Error reading/parsing cloud_database.json:', e.message);
+      if (global._serverMemoryDbCache && typeof global._serverMemoryDbCache === 'object') {
+        console.warn('[Server] Using global._serverMemoryDbCache to prevent data loss after file parse error.');
+        dbData = global._serverMemoryDbCache;
+      }
+    }
+  }
 
-// Cloud Database Sync Endpoints
+  if (!dbData || typeof dbData !== 'object') {
+    if (global._serverMemoryDbCache && typeof global._serverMemoryDbCache === 'object') {
+      dbData = global._serverMemoryDbCache;
+    } else {
+      dbData = {};
+    }
+  }
+
+  if (!Array.isArray(dbData.geniusact_approved_users)) {
+    dbData.geniusact_approved_users = getDefaultApprovedUsers();
+  }
+  if (!Array.isArray(dbData.geniusact_pending_users)) {
+    dbData.geniusact_pending_users = getDefaultPendingUsers();
+  }
+  if (!Array.isArray(dbData.geniusact_visitor_logs)) {
+    dbData.geniusact_visitor_logs = getDefaultVisitorLogs();
+  }
+  if (!dbData.geniusact_global_wallets) dbData.geniusact_global_wallets = {};
+  if (!Array.isArray(dbData.geniusact_support_messages)) dbData.geniusact_support_messages = [];
+  if (!Array.isArray(dbData.geniusact_bank_links)) dbData.geniusact_bank_links = [];
+  if (!Array.isArray(dbData.geniusact_contact_chats)) dbData.geniusact_contact_chats = [];
+  if (!Array.isArray(dbData.geniusact_user_footprints)) dbData.geniusact_user_footprints = [];
+  if (!Array.isArray(dbData.geniusact_withdrawal_requests)) dbData.geniusact_withdrawal_requests = [];
+
+  global._serverMemoryDbCache = dbData;
+  saveCloudDb(dbData);
+  return dbData;
+}
+
+// Cloud Database GET Route
 app.get(['/api/cloud-sync', '/cloud_database.json'], (req, res) => {
   const dbData = getCloudDb();
   res.json(dbData);

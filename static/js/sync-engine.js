@@ -22,11 +22,10 @@ const PRIMARY_CLOUD_BACKEND = 'https://ais-pre-qxh4ji7uvbvllkwllmhpkt-7481991529
 const SECONDARY_CLOUD_BACKEND = 'https://ais-dev-qxh4ji7uvbvllkwllmhpkt-74819915296.us-east1.run.app';
 
 window.getBackendOrigins = function() {
-  const isLocalOrRunApp = window.location.hostname === 'localhost' ||
-                          window.location.hostname === '127.0.0.1' ||
-                          window.location.hostname.endsWith('.run.app');
-
   const origins = [];
+
+  // Same-origin relative path ALWAYS first on all domains/hosts
+  origins.push('');
 
   if (window.GENIUSACT_BACKEND_URL) {
     origins.push(window.GENIUSACT_BACKEND_URL.replace(/\/$/, ''));
@@ -38,17 +37,8 @@ window.getBackendOrigins = function() {
     }
   } catch(e) {}
 
-  if (isLocalOrRunApp) {
-    origins.push(''); // Same-origin relative path first on Cloud Run
-    origins.push(PRIMARY_CLOUD_BACKEND);
-    origins.push(SECONDARY_CLOUD_BACKEND);
-  } else {
-    // Hosted on static domain (e.g. GitHub Pages / custom domain)
-    // Live Cloud Run backend MUST come first so POST/GET requests succeed directly!
-    origins.push(PRIMARY_CLOUD_BACKEND);
-    origins.push(SECONDARY_CLOUD_BACKEND);
-    origins.push('');
-  }
+  origins.push(PRIMARY_CLOUD_BACKEND);
+  origins.push(SECONDARY_CLOUD_BACKEND);
 
   return [...new Set(origins)];
 };
@@ -144,42 +134,23 @@ async function pushToGitHub(data) {
 
 async function cloudFetch() {
   const cacheBust = '?cb=' + Date.now();
-  const fetchEndpoints = [
+  const paths = [
     '/api/cloud-sync' + cacheBust,
-    'https://raw.githubusercontent.com/crowdmineinvestment1/global.com/main/cloud_database.json' + cacheBust,
-    'https://api.github.com/repos/crowdmineinvestment1/global.com/contents/cloud_database.json' + cacheBust,
-    '/cloud_database.json' + cacheBust,
-    './cloud_database.json' + cacheBust
+    '/cloud_database.json' + cacheBust
   ];
 
   const origins = window.getBackendOrigins();
 
-  for (const path of fetchEndpoints) {
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      try {
-        const res = await fetch(path, { cache: 'no-store' });
-        if (res.ok) {
-          const raw = await res.json();
-          let data = raw;
-          if (raw && raw.content && typeof raw.content === 'string') {
-            if (raw.sha) window._lastGitHubSha = raw.sha;
-            try {
-              const decoded = decodeURIComponent(escape(atob(raw.content.replace(/\s/g, ''))));
-              data = JSON.parse(decoded);
-            } catch(e) {
-              data = raw;
-            }
-          }
-          if (data && typeof data === 'object') {
-            console.log('[CloudSync] Data loaded from external endpoint:', path);
-            window._inMemoryCloudCache = data;
-            return data;
-          }
-        }
-      } catch(e) {}
-      continue;
-    }
+  // Helper to validate whether a database object is legitimate and populated
+  function isValidDb(obj) {
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
+    const hasApproved = Array.isArray(obj.geniusact_approved_users);
+    const hasPending = Array.isArray(obj.geniusact_pending_users);
+    return hasApproved || hasPending;
+  }
 
+  // 1. Try live API server endpoints across all origins
+  for (const path of paths) {
     for (const origin of origins) {
       const url = origin ? (origin + path) : path;
       try {
@@ -189,27 +160,101 @@ async function cloudFetch() {
           if (path.includes('/api/') && contentType.includes('text/html')) {
             continue;
           }
-          const data = await res.json();
-          let val = data.expectedOtp || data;
-          if (typeof val === 'string') {
-            try { val = JSON.parse(val); } catch(e) {}
+          let data = null;
+          try {
+            data = await res.json();
+          } catch (jsonErr) {
+            console.warn('[CloudSync] JSON parse error from endpoint:', url, jsonErr.message);
+            try {
+              const text = await res.text();
+              data = JSON.parse(text);
+            } catch (textErr) {
+              console.warn('[CloudSync] Failed to parse response text as JSON from:', url);
+              continue;
+            }
           }
-          if (val && typeof val === 'object') {
-            console.log('[CloudSync] Data successfully loaded from:', url);
+
+          let val = (data && data.expectedOtp) ? data.expectedOtp : data;
+          if (typeof val === 'string') {
+            try { val = JSON.parse(val); } catch(e) {
+              console.warn('[CloudSync] Failed to parse nested string JSON from:', url);
+            }
+          }
+
+          if (isValidDb(val)) {
+            console.log('[CloudSync] Data successfully loaded from live backend:', url);
             window._inMemoryCloudCache = val;
             return val;
           }
         }
       } catch(err) {
-        // Try next origin
+        console.warn('[CloudSync] Network error fetching from:', url, err.message);
       }
     }
   }
 
-  return window._inMemoryCloudCache || {};
+  // 2. Fallback to GitHub raw / REST API if live server endpoints are unreachable or return malformed JSON
+  const githubEndpoints = [
+    'https://raw.githubusercontent.com/crowdmineinvestment1/global.com/main/cloud_database.json' + cacheBust,
+    'https://api.github.com/repos/crowdmineinvestment1/global.com/contents/cloud_database.json' + cacheBust
+  ];
+
+  for (const ghUrl of githubEndpoints) {
+    try {
+      const res = await fetch(ghUrl, { cache: 'no-store' });
+      if (res.ok) {
+        let raw = null;
+        try {
+          raw = await res.json();
+        } catch (ghJsonErr) {
+          console.warn('[CloudSync] GitHub JSON parse error from:', ghUrl, ghJsonErr.message);
+          continue;
+        }
+
+        let data = raw;
+        if (raw && raw.content && typeof raw.content === 'string') {
+          if (raw.sha) window._lastGitHubSha = raw.sha;
+          try {
+            const cleanedContent = raw.content.replace(/\s/g, '');
+            const decoded = decodeURIComponent(escape(atob(cleanedContent)));
+            data = JSON.parse(decoded);
+          } catch(b64Err) {
+            console.warn('[CloudSync] GitHub Base64 content decode/parse error:', b64Err.message);
+            data = raw;
+          }
+        }
+
+        if (isValidDb(data)) {
+          console.log('[CloudSync] Data loaded from GitHub fallback:', ghUrl);
+          window._inMemoryCloudCache = data;
+          return data;
+        }
+      }
+    } catch(e) {
+      console.warn('[CloudSync] GitHub REST API fetch error:', ghUrl, e.message);
+    }
+  }
+
+  // 3. Fallback to in-memory cache if available and valid
+  if (isValidDb(window._inMemoryCloudCache)) {
+    console.warn('[CloudSync] Endpoints unreachable. Using cached valid in-memory database.');
+    return window._inMemoryCloudCache;
+  }
+
+  console.warn('[CloudSync] All cloud database endpoints unreachable or returned invalid JSON.');
+  return null;
 }
 
 async function cloudPush(data) {
+  if (!data || typeof data !== 'object') return false;
+
+  const hasApproved = Array.isArray(data.geniusact_approved_users);
+  const hasPending = Array.isArray(data.geniusact_pending_users);
+  if (!hasApproved && !hasPending) {
+    console.warn('[CloudSync] Aborting push: data payload is empty or missing collections.');
+    return false;
+  }
+
   window._inMemoryCloudCache = data;
   const pushEndpoints = [
     '/api/cloud-sync',
@@ -287,13 +332,23 @@ function mergeUsers(localArr, cloudArr) {
         merged.status = 'rejected';
       }
       merged.donations = mergeDonations(existing.donations, u.donations);
+
+      const maxAmt = Math.max(parseFloat(existing.amount) || 0, parseFloat(u.amount) || 0);
+      const donationSum = merged.donations.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+      merged.amount = Math.max(maxAmt, donationSum);
+
       if (existing.proofFile && !u.proofFile) merged.proofFile = existing.proofFile;
+      if (existing.password && !u.password) merged.password = existing.password;
+      if (existing.uid && !u.uid) merged.uid = existing.uid;
+      if (existing.fullName && !u.fullName) merged.fullName = existing.fullName;
+      if (existing.kyc && !u.kyc) merged.kyc = existing.kyc;
       map.set(emailKey, merged);
     }
   };
 
-  cloudArr.forEach(processUser);
+  // Process local state first, then cloud state so fresh cloud updates take precedence
   localArr.forEach(processUser);
+  cloudArr.forEach(processUser);
 
   return Array.from(map.values());
 }
@@ -554,7 +609,15 @@ async function cloudSyncFull() {
 
   try {
     const cloudData = await cloudFetch();
-    if (!cloudData) return false;
+    if (!cloudData || typeof cloudData !== 'object') {
+      console.warn('[CloudSync] Cloud database unreachable or malformed. Preserving local state and skipping cloud push.');
+      return false;
+    }
+
+    if (!Array.isArray(cloudData.geniusact_approved_users) && !Array.isArray(cloudData.geniusact_pending_users)) {
+      console.warn('[CloudSync] Missing user collections in cloud data. Aborting sync cycle to prevent empty states.');
+      return false;
+    }
 
     let dataChanged = false;
     let finalData = {};
