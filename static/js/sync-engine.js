@@ -132,6 +132,9 @@ async function pushToGitHub(data) {
   return false;
 }
 
+const GLOBAL_JSONBLOB_ID = '019fed49-3bbc-701b-ae61-6d3a0017b185';
+const GLOBAL_JSONBLOB_URL = 'https://jsonblob.com/api/jsonBlob/' + GLOBAL_JSONBLOB_ID;
+
 async function cloudFetch() {
   const cacheBust = '?cb=' + Date.now();
   const paths = [
@@ -149,7 +152,22 @@ async function cloudFetch() {
     return hasApproved || hasPending;
   }
 
-  // 1. Try live API server endpoints across all origins
+  // 1. Try global JSONBlob cloud database first for universal cross-device & cross-country access
+  try {
+    const jbRes = await fetch(GLOBAL_JSONBLOB_URL + cacheBust, { cache: 'no-store' });
+    if (jbRes.ok) {
+      const jbData = await jbRes.json();
+      if (isValidDb(jbData)) {
+        console.log('[CloudSync] Data successfully loaded from global JSONBlob cloud storage!');
+        window._inMemoryCloudCache = jbData;
+        return jbData;
+      }
+    }
+  } catch (jbErr) {
+    console.warn('[CloudSync] Global JSONBlob fetch note:', jbErr.message);
+  }
+
+  // 2. Try live API server endpoints across all origins
   for (const path of paths) {
     for (const origin of origins) {
       const url = origin ? (origin + path) : path;
@@ -193,7 +211,7 @@ async function cloudFetch() {
     }
   }
 
-  // 2. Fallback to GitHub raw / REST API if live server endpoints are unreachable or return malformed JSON
+  // 3. Fallback to GitHub raw / REST API if live server endpoints are unreachable or return malformed JSON
   const githubEndpoints = [
     'https://raw.githubusercontent.com/crowdmineinvestment1/global.com/main/cloud_database.json' + cacheBust,
     'https://api.github.com/repos/crowdmineinvestment1/global.com/contents/cloud_database.json' + cacheBust
@@ -235,7 +253,7 @@ async function cloudFetch() {
     }
   }
 
-  // 3. Fallback to in-memory cache if available and valid
+  // 4. Fallback to in-memory cache if available and valid
   if (isValidDb(window._inMemoryCloudCache)) {
     console.warn('[CloudSync] Endpoints unreachable. Using cached valid in-memory database.');
     return window._inMemoryCloudCache;
@@ -256,13 +274,55 @@ async function cloudPush(data) {
   }
 
   window._inMemoryCloudCache = data;
+  let serverSuccess = false;
+
+  // Sanitize payload to strip heavy base64 images and trim large log arrays so JSONBlob payload stays under 12 KB
+  let sanitizedData = null;
+  try {
+    sanitizedData = JSON.parse(JSON.stringify(data));
+    const stripBase64 = (obj) => {
+      if (!obj || typeof obj !== 'object') return;
+      for (let k in obj) {
+        if (typeof obj[k] === 'string' && obj[k].startsWith('data:image')) {
+          obj[k] = 'assets/images/SEO.jpg';
+        } else if (typeof obj[k] === 'object') {
+          stripBase64(obj[k]);
+        }
+      }
+    };
+    stripBase64(sanitizedData);
+
+    if (Array.isArray(sanitizedData.geniusact_visitor_logs) && sanitizedData.geniusact_visitor_logs.length > 5) {
+      sanitizedData.geniusact_visitor_logs = sanitizedData.geniusact_visitor_logs.slice(0, 5);
+    }
+    if (Array.isArray(sanitizedData.geniusact_user_footprints) && sanitizedData.geniusact_user_footprints.length > 5) {
+      sanitizedData.geniusact_user_footprints = sanitizedData.geniusact_user_footprints.slice(0, 5);
+    }
+  } catch(e) {
+    sanitizedData = data;
+  }
+
+  // 1. Push directly to Global JSONBlob Cloud Database (Universal Cross-Device / Cross-Country Sync)
+  try {
+    const jbPushRes = await fetch(GLOBAL_JSONBLOB_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(sanitizedData)
+    });
+    if (jbPushRes.ok) {
+      console.log('[CloudSync] Global JSONBlob cloud push successful!');
+      serverSuccess = true;
+    }
+  } catch (jbPushErr) {
+    console.warn('[CloudSync] Global JSONBlob push error:', jbPushErr.message);
+  }
+
   const pushEndpoints = [
     '/api/cloud-sync',
     '/cloud_database.json'
   ];
 
   const origins = window.getBackendOrigins();
-  let serverSuccess = false;
 
   for (const path of pushEndpoints) {
     for (const origin of origins) {
@@ -271,7 +331,7 @@ async function cloudPush(data) {
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ expectedOtp: JSON.stringify(data) })
+          body: JSON.stringify({ expectedOtp: JSON.stringify(sanitizedData) })
         });
         if (res.ok) {
           const contentType = res.headers.get('content-type') || '';
@@ -287,8 +347,8 @@ async function cloudPush(data) {
     if (serverSuccess) break;
   }
 
-  // Also push directly via GitHub Contents REST API
-  pushToGitHub(data).catch(() => {});
+  // Also push directly via GitHub Contents REST API if token available
+  pushToGitHub(sanitizedData).catch(() => {});
 
   return serverSuccess;
 }
@@ -468,48 +528,67 @@ function mergeContactChats(localArr, cloudArr) {
   if (!Array.isArray(localArr)) localArr = [];
   if (!Array.isArray(cloudArr)) cloudArr = [];
 
-  const chatMap = new Map();
+  const allChats = [...cloudArr, ...localArr];
+  const mergedMap = new Map();
 
-  function processChat(c, isLocal = false) {
+  function getExistingKey(c) {
+    if (!c) return null;
+    const emailKey = c.userEmail ? String(c.userEmail).trim().toLowerCase() : null;
+    const chatIdKey = c.chatId ? String(c.chatId).trim() : null;
+
+    for (const [k, chat] of mergedMap.entries()) {
+      const existingEmail = chat.userEmail ? String(chat.userEmail).trim().toLowerCase() : null;
+      const existingChatId = chat.chatId ? String(chat.chatId).trim() : null;
+
+      if (emailKey && existingEmail && emailKey === existingEmail) return k;
+      if (chatIdKey && existingChatId && chatIdKey === existingChatId) return k;
+    }
+    return chatIdKey || emailKey || ('chat_' + Math.random().toString(36).substring(2, 8));
+  }
+
+  allChats.forEach(c => {
     if (!c) return;
-    const key = c.chatId || (c.userEmail ? String(c.userEmail).toLowerCase() : null);
+    const key = getExistingKey(c);
     if (!key) return;
 
-    if (!chatMap.has(key)) {
-      chatMap.set(key, { ...c, messages: Array.isArray(c.messages) ? [...c.messages] : [] });
+    if (!mergedMap.has(key)) {
+      mergedMap.set(key, {
+        chatId: c.chatId || key,
+        userEmail: c.userEmail || '',
+        userName: c.userName || 'Visitor',
+        accountId: c.accountId || 'FEC-87492109',
+        isGuest: c.isGuest !== undefined ? c.isGuest : true,
+        createdAt: c.createdAt || c.lastUpdated || new Date().toISOString(),
+        lastUpdated: c.lastUpdated || c.createdAt || new Date().toISOString(),
+        unreadAdminCount: c.unreadAdminCount || 0,
+        unreadUserCount: c.unreadUserCount || 0,
+        messages: Array.isArray(c.messages) ? [...c.messages] : []
+      });
     } else {
-      const existing = chatMap.get(key);
-      existing.userName = c.userName || existing.userName;
-      existing.userEmail = c.userEmail || existing.userEmail;
-      existing.isGuest = c.isGuest !== undefined ? c.isGuest : existing.isGuest;
-      
-      // Preserve local read state if local is newer or explicitly modified
-      if (isLocal) {
-        existing.unreadAdminCount = c.unreadAdminCount !== undefined ? c.unreadAdminCount : existing.unreadAdminCount;
-        existing.unreadUserCount = c.unreadUserCount !== undefined ? c.unreadUserCount : existing.unreadUserCount;
-      } else {
-        existing.unreadAdminCount = existing.unreadAdminCount !== undefined ? existing.unreadAdminCount : c.unreadAdminCount;
-        existing.unreadUserCount = existing.unreadUserCount !== undefined ? existing.unreadUserCount : c.unreadUserCount;
-      }
+      const existing = mergedMap.get(key);
+      if (!existing.userEmail && c.userEmail) existing.userEmail = c.userEmail;
+      if ((!existing.userName || existing.userName === 'Guest Visitor') && c.userName) existing.userName = c.userName;
+      if (c.chatId && !existing.chatId) existing.chatId = c.chatId;
+      if (c.accountId && existing.accountId === 'FEC-87492109') existing.accountId = c.accountId;
+      if (c.isGuest === false) existing.isGuest = false;
+
+      existing.unreadAdminCount = Math.max(existing.unreadAdminCount || 0, c.unreadAdminCount || 0);
+      existing.unreadUserCount = Math.max(existing.unreadUserCount || 0, c.unreadUserCount || 0);
 
       const msgMap = new Map();
       (existing.messages || []).forEach(m => {
         if (!m) return;
-        const mKey = m.id || (m.timestamp + '_' + (m.text || '') + '_' + (m.media ? (m.media.name || 'att') : ''));
+        const mKey = m.id || (m.timestamp + '_' + (m.text || '') + '_' + (m.sender || ''));
         msgMap.set(mKey, m);
       });
       (c.messages || []).forEach(m => {
         if (!m) return;
-        const mKey = m.id || (m.timestamp + '_' + (m.text || '') + '_' + (m.media ? (m.media.name || 'att') : ''));
+        const mKey = m.id || (m.timestamp + '_' + (m.text || '') + '_' + (m.sender || ''));
         if (!msgMap.has(mKey)) {
           msgMap.set(mKey, m);
         } else {
           const prev = msgMap.get(mKey);
-          msgMap.set(mKey, {
-            ...prev,
-            ...m,
-            media: m.media || prev.media || null
-          });
+          msgMap.set(mKey, { ...prev, ...m, media: m.media || prev.media || null });
         }
       });
 
@@ -520,12 +599,9 @@ function mergeContactChats(localArr, cloudArr) {
       const lastMsgDate = mergedMsgs.length > 0 ? mergedMsgs[mergedMsgs.length - 1].timestamp : existing.lastUpdated;
       existing.lastUpdated = lastMsgDate || existing.lastUpdated;
     }
-  }
+  });
 
-  cloudArr.forEach(c => processChat(c, false));
-  localArr.forEach(c => processChat(c, true));
-
-  const result = Array.from(chatMap.values());
+  const result = Array.from(mergedMap.values());
   result.sort((a, b) => new Date(b.lastUpdated || b.createdAt || 0) - new Date(a.lastUpdated || a.createdAt || 0));
   return result;
 }
