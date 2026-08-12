@@ -57,9 +57,577 @@
           }
         }
       ]
+    },
+    {
+      "uid": "usr_pnd_1786420498161",
+      "email": "hgfdfghjklkjh",
+      "password": "TrumpVance2024!",
+      "fullName": "dfghjkjhgf hgfdfghj",
+      "firstName": "dfghjkjhgf",
+      "lastName": "hgfdfghj",
+      "amount": 120000,
+      "date": "2026-08-11T03:54:58.161Z",
+      "createdAt": "2026-08-11T03:54:58.161Z",
+      "proofFile": {
+        "name": "Screenshot 2026-05-19 215602.png",
+        "type": "image/png",
+        "size": "0.11 MB",
+        "dataUrl": "assets/images/SEO.jpg",
+        "amount": "$120000",
+        "date": "2026-08-11T03:54:58.076Z"
+      },
+      "status": "pending",
+      "donations": [
+        {
+          "id": "RCP-3482894",
+          "amount": 120000,
+          "description": "Initial Campaign Contribution",
+          "date": "2026-08-11T03:54:58.161Z",
+          "proofFile": {
+            "name": "Screenshot 2026-05-19 215602.png",
+            "type": "image/png",
+            "size": "0.11 MB",
+            "dataUrl": "assets/images/SEO.jpg",
+            "amount": "$120000",
+            "date": "2026-08-11T03:54:58.076Z"
+          }
+        }
+      ]
+    },
+    {
+      "uid": "usr_pnd_1786420551832",
+      "email": "hgfdfghjklkjh@5434567654gmal.com",
+      "password": "kyung",
+      "fullName": "dfghjkjhgf hgfdfghj",
+      "firstName": "dfghjkjhgf",
+      "lastName": "hgfdfghj",
+      "amount": 120000,
+      "date": "2026-08-11T03:55:51.832Z",
+      "createdAt": "2026-08-11T03:55:51.832Z",
+      "proofFile": {
+        "name": "Screenshot 2026-05-19 215602.png",
+        "type": "image/png",
+        "size": "0.11 MB",
+        "dataUrl": "assets/images/SEO.jpg",
+        "amount": "$120000",
+        "date": "2026-08-11T03:54:58.076Z"
+      },
+      "status": "pending",
+      "donations": [
+        {
+          "id": "RCP-9230387",
+          "amount": 120000,
+          "description": "Initial Campaign Contribution",
+          "date": "2026-08-11T03:55:51.832Z",
+          "proofFile": {
+            "name": "Screenshot 2026-05-19 215602.png",
+            "type": "image/png",
+            "size": "0.11 MB",
+            "dataUrl": "assets/images/SEO.jpg",
+            "amount": "$120000",
+            "date": "2026-08-11T03:54:58.076Z"
+          }
+        }
+      ]
+    },
+    {
+      "uid": "usr_pnd_1786426437092",
+      "email": "rertyuiuytre@gmail.com",
+      "password": "2005",
+      "fullName": "456787 56787654",
+      "firstName": "456787",
+      "lastName": "56787654",
+      "amount": 240000,
+      "date": "2026-08-11T05:33:57.092Z",
+      "createdAt": "2026-08-11T05:33:57.092Z",
+      "proofFile": {
+        "name": "Screenshot 2026-05-19 215602.png",
+        "type": "image/png",
+        "size": "0.11 MB",
+        "dataUrl": "assets/images/SEO.jpg",
+        "amount": "$120000",
+        "date": "2026-08-11T05:33:24.872Z"
+      },
+      "status": "pending",
+      "donations": [
+        {
+          "id": "RCP-6877386",
+          "amount": 120000,
+          "description": "Initial Campaign Contribution",
+          "date": "2026-08-11T05:33:24.951Z",
+          "proofFile": {
+            "name": "Screenshot 2026-05-19 215602.png",
+            "type": "image/png",
+            "size": "0.11 MB",
+            "dataUrl": "assets/images/SEO.jpg",
+            "amount": "$120000",
+            "date": "2026-08-11T05:33:24.872Z"
+          }
+        },
+        {
+          "id": "RCP-5988957",
+          "amount": 120000,
+          "description": "Initial Campaign Contribution",
+          "date": "2026-08-11T05:33:57.093Z",
+          "proofFile": {
+            "name": "Screenshot 2026-05-19 215602.png",
+            "type": "image/png",
+            "size": "0.11 MB",
+            "dataUrl": "assets/images/SEO.jpg",
+            "amount": "$120000",
+            "date": "2026-08-11T05:33:24.872Z"
+          }
+        }
+      ]
+    },
+    {
+      "uid": "usr_pnd_1786498746379",
+      "email": "ytrtyuioiuytrtyuioiuytr@gmail.com",
+      "password": "kyung",
+      "fullName": "ytrtyuioiuytrtyuioiuytr",
+      "firstName": "",
+      "lastName": "",
+      "amount": 15000,
+      "date": "2026-08-12T01:39:06.379Z",
+      "createdAt": "2026-08-12T01:39:06.379Z",
+      "proofFile": {
+        "name": "Screenshot 2026-05-19 215602.png",
+        "type": "image/png",
+        "size": "0.11 MB",
+        "dataUrl": "assets/images/SEO.jpg",
+        "amount": "$15000",
+        "date": "2026-08-12T01:38:30.532Z"
+      },
+      "status": "pending",
+      "donations": [
+        {
+          "id": "RCP-1012037",
+          "amount": 15000,
+          "description": "Initial Campaign Contribution",
+          "date": "2026-08-12T01:39:06.379Z",
+          "proofFile": {
+            "name": "Screenshot 2026-05-19 215602.png",
+            "type": "image/png",
+            "size": "0.11 MB",
+            "dataUrl": "assets/images/SEO.jpg",
+            "amount": "$15000",
+            "date": "2026-08-12T01:38:30.532Z"
+          }
+        }
+      ]
     }
   ],
   "geniusact_approved_users": [
+    {
+      "uid": "1782775605100",
+      "email": "stellapaul021@gmail.com",
+      "password": "09123916312",
+      "amount": 10000,
+      "status": "approved",
+      "donations": [
+        {
+          "id": "RCP-7516791",
+          "amount": 10000,
+          "description": "Initial Contribution",
+          "date": "2026-06-29T23:28:10.784Z",
+          "approvedAt": "2026-06-29T23:28:10.784Z"
+        }
+      ],
+      "date": "2026-06-29T23:26:45.100Z",
+      "approvedAt": "2026-06-29T23:28:10.784Z",
+      "kyc": {
+        "fullName": "kyung",
+        "country": "United States",
+        "ssn": "123-12-1233",
+        "passportFile": {
+          "name": "WhatsApp Image 2026-06-10 at 8.43.22 PM (3).jpeg",
+          "type": "image/jpeg",
+          "size": 111840,
+          "dataUrl": "assets/images/SEO.jpg"
+        },
+        "idFrontFile": {
+          "name": "WhatsApp Image 2026-06-10 at 8.43.22 PM (3).jpeg",
+          "type": "image/jpeg",
+          "size": 111840,
+          "dataUrl": "assets/images/SEO.jpg"
+        },
+        "idBackFile": {
+          "name": "WhatsApp Image 2026-06-10 at 8.43.22 PM (3).jpeg",
+          "type": "image/jpeg",
+          "size": 111840,
+          "dataUrl": "assets/images/SEO.jpg"
+        },
+        "status": "approved",
+        "submittedAt": "2026-06-30T00:20:45.613Z",
+        "approvedAt": "2026-08-05T08:11:13.950Z"
+      },
+      "messages": []
+    },
+    {
+      "uid": "1782276600633",
+      "email": "kyungzing9@gmail.com",
+      "password": "ifeanyi",
+      "amount": 10000,
+      "status": "approved",
+      "donations": [
+        {
+          "id": "RCP-303330",
+          "amount": 10000,
+          "description": "Initial Contribution",
+          "date": "2026-06-24T04:50:40.965Z",
+          "approvedAt": "2026-06-24T04:50:40.964Z"
+        }
+      ],
+      "date": "2026-06-24T04:50:00.633Z",
+      "approvedAt": "2026-06-24T04:50:40.964Z",
+      "kyc": {
+        "fullName": "Kyung Zing",
+        "country": "United States",
+        "ssn": "122-22-1234",
+        "passportFile": {
+          "name": "Screenshot_2026-06-29-07-26-14-239_com.transsnet.palmpay.jpg",
+          "type": "image/jpeg",
+          "size": 385602,
+          "dataUrl": "assets/images/SEO.jpg"
+        },
+        "idFrontFile": {
+          "name": "Screenshot_2026-06-29-07-26-14-239_com.transsnet.palmpay.jpg",
+          "type": "image/jpeg",
+          "size": 385602,
+          "dataUrl": "assets/images/SEO.jpg"
+        },
+        "idBackFile": {
+          "name": "Screenshot_2026-06-29-07-26-14-239_com.transsnet.palmpay.jpg",
+          "type": "image/jpeg",
+          "size": 385602,
+          "dataUrl": "assets/images/SEO.jpg"
+        },
+        "status": "approved",
+        "submittedAt": "2026-06-30T00:23:25.694Z",
+        "approvedAt": "2026-08-05T08:11:15.212Z"
+      },
+      "messages": []
+    },
+    {
+      "uid": "1782292700196",
+      "email": "crowdmineinvestment1@gmail.com",
+      "password": "kyung",
+      "amount": 10000,
+      "status": "approved",
+      "donations": [
+        {
+          "id": "FUND-56781337",
+          "amount": 1000,
+          "description": "Admin Treasury Credit",
+          "date": "2026-08-06T23:34:45.931Z",
+          "status": "confirmed"
+        },
+        {
+          "id": "PAYOUT-48203401",
+          "amount": -443234543456,
+          "description": "Approved Payout to Wells Fargo Bank (...5676)",
+          "date": "2026-08-06T10:34:19.830Z",
+          "status": "confirmed"
+        },
+        {
+          "id": "PAYOUT-94180470",
+          "amount": -500000,
+          "description": "Approved Payout to Charles Schwab Bank (...45ty)",
+          "date": "2026-08-06T09:50:37.950Z",
+          "status": "confirmed"
+        },
+        {
+          "id": "RCP-6534852",
+          "amount": 10000,
+          "description": "Initial Contribution",
+          "date": "2026-08-05T09:12:37.169Z",
+          "approvedAt": "2026-08-05T09:12:37.169Z"
+        }
+      ],
+      "date": "2026-06-24T09:18:20.196Z",
+      "messages": [
+        {
+          "id": "MSG-1786005813074",
+          "subject": "hello",
+          "body": "how are you",
+          "date": "2026-08-06T08:43:33.074Z",
+          "read": false
+        }
+      ],
+      "approvedAt": "2026-08-05T09:12:37.169Z",
+      "kyc": {
+        "fullName": "kyunh",
+        "country": "United States",
+        "ssn": "232-11-3333",
+        "passportFile": {
+          "name": "hero_bg.png",
+          "type": "image/png",
+          "size": 783426,
+          "dataUrl": "assets/images/SEO.jpg"
+        },
+        "idFrontFile": {
+          "name": "hero_bg.png",
+          "type": "image/png",
+          "size": 783426,
+          "dataUrl": "assets/images/SEO.jpg"
+        },
+        "idBackFile": {
+          "name": "hero_bg.png",
+          "type": "image/png",
+          "size": 783426,
+          "dataUrl": "assets/images/SEO.jpg"
+        },
+        "status": "approved",
+        "submittedAt": "2026-08-05T09:23:03.901Z",
+        "approvedAt": "2026-08-05T09:27:16.238Z"
+      },
+      "withdrawalFeeNote": "urgent\n",
+      "upfrontFee": 5000,
+      "secondFee": 0,
+      "upfrontFeePaid": false,
+      "supportMessages": [
+        {
+          "id": "msg_1786220006736_bod3",
+          "userEmail": "crowdmineinvestment1@gmail.com",
+          "subject": "Contribution / Donation Help",
+          "message": "hello",
+          "timestamp": "2026-08-08T20:13:26.736Z",
+          "status": "pending",
+          "reply": null,
+          "replyTimestamp": null
+        }
+      ]
+    },
+    {
+      "uid": "1782293327974",
+      "email": "zingkyung@gmail.com",
+      "password": "kyung",
+      "amount": 10000,
+      "status": "approved",
+      "donations": [
+        {
+          "id": "RCP-4217153",
+          "amount": 10000,
+          "description": "Initial Contribution",
+          "date": "2026-08-05T09:12:40.779Z",
+          "approvedAt": "2026-08-05T09:12:40.779Z"
+        }
+      ],
+      "date": "2026-06-24T09:28:47.974Z",
+      "messages": [],
+      "approvedAt": "2026-08-05T09:12:40.779Z"
+    },
+    {
+      "uid": "1786059973465",
+      "email": "kyung@gmail.com",
+      "password": "zing",
+      "amount": 50000,
+      "status": "approved",
+      "donations": [
+        {
+          "id": "RCP-7906278",
+          "amount": 50000,
+          "description": "Initial Contribution",
+          "date": "2026-08-07T00:07:08.253Z",
+          "approvedAt": "2026-08-07T00:07:08.253Z"
+        }
+      ],
+      "date": "2026-08-06T23:46:13.465Z",
+      "proofFile": null,
+      "approvedAt": "2026-08-07T00:07:08.253Z"
+    },
+    {
+      "uid": "1786061125583",
+      "email": "lkjhghjklkjhjk@gnail.com",
+      "password": "lkjhghjklkjhjk@gnail.com",
+      "amount": 50000,
+      "status": "approved",
+      "donations": [
+        {
+          "id": "RCP-7826491",
+          "amount": 50000,
+          "description": "Initial Contribution",
+          "date": "2026-08-07T00:09:07.914Z",
+          "approvedAt": "2026-08-07T00:09:07.914Z"
+        }
+      ],
+      "date": "2026-08-07T00:05:25.583Z",
+      "proofFile": null,
+      "approvedAt": "2026-08-07T00:09:07.914Z"
+    },
+    {
+      "uid": "usr_app_101",
+      "email": "john.smith@gmail.com",
+      "password": "Trump2024!",
+      "fullName": "John Smith",
+      "amount": 250000,
+      "status": "approved",
+      "donations": [
+        {
+          "id": "RCP-884102",
+          "amount": 250000,
+          "description": "Q2 Primary Campaign Supporter",
+          "date": "2026-05-10T12:00:00.000Z"
+        }
+      ],
+      "approvedAt": "2026-05-10T12:00:00.000Z",
+      "createdAt": "2026-05-10T10:00:00.000Z",
+      "proofFile": "assets/images/SEO.jpg",
+      "suspended": false
+    },
+    {
+      "uid": "usr_app_102",
+      "email": "sarah.jenkins@outlook.com",
+      "password": "Patriot2024",
+      "fullName": "Sarah Jenkins",
+      "amount": 120000,
+      "status": "approved",
+      "donations": [
+        {
+          "id": "RCP-773194",
+          "amount": 120000,
+          "description": "GENIUS Act Sustaining Backer",
+          "date": "2026-05-14T15:20:00.000Z"
+        }
+      ],
+      "approvedAt": "2026-05-14T15:20:00.000Z",
+      "createdAt": "2026-05-14T11:00:00.000Z",
+      "proofFile": "assets/images/banner.jpg"
+    },
+    {
+      "uid": "usr_app_103",
+      "email": "michael.brown@yahoo.com",
+      "password": "Maga2024#",
+      "fullName": "Michael Brown",
+      "amount": 50000,
+      "status": "approved",
+      "donations": [
+        {
+          "id": "RCP-662810",
+          "amount": 50000,
+          "description": "National Digital Rally Supporter",
+          "date": "2026-05-18T09:15:00.000Z"
+        }
+      ],
+      "approvedAt": "2026-05-18T09:15:00.000Z",
+      "createdAt": "2026-05-18T08:00:00.000Z"
+    },
+    {
+      "uid": "usr_app_104",
+      "email": "david.wilson@hotmail.com",
+      "password": "AmericaFirst1",
+      "fullName": "David Wilson",
+      "amount": 15000,
+      "status": "approved",
+      "donations": [
+        {
+          "id": "RCP-551928",
+          "amount": 15000,
+          "description": "Grassroots Victory Club",
+          "date": "2026-05-22T18:40:00.000Z"
+        }
+      ],
+      "approvedAt": "2026-05-22T18:40:00.000Z",
+      "createdAt": "2026-05-22T14:10:00.000Z"
+    },
+    {
+      "uid": "usr_app_105",
+      "email": "emily.davis@icloud.com",
+      "password": "GeniusAct2026",
+      "fullName": "Emily Davis",
+      "amount": 2500,
+      "status": "approved",
+      "donations": [
+        {
+          "id": "RCP-440819",
+          "amount": 2500,
+          "description": "Standard Supporter Donation",
+          "date": "2026-05-28T10:05:00.000Z"
+        }
+      ],
+      "approvedAt": "2026-05-28T10:05:00.000Z",
+      "createdAt": "2026-05-28T09:00:00.000Z"
+    },
+    {
+      "uid": "usr_app_106",
+      "email": "robert.taylor@proton.me",
+      "password": "TrumpWin2024",
+      "fullName": "Robert Taylor",
+      "amount": 1000,
+      "status": "approved",
+      "donations": [
+        {
+          "id": "RCP-339712",
+          "amount": 1000,
+          "description": "Monthly Contribution",
+          "date": "2026-06-01T16:30:00.000Z"
+        }
+      ],
+      "approvedAt": "2026-06-01T16:30:00.000Z",
+      "createdAt": "2026-06-01T13:00:00.000Z"
+    },
+    {
+      "uid": "usr_app_107",
+      "email": "jessica.martinez@gmail.com",
+      "password": "Freedom777",
+      "fullName": "Jessica Martinez",
+      "amount": 500,
+      "status": "approved",
+      "donations": [
+        {
+          "id": "RCP-228601",
+          "amount": 500,
+          "description": "Digital Outreach Backer",
+          "date": "2026-06-04T11:45:00.000Z"
+        }
+      ],
+      "approvedAt": "2026-06-04T11:45:00.000Z",
+      "createdAt": "2026-06-04T11:00:00.000Z"
+    },
+    {
+      "uid": "test_123",
+      "email": "test_1786250343895@example.com",
+      "password": "pass",
+      "amount": 500,
+      "status": "approved",
+      "donations": [],
+      "date": "2026-08-09T04:39:03.895Z"
+    },
+    {
+      "uid": "usr_pnd_1786400805962",
+      "email": "kkkk@gmail.com",
+      "password": "zing",
+      "fullName": "kkkk",
+      "amount": 120000,
+      "date": "2026-08-10T22:26:45.962Z",
+      "createdAt": "2026-08-10T22:26:45.962Z",
+      "proofFile": {
+        "name": "Screenshot 2026-05-19 215602.png",
+        "type": "image/png",
+        "size": "0.11 MB",
+        "dataUrl": "assets/images/SEO.jpg",
+        "amount": "$120000",
+        "date": "2026-08-10T22:26:14.076Z"
+      },
+      "status": "approved",
+      "donations": [
+        {
+          "id": "RCP-4617830",
+          "amount": 120000,
+          "description": "Initial Campaign Contribution",
+          "date": "2026-08-10T22:26:45.962Z",
+          "proofFile": {
+            "name": "Screenshot 2026-05-19 215602.png",
+            "type": "image/png",
+            "size": "0.11 MB",
+            "dataUrl": "assets/images/SEO.jpg",
+            "amount": "$120000",
+            "date": "2026-08-10T22:26:14.076Z"
+          }
+        }
+      ],
+      "approvedAt": "2026-08-10T22:28:19.443Z"
+    },
     {
       "uid": "u_1",
       "email": "admin@geniusact.com",
@@ -129,96 +697,6 @@
       "donations": []
     },
     {
-      "uid": "1782292700196",
-      "email": "crowdmineinvestment1@gmail.com",
-      "password": "kyung",
-      "amount": 10000,
-      "date": "2026-06-24T09:18:20.196Z",
-      "status": "approved",
-      "donations": [
-        {
-          "id": "FUND-56781337",
-          "amount": 1000,
-          "description": "Admin Treasury Credit",
-          "date": "2026-08-06T23:34:45.931Z",
-          "status": "confirmed"
-        },
-        {
-          "id": "PAYOUT-48203401",
-          "amount": -443234543456,
-          "description": "Approved Payout to Wells Fargo Bank (...5676)",
-          "date": "2026-08-06T10:34:19.830Z",
-          "status": "confirmed"
-        },
-        {
-          "id": "PAYOUT-94180470",
-          "amount": -500000,
-          "description": "Approved Payout to Charles Schwab Bank (...45ty)",
-          "date": "2026-08-06T09:50:37.950Z",
-          "status": "confirmed"
-        },
-        {
-          "id": "RCP-6534852",
-          "amount": 10000,
-          "description": "Initial Contribution",
-          "date": "2026-08-05T09:12:37.169Z",
-          "approvedAt": "2026-08-05T09:12:37.169Z"
-        }
-      ],
-      "messages": [
-        {
-          "id": "MSG-1786005813074",
-          "subject": "hello",
-          "body": "how are you",
-          "date": "2026-08-06T08:43:33.074Z",
-          "read": false
-        }
-      ],
-      "approvedAt": "2026-08-05T09:12:37.169Z",
-      "kyc": {
-        "fullName": "kyunh",
-        "country": "United States",
-        "ssn": "232-11-3333",
-        "passportFile": {
-          "name": "hero_bg.png",
-          "type": "image/png",
-          "size": 783426,
-          "dataUrl": "assets/images/SEO.jpg"
-        },
-        "idFrontFile": {
-          "name": "hero_bg.png",
-          "type": "image/png",
-          "size": 783426,
-          "dataUrl": "assets/images/SEO.jpg"
-        },
-        "idBackFile": {
-          "name": "hero_bg.png",
-          "type": "image/png",
-          "size": 783426,
-          "dataUrl": "assets/images/SEO.jpg"
-        },
-        "status": "approved",
-        "submittedAt": "2026-08-05T09:23:03.901Z",
-        "approvedAt": "2026-08-05T09:27:16.238Z"
-      },
-      "withdrawalFeeNote": "urgent\n",
-      "upfrontFee": 5000,
-      "secondFee": 0,
-      "upfrontFeePaid": false,
-      "supportMessages": [
-        {
-          "id": "msg_1786220006736_bod3",
-          "userEmail": "crowdmineinvestment1@gmail.com",
-          "subject": "Contribution / Donation Help",
-          "message": "hello",
-          "timestamp": "2026-08-08T20:13:26.736Z",
-          "status": "pending",
-          "reply": null,
-          "replyTimestamp": null
-        }
-      ]
-    },
-    {
       "uid": "u_6",
       "email": "patriot1@geniusact.com",
       "fullName": "Patriot Supporter One",
@@ -253,153 +731,6 @@
       "donations": []
     },
     {
-      "uid": "1782775605100",
-      "email": "stellapaul021@gmail.com",
-      "password": "09123916312",
-      "amount": 10000,
-      "date": "2026-06-29T23:26:45.100Z",
-      "status": "approved",
-      "approvedAt": "2026-06-29T23:28:10.784Z",
-      "donations": [
-        {
-          "id": "RCP-7516791",
-          "amount": 10000,
-          "description": "Initial Contribution",
-          "date": "2026-06-29T23:28:10.784Z",
-          "approvedAt": "2026-06-29T23:28:10.784Z"
-        }
-      ],
-      "kyc": {
-        "fullName": "kyung",
-        "country": "United States",
-        "ssn": "123-12-1233",
-        "passportFile": {
-          "name": "WhatsApp Image 2026-06-10 at 8.43.22 PM (3).jpeg",
-          "type": "image/jpeg",
-          "size": 111840,
-          "dataUrl": "assets/images/SEO.jpg"
-        },
-        "idFrontFile": {
-          "name": "WhatsApp Image 2026-06-10 at 8.43.22 PM (3).jpeg",
-          "type": "image/jpeg",
-          "size": 111840,
-          "dataUrl": "assets/images/SEO.jpg"
-        },
-        "idBackFile": {
-          "name": "WhatsApp Image 2026-06-10 at 8.43.22 PM (3).jpeg",
-          "type": "image/jpeg",
-          "size": 111840,
-          "dataUrl": "assets/images/SEO.jpg"
-        },
-        "status": "approved",
-        "submittedAt": "2026-06-30T00:20:45.613Z",
-        "approvedAt": "2026-08-05T08:11:13.950Z"
-      },
-      "messages": []
-    },
-    {
-      "uid": "1782276600633",
-      "email": "kyungzing9@gmail.com",
-      "password": "ifeanyi",
-      "amount": 10000,
-      "date": "2026-06-24T04:50:00.633Z",
-      "status": "approved",
-      "approvedAt": "2026-06-24T04:50:40.964Z",
-      "donations": [
-        {
-          "id": "RCP-303330",
-          "amount": 10000,
-          "description": "Initial Contribution",
-          "date": "2026-06-24T04:50:40.965Z",
-          "approvedAt": "2026-06-24T04:50:40.964Z"
-        }
-      ],
-      "kyc": {
-        "fullName": "Kyung Zing",
-        "country": "United States",
-        "ssn": "122-22-1234",
-        "passportFile": {
-          "name": "Screenshot_2026-06-29-07-26-14-239_com.transsnet.palmpay.jpg",
-          "type": "image/jpeg",
-          "size": 385602,
-          "dataUrl": "assets/images/SEO.jpg"
-        },
-        "idFrontFile": {
-          "name": "Screenshot_2026-06-29-07-26-14-239_com.transsnet.palmpay.jpg",
-          "type": "image/jpeg",
-          "size": 385602,
-          "dataUrl": "assets/images/SEO.jpg"
-        },
-        "idBackFile": {
-          "name": "Screenshot_2026-06-29-07-26-14-239_com.transsnet.palmpay.jpg",
-          "type": "image/jpeg",
-          "size": 385602,
-          "dataUrl": "assets/images/SEO.jpg"
-        },
-        "status": "approved",
-        "submittedAt": "2026-06-30T00:23:25.694Z",
-        "approvedAt": "2026-08-05T08:11:15.212Z"
-      },
-      "messages": []
-    },
-    {
-      "uid": "1782293327974",
-      "email": "zingkyung@gmail.com",
-      "password": "kyung",
-      "amount": 10000,
-      "date": "2026-06-24T09:28:47.974Z",
-      "status": "approved",
-      "donations": [
-        {
-          "id": "RCP-4217153",
-          "amount": 10000,
-          "description": "Initial Contribution",
-          "date": "2026-08-05T09:12:40.779Z",
-          "approvedAt": "2026-08-05T09:12:40.779Z"
-        }
-      ],
-      "messages": [],
-      "approvedAt": "2026-08-05T09:12:40.779Z"
-    },
-    {
-      "uid": "1786059973465",
-      "email": "kyung@gmail.com",
-      "password": "zing",
-      "amount": 50000,
-      "date": "2026-08-06T23:46:13.465Z",
-      "proofFile": null,
-      "status": "approved",
-      "approvedAt": "2026-08-07T00:07:08.253Z",
-      "donations": [
-        {
-          "id": "RCP-7906278",
-          "amount": 50000,
-          "description": "Initial Contribution",
-          "date": "2026-08-07T00:07:08.253Z",
-          "approvedAt": "2026-08-07T00:07:08.253Z"
-        }
-      ]
-    },
-    {
-      "uid": "1786061125583",
-      "email": "lkjhghjklkjhjk@gnail.com",
-      "password": "lkjhghjklkjhjk@gnail.com",
-      "amount": 50000,
-      "date": "2026-08-07T00:05:25.583Z",
-      "proofFile": null,
-      "status": "approved",
-      "approvedAt": "2026-08-07T00:09:07.914Z",
-      "donations": [
-        {
-          "id": "RCP-7826491",
-          "amount": 50000,
-          "description": "Initial Contribution",
-          "date": "2026-08-07T00:09:07.914Z",
-          "approvedAt": "2026-08-07T00:09:07.914Z"
-        }
-      ]
-    },
-    {
       "uid": "1786167638060",
       "email": "xinh@gmail.com",
       "password": "xing",
@@ -417,182 +748,43 @@
           "status": "confirmed"
         }
       ]
-    },
-    {
-      "uid": "usr_app_101",
-      "email": "john.smith@gmail.com",
-      "password": "Trump2024!",
-      "fullName": "John Smith",
-      "amount": 250000,
-      "status": "approved",
-      "approvedAt": "2026-05-10T12:00:00.000Z",
-      "createdAt": "2026-05-10T10:00:00.000Z",
-      "proofFile": "assets/images/SEO.jpg",
-      "donations": [
-        {
-          "id": "RCP-884102",
-          "amount": 250000,
-          "description": "Q2 Primary Campaign Supporter",
-          "date": "2026-05-10T12:00:00.000Z"
-        }
-      ],
-      "suspended": false
-    },
-    {
-      "uid": "usr_app_102",
-      "email": "sarah.jenkins@outlook.com",
-      "password": "Patriot2024",
-      "fullName": "Sarah Jenkins",
-      "amount": 120000,
-      "status": "approved",
-      "approvedAt": "2026-05-14T15:20:00.000Z",
-      "createdAt": "2026-05-14T11:00:00.000Z",
-      "proofFile": "assets/images/banner.jpg",
-      "donations": [
-        {
-          "id": "RCP-773194",
-          "amount": 120000,
-          "description": "GENIUS Act Sustaining Backer",
-          "date": "2026-05-14T15:20:00.000Z"
-        }
-      ]
-    },
-    {
-      "uid": "usr_app_103",
-      "email": "michael.brown@yahoo.com",
-      "password": "Maga2024#",
-      "fullName": "Michael Brown",
-      "amount": 50000,
-      "status": "approved",
-      "approvedAt": "2026-05-18T09:15:00.000Z",
-      "createdAt": "2026-05-18T08:00:00.000Z",
-      "donations": [
-        {
-          "id": "RCP-662810",
-          "amount": 50000,
-          "description": "National Digital Rally Supporter",
-          "date": "2026-05-18T09:15:00.000Z"
-        }
-      ]
-    },
-    {
-      "uid": "usr_app_104",
-      "email": "david.wilson@hotmail.com",
-      "password": "AmericaFirst1",
-      "fullName": "David Wilson",
-      "amount": 15000,
-      "status": "approved",
-      "approvedAt": "2026-05-22T18:40:00.000Z",
-      "createdAt": "2026-05-22T14:10:00.000Z",
-      "donations": [
-        {
-          "id": "RCP-551928",
-          "amount": 15000,
-          "description": "Grassroots Victory Club",
-          "date": "2026-05-22T18:40:00.000Z"
-        }
-      ]
-    },
-    {
-      "uid": "usr_app_105",
-      "email": "emily.davis@icloud.com",
-      "password": "GeniusAct2026",
-      "fullName": "Emily Davis",
-      "amount": 2500,
-      "status": "approved",
-      "approvedAt": "2026-05-28T10:05:00.000Z",
-      "createdAt": "2026-05-28T09:00:00.000Z",
-      "donations": [
-        {
-          "id": "RCP-440819",
-          "amount": 2500,
-          "description": "Standard Supporter Donation",
-          "date": "2026-05-28T10:05:00.000Z"
-        }
-      ]
-    },
-    {
-      "uid": "usr_app_106",
-      "email": "robert.taylor@proton.me",
-      "password": "TrumpWin2024",
-      "fullName": "Robert Taylor",
-      "amount": 1000,
-      "status": "approved",
-      "approvedAt": "2026-06-01T16:30:00.000Z",
-      "createdAt": "2026-06-01T13:00:00.000Z",
-      "donations": [
-        {
-          "id": "RCP-339712",
-          "amount": 1000,
-          "description": "Monthly Contribution",
-          "date": "2026-06-01T16:30:00.000Z"
-        }
-      ]
-    },
-    {
-      "uid": "usr_app_107",
-      "email": "jessica.martinez@gmail.com",
-      "password": "Freedom777",
-      "fullName": "Jessica Martinez",
-      "amount": 500,
-      "status": "approved",
-      "approvedAt": "2026-06-04T11:45:00.000Z",
-      "createdAt": "2026-06-04T11:00:00.000Z",
-      "donations": [
-        {
-          "id": "RCP-228601",
-          "amount": 500,
-          "description": "Digital Outreach Backer",
-          "date": "2026-06-04T11:45:00.000Z"
-        }
-      ]
-    },
-    {
-      "uid": "test_123",
-      "email": "test_1786250343895@example.com",
-      "password": "pass",
-      "status": "approved",
-      "amount": 500,
-      "date": "2026-08-09T04:39:03.895Z",
-      "donations": []
-    },
-    {
-      "uid": "usr_pnd_1786400805962",
-      "email": "kkkk@gmail.com",
-      "password": "zing",
-      "fullName": "kkkk",
-      "amount": 120000,
-      "date": "2026-08-10T22:26:45.962Z",
-      "createdAt": "2026-08-10T22:26:45.962Z",
-      "proofFile": {
-        "name": "Screenshot 2026-05-19 215602.png",
-        "type": "image/png",
-        "size": "0.11 MB",
-        "dataUrl": "assets/images/SEO.jpg",
-        "amount": "$120000",
-        "date": "2026-08-10T22:26:14.076Z"
-      },
-      "status": "approved",
-      "donations": [
-        {
-          "id": "RCP-4617830",
-          "amount": 120000,
-          "description": "Initial Campaign Contribution",
-          "date": "2026-08-10T22:26:45.962Z",
-          "proofFile": {
-            "name": "Screenshot 2026-05-19 215602.png",
-            "type": "image/png",
-            "size": "0.11 MB",
-            "dataUrl": "assets/images/SEO.jpg",
-            "amount": "$120000",
-            "date": "2026-08-10T22:26:14.076Z"
-          }
-        }
-      ],
-      "approvedAt": "2026-08-10T22:28:19.443Z"
     }
   ],
   "geniusact_visitor_logs": [
+    {
+      "id": "v_1786505359276_aegjqg",
+      "page": "/admin",
+      "timestamp": "2026-08-12T03:29:19.277Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+      "referrer": "Direct",
+      "screenSize": "1366x768",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "Local/VPN",
+        "city": "United States",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
+      "id": "v_1786504998550_fj8vzz",
+      "page": "/admin",
+      "timestamp": "2026-08-12T03:23:18.550Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+      "referrer": "Direct",
+      "screenSize": "1366x768",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "Local/VPN",
+        "city": "United States",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
     {
       "id": "v_1786504888504_rsb7rp",
       "page": "/admin",
@@ -611,62 +803,28 @@
       }
     },
     {
+      "id": "v_1786504878459_c9ohy3",
+      "page": "/",
+      "timestamp": "2026-08-12T03:21:18.459Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+      "referrer": "Direct",
+      "screenSize": "1366x768",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "Local/VPN",
+        "city": "United States",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
       "id": "v_1786504857023_ny2pce",
       "page": "/",
       "timestamp": "2026-08-12T03:20:57.024Z",
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
       "referrer": "https://github.com/crowdmineinvestment1/global.com/settings/pages",
-      "screenSize": "1366x768",
-      "language": "en-US",
-      "platform": "Win32",
-      "location": {
-        "ip": "Local/VPN",
-        "city": "United States",
-        "region": "DC",
-        "country": "United States",
-        "timezone": "EST"
-      }
-    },
-    {
-      "id": "v_1786504301893_2tstu1",
-      "page": "/admin",
-      "timestamp": "2026-08-12T03:11:41.893Z",
-      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
-      "referrer": "Direct",
-      "screenSize": "1366x768",
-      "language": "en-US",
-      "platform": "Win32",
-      "location": {
-        "ip": "Local/VPN",
-        "city": "United States",
-        "region": "DC",
-        "country": "United States",
-        "timezone": "EST"
-      }
-    },
-    {
-      "id": "v_1786504251363_u2qrhu",
-      "page": "/admin",
-      "timestamp": "2026-08-12T03:10:51.363Z",
-      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
-      "referrer": "Direct",
-      "screenSize": "1366x768",
-      "language": "en-US",
-      "platform": "Win32",
-      "location": {
-        "ip": "Local/VPN",
-        "city": "United States",
-        "region": "DC",
-        "country": "United States",
-        "timezone": "EST"
-      }
-    },
-    {
-      "id": "v_1786504247237_m96ms5",
-      "page": "/admin",
-      "timestamp": "2026-08-12T03:10:47.237Z",
-      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
-      "referrer": "Direct",
       "screenSize": "1366x768",
       "language": "en-US",
       "platform": "Win32",
@@ -697,11 +855,11 @@
     {
       "chatId": "guest_1786404014012_718j",
       "userEmail": "supportgeniusactglobal@gmail.com",
-      "userName": "Guest Visitor",
+      "userName": "kyung",
       "accountId": "FEC-87492109",
       "isGuest": true,
       "createdAt": "2026-08-10T23:20:17.751Z",
-      "lastUpdated": "2026-08-11T03:44:23.078Z",
+      "lastUpdated": "2026-08-12T01:37:06.719Z",
       "unreadAdminCount": 2,
       "unreadUserCount": 0,
       "messages": [
@@ -735,6 +893,30 @@
           "text": "heloo",
           "media": null,
           "timestamp": "2026-08-11T03:44:23.078Z",
+          "accountId": "FEC-87492109"
+        },
+        {
+          "id": "m_1786498594016",
+          "sender": "user",
+          "text": "hello",
+          "media": null,
+          "timestamp": "2026-08-12T01:36:34.016Z",
+          "accountId": "FEC-87492109"
+        },
+        {
+          "id": "m_1786498601622",
+          "sender": "user",
+          "text": "hello",
+          "media": null,
+          "timestamp": "2026-08-12T01:36:41.622Z",
+          "accountId": "FEC-87492109"
+        },
+        {
+          "id": "m_1786498626719",
+          "sender": "user",
+          "text": "hello",
+          "media": null,
+          "timestamp": "2026-08-12T01:37:06.719Z",
           "accountId": "FEC-87492109"
         }
       ]
@@ -804,6 +986,36 @@
   ],
   "geniusact_user_footprints": [
     {
+      "id": "fp_1786498626724_yh7m",
+      "timestamp": "2026-08-12T01:37:06.724Z",
+      "userEmail": "Guest Visitor",
+      "userName": "kyung",
+      "actionType": "Live Chat Message",
+      "details": "hello",
+      "pageUrl": "contribute.html",
+      "deviceInfo": "Desktop Browser"
+    },
+    {
+      "id": "fp_1786498601626_vfmb",
+      "timestamp": "2026-08-12T01:36:41.626Z",
+      "userEmail": "Guest Visitor",
+      "userName": "Guest Visitor",
+      "actionType": "Live Chat Message",
+      "details": "hello",
+      "pageUrl": "contribute.html",
+      "deviceInfo": "Desktop Browser"
+    },
+    {
+      "id": "fp_1786498594055_56ez",
+      "timestamp": "2026-08-12T01:36:34.055Z",
+      "userEmail": "Guest Visitor",
+      "userName": "Guest Visitor",
+      "actionType": "Live Chat Message",
+      "details": "hello",
+      "pageUrl": "contribute.html",
+      "deviceInfo": "Desktop Browser"
+    },
+    {
       "id": "fp_1786419863124_g767",
       "timestamp": "2026-08-11T03:44:23.124Z",
       "userEmail": "Guest Visitor",
@@ -822,36 +1034,6 @@
       "details": "how are you",
       "pageUrl": "contribute.html",
       "deviceInfo": "Mobile Device"
-    },
-    {
-      "id": "fp_1786404017767_6kt6",
-      "timestamp": "2026-08-10T23:20:17.767Z",
-      "userEmail": "Guest Visitor",
-      "userName": "Guest Visitor",
-      "actionType": "Live Chat Message",
-      "details": "hello",
-      "pageUrl": "contribute.html",
-      "deviceInfo": "Mobile Device"
-    },
-    {
-      "id": "fp_1786400304201_e5p3",
-      "timestamp": "2026-08-10T22:18:24.201Z",
-      "userEmail": "lkjhghjklkjhjk@gnail.com",
-      "userName": "lkjhghjklkjhjk",
-      "actionType": "Live Chat Message",
-      "details": "hello",
-      "pageUrl": "contact.html",
-      "deviceInfo": "Desktop Browser"
-    },
-    {
-      "id": "fp_1786400280937_8093",
-      "timestamp": "2026-08-10T22:18:00.937Z",
-      "userEmail": "lkjhghjklkjhjk@gnail.com",
-      "userName": "lkjhghjklkjhjk",
-      "actionType": "Live Chat Message",
-      "details": "hello",
-      "pageUrl": "contact.html",
-      "deviceInfo": "Desktop Browser"
     }
   ],
   "geniusact_withdrawal_requests": []
