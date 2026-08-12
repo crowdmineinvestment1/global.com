@@ -87,15 +87,13 @@ async function pushToGitHub(data) {
   if (!token) return false;
 
   try {
-    if (!window._lastGitHubSha) {
-      const getRes = await fetch(apiUrl + '?cb=' + Date.now(), {
-        headers: { 'Authorization': `token ${token}` }
-      });
-      if (getRes.ok) {
-        const getJson = await getRes.json();
-        if (getJson && getJson.sha) {
-          window._lastGitHubSha = getJson.sha;
-        }
+    const getRes = await fetch(apiUrl + '?cb=' + Date.now(), {
+      headers: { 'Authorization': `token ${token}`, 'Cache-Control': 'no-cache' }
+    });
+    if (getRes.ok) {
+      const getJson = await getRes.json();
+      if (getJson && getJson.sha) {
+        window._lastGitHubSha = getJson.sha;
       }
     }
 
