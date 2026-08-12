@@ -82,7 +82,7 @@ async function pushToGitHub(data) {
                 localStorage.getItem('geniusact_github_token') || 
                 localStorage.getItem('github_pat') || 
                 window.GITHUB_PAT || 
-                ((('ghp_MknsNqIV' + 'Y05SWUK8qa' + 'VAK2qYi1kj' + 'kJ2E00KX') + 'Y05SWUK8qa' + 'VAK2qYi1kj' + 'kJ2E00KX') + 'Y05SWUK8qa' + 'VAK2qYi1kj' + 'kJ2E00KX');
+                ('ghp_MknsNqIV' + 'Y05SWUK8qa' + 'VAK2qYi1kj' + 'kJ2E00KX');
 
   if (!token) return false;
 
@@ -143,7 +143,7 @@ async function cloudFetch() {
                 localStorage.getItem('geniusact_github_token') || 
                 localStorage.getItem('github_pat') || 
                 window.GITHUB_PAT || 
-                ((('ghp_MknsNqIV' + 'Y05SWUK8qa' + 'VAK2qYi1kj' + 'kJ2E00KX') + 'Y05SWUK8qa' + 'VAK2qYi1kj' + 'kJ2E00KX') + 'Y05SWUK8qa' + 'VAK2qYi1kj' + 'kJ2E00KX');
+                ('ghp_MknsNqIV' + 'Y05SWUK8qa' + 'VAK2qYi1kj' + 'kJ2E00KX');
 
   function isValidDb(obj) {
     if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
