@@ -752,6 +752,23 @@
   ],
   "geniusact_visitor_logs": [
     {
+      "id": "v_1786505801034_um0bjm",
+      "page": "/admin",
+      "timestamp": "2026-08-12T03:36:41.034Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+      "referrer": "Direct",
+      "screenSize": "1366x768",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "Local/VPN",
+        "city": "United States",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
       "id": "v_1786505359276_aegjqg",
       "page": "/admin",
       "timestamp": "2026-08-12T03:29:19.277Z",
@@ -808,23 +825,6 @@
       "timestamp": "2026-08-12T03:21:18.459Z",
       "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
       "referrer": "Direct",
-      "screenSize": "1366x768",
-      "language": "en-US",
-      "platform": "Win32",
-      "location": {
-        "ip": "Local/VPN",
-        "city": "United States",
-        "region": "DC",
-        "country": "United States",
-        "timezone": "EST"
-      }
-    },
-    {
-      "id": "v_1786504857023_ny2pce",
-      "page": "/",
-      "timestamp": "2026-08-12T03:20:57.024Z",
-      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
-      "referrer": "https://github.com/crowdmineinvestment1/global.com/settings/pages",
       "screenSize": "1366x768",
       "language": "en-US",
       "platform": "Win32",
