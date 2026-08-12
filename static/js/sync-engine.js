@@ -150,7 +150,29 @@ async function cloudFetch() {
     return hasApproved || hasPending;
   }
 
-  // 1. Try GitHub REST API FIRST (Always live, bypasses all CDN caching, 99.99% uptime worldwide)
+  // 1. Try global JSONBlob cloud database FIRST (Lightning fast real-time sync)
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2500);
+    const jbRes = await fetch(GLOBAL_JSONBLOB_URL + cacheBust, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+    if (jbRes.ok) {
+      const jbData = await jbRes.json();
+      if (isValidDb(jbData)) {
+        console.log('[CloudSync] Data successfully loaded from global JSONBlob cloud storage!');
+        window._inMemoryCloudCache = jbData;
+        return jbData;
+      }
+    }
+  } catch (jbErr) {
+    console.warn('[CloudSync] Global JSONBlob fetch note:', jbErr.message);
+  }
+
+  // 2. Try GitHub REST API as Fallback
   if (token) {
     try {
       const ghRes = await fetch(`https://api.github.com/repos/crowdmineinvestment1/global.com/contents/cloud_database.json${cacheBust}`, {
@@ -171,28 +193,6 @@ async function cloudFetch() {
     } catch(e) {
       console.warn('[CloudSync] GitHub REST API fetch error:', e.message);
     }
-  }
-
-  // 2. Try global JSONBlob cloud database with 2.5s AbortController timeout fallback
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 2500);
-    const jbRes = await fetch(GLOBAL_JSONBLOB_URL + cacheBust, {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
-      signal: controller.signal
-    });
-    clearTimeout(timer);
-    if (jbRes.ok) {
-      const jbData = await jbRes.json();
-      if (isValidDb(jbData)) {
-        console.log('[CloudSync] Data successfully loaded from global JSONBlob cloud storage!');
-        window._inMemoryCloudCache = jbData;
-        return jbData;
-      }
-    }
-  } catch (jbErr) {
-    console.warn('[CloudSync] Global JSONBlob fetch note:', jbErr.message);
   }
 
   const paths = [
