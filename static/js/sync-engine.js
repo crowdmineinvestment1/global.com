@@ -713,10 +713,14 @@ function mergeGlobalWallets(localObj, cloudObj) {
 }
 
 let _isSyncing = false;
+window._hasPendingLocalChanges = false;
 
 async function cloudSyncFull() {
   if (_isSyncing) return false;
   _isSyncing = true;
+  
+  let hasLocalUpdates = window._hasPendingLocalChanges;
+  window._hasPendingLocalChanges = false;
 
   try {
     const cloudData = await cloudFetch();
@@ -785,8 +789,10 @@ async function cloudSyncFull() {
       }
     });
 
-    // Push latest merged state back to cloud database
-    await cloudPush(finalData);
+    // Push latest merged state back to cloud database ONLY if we had local updates
+    if (hasLocalUpdates) {
+      await cloudPush(finalData);
+    }
 
     // Refresh active session if logged in
     refreshActiveUserSession();
@@ -846,6 +852,7 @@ localStorage.setItem = function(key, value) {
   }
 
   if (SYNC_KEYS.includes(key)) {
+    window._hasPendingLocalChanges = true;
     if (window._cloudPushTimeout) clearTimeout(window._cloudPushTimeout);
     window._cloudPushTimeout = setTimeout(async () => {
       await cloudSyncFull();
