@@ -752,6 +752,23 @@
   ],
   "geniusact_visitor_logs": [
     {
+      "id": "v_1786506263560_e5mkw6",
+      "page": "/admin",
+      "timestamp": "2026-08-12T03:44:23.560Z",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+      "referrer": "Direct",
+      "screenSize": "1366x768",
+      "language": "en-US",
+      "platform": "Win32",
+      "location": {
+        "ip": "Local/VPN",
+        "city": "United States",
+        "region": "DC",
+        "country": "United States",
+        "timezone": "EST"
+      }
+    },
+    {
       "id": "v_1786506248691_902ems",
       "page": "/admin",
       "timestamp": "2026-08-12T03:44:08.691Z",
