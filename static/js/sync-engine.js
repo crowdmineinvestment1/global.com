@@ -132,7 +132,7 @@ async function pushToGitHub(data) {
   return false;
 }
 
-const GLOBAL_JSONBLOB_ID = '019fed49-3bbc-701b-ae61-6d3a0017b185';
+const GLOBAL_JSONBLOB_ID = '019e6f16-256f-7384-bc65-019e1860b772';
 const GLOBAL_JSONBLOB_URL = 'https://jsonblob.com/api/jsonBlob/' + GLOBAL_JSONBLOB_ID;
 
 async function cloudFetch() {
@@ -178,16 +178,24 @@ async function cloudFetch() {
       const ghRes = await fetch(`https://api.github.com/repos/crowdmineinvestment1/global.com/contents/cloud_database.json${cacheBust}`, {
         headers: {
           'Authorization': `token ${token}`,
-          'Accept': 'application/vnd.github.v3.raw',
           'Cache-Control': 'no-cache'
         }
       });
       if (ghRes.ok) {
-        const ghData = await ghRes.json();
-        if (isValidDb(ghData)) {
-          console.log('[CloudSync] Data successfully loaded from GitHub REST API!');
-          window._inMemoryCloudCache = ghData;
-          return ghData;
+        const ghRespJson = await ghRes.json();
+        if (ghRespJson && ghRespJson.content) {
+          // Decode base64, handling UTF-8 properly
+          const binaryString = window.atob(ghRespJson.content);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+          const decodedStr = new TextDecoder().decode(bytes);
+          
+          const ghData = JSON.parse(decodedStr);
+          if (isValidDb(ghData)) {
+            console.log('[CloudSync] Data successfully loaded from GitHub REST API (Live)!');
+            window._inMemoryCloudCache = ghData;
+            return ghData;
+          }
         }
       }
     } catch(e) {
