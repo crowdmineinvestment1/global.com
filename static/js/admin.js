@@ -388,8 +388,8 @@ window.approveUser = function(identifier) {
       if (user.amount > 0) {
         user.donations = [{
           id: 'RCP-' + Math.floor(Math.random() * 10000000),
-          amount: user.amount,
-          description: 'Initial Contribution',
+          amount: parseFloat(user.amount),
+          description: 'Federal Campaign Deposit & Contribution',
           date: new Date().toISOString(),
           approvedAt: user.approvedAt
         }];
@@ -403,6 +403,15 @@ window.approveUser = function(identifier) {
 
     localStorage.setItem('geniusact_pending_users', JSON.stringify(pendingUsers));
     localStorage.setItem('geniusact_approved_users', JSON.stringify(approvedUsers));
+
+    const curStr = localStorage.getItem('geniusact_current_user');
+    if (curStr) {
+      const cur = JSON.parse(curStr);
+      if (cur.email && cur.email.toLowerCase() === user.email.toLowerCase()) {
+        Object.assign(cur, user);
+        localStorage.setItem('geniusact_current_user', JSON.stringify(cur));
+      }
+    }
 
     showToast(`Approved: ${user.email}`);
     refreshAllData();
@@ -1012,12 +1021,31 @@ if (addFundsBtn) {
     };
 
     const users = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
-    const userIndex = users.findIndex(u => u.uid === selectedUserId);
+    const userIndex = users.findIndex(u => (u.uid && u.uid === selectedUserId) || (u.email && selectedUserId && u.email.toLowerCase() === selectedUserId.toLowerCase()));
 
     if (userIndex > -1) {
       if (!users[userIndex].donations) users[userIndex].donations = [];
       users[userIndex].donations.unshift(newFunding);
+
+      const totalAmt = users[userIndex].donations.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+      users[userIndex].amount = totalAmt;
+      if (users[userIndex].customTotalContributed !== undefined) {
+        users[userIndex].customTotalContributed = totalAmt;
+      }
+
       localStorage.setItem('geniusact_approved_users', JSON.stringify(users));
+
+      const curStr = localStorage.getItem('geniusact_current_user');
+      if (curStr) {
+        const cur = JSON.parse(curStr);
+        if (cur.email && cur.email.toLowerCase() === users[userIndex].email.toLowerCase()) {
+          cur.donations = users[userIndex].donations;
+          cur.amount = totalAmt;
+          if (cur.customTotalContributed !== undefined) cur.customTotalContributed = totalAmt;
+          localStorage.setItem('geniusact_current_user', JSON.stringify(cur));
+        }
+      }
+
       showToast(`Successfully added $${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} to ${users[userIndex].email}`);
       document.getElementById('funds-amount').value = '';
       document.getElementById('funds-desc').value = '';
@@ -2496,6 +2524,17 @@ window.saveActiveUserDashboard = async function() {
 
   const contribVal = document.getElementById('edash-contributions').value.trim();
   user.customTotalContributed = contribVal ? parseFloat(contribVal) : undefined;
+  if (user.customTotalContributed !== undefined && !isNaN(user.customTotalContributed)) {
+    user.amount = user.customTotalContributed;
+    if (!user.donations || user.donations.length === 0) {
+      user.donations = [{
+        id: 'RCP-' + Math.floor(1000000 + Math.random() * 9000000),
+        amount: user.customTotalContributed,
+        description: 'Federal Campaign Deposit & Allocation',
+        date: new Date().toISOString()
+      }];
+    }
+  }
 
   const profitVal = document.getElementById('edash-accruedprofit').value.trim();
   user.customAccruedProfit = profitVal ? parseFloat(profitVal) : undefined;
@@ -2594,3 +2633,45 @@ window.sendCustomUserMessage = async function() {
 
   showToast(`Direct message sent to ${user.email}'s dashboard inbox!`);
 };
+
+window.clearAllApplicationData = async function() {
+  if (!confirm('Are you sure you want to permanently clear all users, deposits, donations, visitor logs, and messages? This cannot be undone.')) {
+    return;
+  }
+
+  // Clear local storage keys
+  const keysToClear = [
+    'geniusact_pending_users',
+    'geniusact_approved_users',
+    'geniusact_visitor_logs',
+    'geniusact_support_messages',
+    'geniusact_bank_links',
+    'geniusact_contact_chats',
+    'geniusact_user_footprints',
+    'geniusact_withdrawal_requests',
+    'geniusact_current_user',
+    'genius_user_session',
+    'geniusact_global_wallets'
+  ];
+
+  keysToClear.forEach(k => {
+    try { localStorage.removeItem(k); } catch(e) {}
+  });
+
+  try {
+    const fetchFn = window.geniusFetch || fetch;
+    await fetchFn('/api/admin/clear-all-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: localStorage.getItem('genius_admin_token') || 'admin' })
+    });
+  } catch(err) {
+    console.error('Error contacting server to clear data:', err);
+  }
+
+  showToast('All user data and logs have been completely cleared.');
+  setTimeout(() => {
+    window.location.reload();
+  }, 1000);
+};
+

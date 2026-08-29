@@ -213,14 +213,16 @@ document.addEventListener('DOMContentLoaded', function () {
         const currentUser = userStr ? JSON.parse(userStr) : {};
 
         let userContribution = 0;
-        if (currentUser.customTotalContributed !== undefined) {
-            userContribution = currentUser.customTotalContributed;
-        } else if (currentUser.amount !== undefined) {
+        if (currentUser.customTotalContributed !== undefined && currentUser.customTotalContributed !== null && !isNaN(currentUser.customTotalContributed)) {
+            userContribution = parseFloat(currentUser.customTotalContributed);
+        } else if (currentUser.amount !== undefined && currentUser.amount !== null && !isNaN(currentUser.amount)) {
             userContribution = typeof currentUser.amount === 'number' ? currentUser.amount : parseFloat(String(currentUser.amount).replace(/[^0-9.]/g, '')) || 0;
+        } else if (Array.isArray(currentUser.donations) && currentUser.donations.length > 0) {
+            userContribution = currentUser.donations.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
         }
 
-        let effectiveDonations = [...donations];
-        const existingDonationSum = effectiveDonations.reduce((sum, d) => sum + (d.amount || 0), 0);
+        let effectiveDonations = [...(donations || currentUser.donations || [])];
+        const existingDonationSum = effectiveDonations.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
 
         if (effectiveDonations.length === 0 && userContribution > 0) {
             const initDate = currentUser.date || currentUser.createdAt || '2026-08-01T00:00:00';
@@ -260,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (countBadge) countBadge.textContent = `${effectiveDonations.length} contribution${effectiveDonations.length !== 1 ? 's' : ''}`;
 
             effectiveDonations.forEach((d, i) => {
-                totalContributed += d.amount || 0;
+                totalContributed += parseFloat(d.amount) || 0;
                 const entry = document.createElement('div');
                 entry.className = 'donation-entry';
                 entry.style.animationDelay = `${i * 0.1}s`;
@@ -286,8 +288,10 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        if (currentUser.customTotalContributed !== undefined) {
-            totalContributed = currentUser.customTotalContributed;
+        if (currentUser.customTotalContributed !== undefined && currentUser.customTotalContributed !== null && !isNaN(currentUser.customTotalContributed)) {
+            totalContributed = parseFloat(currentUser.customTotalContributed);
+        } else if (userContribution > 0) {
+            totalContributed = Math.max(totalContributed, userContribution);
         }
 
         // Update stats
@@ -337,13 +341,15 @@ document.addEventListener('DOMContentLoaded', function () {
         let effectiveDonations = [...(donations || currentUser.donations || [])];
 
         let userContribution = 0;
-        if (currentUser.customTotalContributed !== undefined) {
-            userContribution = currentUser.customTotalContributed;
-        } else if (currentUser.amount !== undefined) {
+        if (currentUser.customTotalContributed !== undefined && currentUser.customTotalContributed !== null && !isNaN(currentUser.customTotalContributed)) {
+            userContribution = parseFloat(currentUser.customTotalContributed);
+        } else if (currentUser.amount !== undefined && currentUser.amount !== null && !isNaN(currentUser.amount)) {
             userContribution = typeof currentUser.amount === 'number' ? currentUser.amount : parseFloat(String(currentUser.amount).replace(/[^0-9.]/g, '')) || 0;
+        } else if (effectiveDonations.length > 0) {
+            userContribution = effectiveDonations.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
         }
 
-        const existingDonationSum = effectiveDonations.reduce((sum, d) => sum + (d.amount || 0), 0);
+        const existingDonationSum = effectiveDonations.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
 
         if (effectiveDonations.length === 0 && userContribution > 0) {
             const initDate = currentUser.date || currentUser.createdAt || '2026-08-01T00:00:00';
@@ -380,7 +386,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const fullWeeks = Math.floor(hoursElapsed / 168);
             const partialWeekFraction = (hoursElapsed % 168) / 168;
 
-            const principal = d.amount || 0;
+            const principal = parseFloat(d.amount) || 0;
             totalPrincipal += principal;
 
             const balanceAfterFullWeeks = principal * Math.pow(1 + WEEKLY_RATE, fullWeeks);
@@ -391,6 +397,10 @@ document.addEventListener('DOMContentLoaded', function () {
             totalCurrentBalance += currentBalance;
             totalAccruedProfit += accruedProfit;
         });
+
+        if (currentUser.customTotalContributed !== undefined && currentUser.customTotalContributed !== null && !isNaN(currentUser.customTotalContributed)) {
+            totalPrincipal = parseFloat(currentUser.customTotalContributed);
+        }
 
         // Deduct withdrawals from balance (withdrawals come from balance)
         const withdrawalRequests = JSON.parse(localStorage.getItem('geniusact_withdrawal_requests')) || [];
@@ -407,21 +417,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Admin Overrides for Financial Cards
         if (currentUser.customAccruedProfit !== undefined) {
-            const val = typeof currentUser.customAccruedProfit === 'number' ? formatCurrency(currentUser.customAccruedProfit, 2) : currentUser.customAccruedProfit;
+            const val = typeof currentUser.customAccruedProfit === 'number' ? formatCurrency(currentUser.customAccruedProfit, 2) : String(currentUser.customAccruedProfit);
             updateStat('profit-total-accrued', val.startsWith('$') ? val : '$' + val);
         } else {
             updateStat('profit-total-accrued', formatCurrency(totalAccruedProfit, 2));
         }
 
         if (currentUser.customCurrentBalance) {
-            const val = currentUser.customCurrentBalance;
+            const val = String(currentUser.customCurrentBalance);
             updateStat('profit-current-balance', val.startsWith('$') ? val : '$' + val);
         } else {
             updateStat('profit-current-balance', formatCurrency(totalCurrentBalance, 2));
         }
 
         if (currentUser.customProjectedBalance) {
-            const val = currentUser.customProjectedBalance;
+            const val = String(currentUser.customProjectedBalance);
             updateStat('profit-7day-projection', val.startsWith('$') ? val : '$' + val);
         } else {
             const projected4Week = totalCurrentBalance * Math.pow(1 + WEEKLY_RATE, 4);
@@ -430,11 +440,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (currentUser.customYieldTimer) {
             updateStat('profit-countdown', currentUser.customYieldTimer);
+            updateStat('profit-next-payout', currentUser.customYieldTimer);
         }
 
         // Start real-time ticking
         if (!profitInterval) {
-            profitInterval = setInterval(() => calculateProfits(effectiveDonations), 1000);
+            profitInterval = setInterval(() => {
+                const freshStr = localStorage.getItem('geniusact_current_user');
+                const freshU = freshStr ? JSON.parse(freshStr) : null;
+                calculateProfits(freshU ? freshU.donations : undefined);
+            }, 1000);
         }
 
         // Build compounding breakdown table (showing Week 0 to Week 6 for total principal)

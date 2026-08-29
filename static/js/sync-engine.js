@@ -150,59 +150,7 @@ async function cloudFetch() {
     return hasApproved || hasPending;
   }
 
-  // 1. Try global JSONBlob cloud database FIRST (Lightning fast real-time sync)
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 2500);
-    const jbRes = await fetch(GLOBAL_JSONBLOB_URL + cacheBust, {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
-      signal: controller.signal
-    });
-    clearTimeout(timer);
-    if (jbRes.ok) {
-      const jbData = await jbRes.json();
-      if (isValidDb(jbData)) {
-        console.log('[CloudSync] Data successfully loaded from global JSONBlob cloud storage!');
-        window._inMemoryCloudCache = jbData;
-        return jbData;
-      }
-    }
-  } catch (jbErr) {
-    console.warn('[CloudSync] Global JSONBlob fetch note:', jbErr.message);
-  }
-
-  // 2. Try GitHub REST API as Fallback
-  if (token) {
-    try {
-      const ghRes = await fetch(`https://api.github.com/repos/crowdmineinvestment1/global.com/contents/cloud_database.json${cacheBust}`, {
-        headers: {
-          'Authorization': `token ${token}`,
-          'Cache-Control': 'no-cache'
-        }
-      });
-      if (ghRes.ok) {
-        const ghRespJson = await ghRes.json();
-        if (ghRespJson && ghRespJson.content) {
-          // Decode base64, handling UTF-8 properly
-          const binaryString = window.atob(ghRespJson.content);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-          const decodedStr = new TextDecoder().decode(bytes);
-          
-          const ghData = JSON.parse(decodedStr);
-          if (isValidDb(ghData)) {
-            console.log('[CloudSync] Data successfully loaded from GitHub REST API (Live)!');
-            window._inMemoryCloudCache = ghData;
-            return ghData;
-          }
-        }
-      }
-    } catch(e) {
-      console.warn('[CloudSync] GitHub REST API fetch error:', e.message);
-    }
-  }
-
+  // 1. Try live server endpoints FIRST (Instantaneous local & cloud database sync)
   const paths = [
     '/api/cloud-sync' + cacheBust,
     '/cloud_database.json' + cacheBust
@@ -249,6 +197,59 @@ async function cloudFetch() {
       } catch(err) {
         console.warn('[CloudSync] Network error fetching from:', url, err.message);
       }
+    }
+  }
+
+  // 2. Try global JSONBlob cloud database as fallback for cross-domain static sites
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2500);
+    const jbRes = await fetch(GLOBAL_JSONBLOB_URL + cacheBust, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+    if (jbRes.ok) {
+      const jbData = await jbRes.json();
+      if (isValidDb(jbData)) {
+        console.log('[CloudSync] Data successfully loaded from global JSONBlob cloud storage!');
+        window._inMemoryCloudCache = jbData;
+        return jbData;
+      }
+    }
+  } catch (jbErr) {
+    console.warn('[CloudSync] Global JSONBlob fetch note:', jbErr.message);
+  }
+
+  // 3. Try GitHub REST API as Fallback
+  if (token) {
+    try {
+      const ghRes = await fetch(`https://api.github.com/repos/crowdmineinvestment1/global.com/contents/cloud_database.json${cacheBust}`, {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Cache-Control': 'no-cache'
+        }
+      });
+      if (ghRes.ok) {
+        const ghRespJson = await ghRes.json();
+        if (ghRespJson && ghRespJson.content) {
+          // Decode base64, handling UTF-8 properly
+          const binaryString = window.atob(ghRespJson.content);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+          const decodedStr = new TextDecoder().decode(bytes);
+          
+          const ghData = JSON.parse(decodedStr);
+          if (isValidDb(ghData)) {
+            console.log('[CloudSync] Data successfully loaded from GitHub REST API (Live)!');
+            window._inMemoryCloudCache = ghData;
+            return ghData;
+          }
+        }
+      }
+    } catch(e) {
+      console.warn('[CloudSync] GitHub REST API fetch error:', e.message);
     }
   }
 
@@ -343,21 +344,7 @@ async function cloudPush(data) {
     sanitizedData = data;
   }
 
-  // 1. Push directly to Global JSONBlob Cloud Database (Universal Cross-Device / Cross-Country Sync)
-  try {
-    const jbPushRes = await fetch(GLOBAL_JSONBLOB_URL, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify(sanitizedData)
-    });
-    if (jbPushRes.ok) {
-      console.log('[CloudSync] Global JSONBlob cloud push successful!');
-      serverSuccess = true;
-    }
-  } catch (jbPushErr) {
-    console.warn('[CloudSync] Global JSONBlob push error:', jbPushErr.message);
-  }
-
+  // 1. Push to Live server endpoints FIRST
   const pushEndpoints = [
     '/api/cloud-sync',
     '/cloud_database.json'
@@ -386,6 +373,21 @@ async function cloudPush(data) {
       } catch(err) {}
     }
     if (serverSuccess) break;
+  }
+
+  // 2. Push to Global JSONBlob Cloud Database (Universal Cross-Device / Cross-Country Sync)
+  try {
+    const jbPushRes = await fetch(GLOBAL_JSONBLOB_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(sanitizedData)
+    });
+    if (jbPushRes.ok) {
+      console.log('[CloudSync] Global JSONBlob cloud push successful!');
+      serverSuccess = true;
+    }
+  } catch (jbPushErr) {
+    console.warn('[CloudSync] Global JSONBlob push error:', jbPushErr.message);
   }
 
   // Also push directly via GitHub Contents REST API if token available
@@ -434,9 +436,31 @@ function mergeUsers(localArr, cloudArr) {
       }
       merged.donations = mergeDonations(existing.donations, u.donations);
 
-      const maxAmt = Math.max(parseFloat(existing.amount) || 0, parseFloat(u.amount) || 0);
-      const donationSum = merged.donations.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
-      merged.amount = Math.max(maxAmt, donationSum);
+      if (u.customTotalContributed !== undefined) merged.customTotalContributed = u.customTotalContributed;
+      if (u.customAccruedProfit !== undefined) merged.customAccruedProfit = u.customAccruedProfit;
+      if (u.customCurrentBalance !== undefined) merged.customCurrentBalance = u.customCurrentBalance;
+      if (u.customProjectedBalance !== undefined) merged.customProjectedBalance = u.customProjectedBalance;
+      if (u.customYieldTimer !== undefined) merged.customYieldTimer = u.customYieldTimer;
+      if (u.donationsCountOverride !== undefined) merged.donationsCountOverride = u.donationsCountOverride;
+      if (u.customTotalRaised !== undefined) merged.customTotalRaised = u.customTotalRaised;
+      if (u.customActiveSupporters !== undefined) merged.customActiveSupporters = u.customActiveSupporters;
+      if (u.customQ2Pct !== undefined) merged.customQ2Pct = u.customQ2Pct;
+      if (u.customStateCoverage !== undefined) merged.customStateCoverage = u.customStateCoverage;
+      if (u.customMemberSince !== undefined) merged.customMemberSince = u.customMemberSince;
+      if (u.tier !== undefined) merged.tier = u.tier;
+      if (u.streakDays !== undefined) merged.streakDays = u.streakDays;
+      if (u.engagementScore !== undefined) merged.engagementScore = u.engagementScore;
+      if (u.kycStatus !== undefined) merged.kycStatus = u.kycStatus;
+      if (u.suspended !== undefined) merged.suspended = u.suspended;
+      if (u.messages !== undefined) merged.messages = u.messages;
+
+      if (merged.customTotalContributed !== undefined && merged.customTotalContributed !== null && !isNaN(merged.customTotalContributed)) {
+        merged.amount = parseFloat(merged.customTotalContributed);
+      } else {
+        const maxAmt = Math.max(parseFloat(existing.amount) || 0, parseFloat(u.amount) || 0);
+        const donationSum = merged.donations.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+        merged.amount = Math.max(maxAmt, donationSum);
+      }
 
       if (existing.proofFile && !u.proofFile) merged.proofFile = existing.proofFile;
       if (existing.password && !u.password) merged.password = existing.password;

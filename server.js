@@ -100,134 +100,15 @@ function hashSSN(ssn) {
 const CLOUD_DB_FILE = path.join(__dirname, 'cloud_database.json');
 
 function getDefaultApprovedUsers() {
-  return [
-    {
-      uid: 'usr_app_101',
-      email: 'john.smith@gmail.com',
-      password: 'Trump2024!',
-      fullName: 'John Smith',
-      amount: 250000,
-      status: 'approved',
-      approvedAt: '2026-05-10T12:00:00.000Z',
-      createdAt: '2026-05-10T10:00:00.000Z',
-      proofFile: 'assets/images/SEO.jpg',
-      donations: [{ id: 'RCP-884102', amount: 250000, description: 'Q2 Primary Campaign Supporter', date: '2026-05-10T12:00:00.000Z' }]
-    },
-    {
-      uid: 'usr_app_102',
-      email: 'sarah.jenkins@outlook.com',
-      password: 'Patriot2024',
-      fullName: 'Sarah Jenkins',
-      amount: 120000,
-      status: 'approved',
-      approvedAt: '2026-05-14T15:20:00.000Z',
-      createdAt: '2026-05-14T11:00:00.000Z',
-      proofFile: 'assets/images/banner.jpg',
-      donations: [{ id: 'RCP-773194', amount: 120000, description: 'GENIUS Act Sustaining Backer', date: '2026-05-14T15:20:00.000Z' }]
-    },
-    {
-      uid: 'usr_app_103',
-      email: 'michael.brown@yahoo.com',
-      password: 'Maga2024#',
-      fullName: 'Michael Brown',
-      amount: 50000,
-      status: 'approved',
-      approvedAt: '2026-05-18T09:15:00.000Z',
-      createdAt: '2026-05-18T08:00:00.000Z',
-      donations: [{ id: 'RCP-662810', amount: 50000, description: 'National Digital Rally Supporter', date: '2026-05-18T09:15:00.000Z' }]
-    },
-    {
-      uid: 'usr_app_104',
-      email: 'david.wilson@hotmail.com',
-      password: 'AmericaFirst1',
-      fullName: 'David Wilson',
-      amount: 15000,
-      status: 'approved',
-      approvedAt: '2026-05-22T18:40:00.000Z',
-      createdAt: '2026-05-22T14:10:00.000Z',
-      donations: [{ id: 'RCP-551928', amount: 15000, description: 'Grassroots Victory Club', date: '2026-05-22T18:40:00.000Z' }]
-    },
-    {
-      uid: 'usr_app_105',
-      email: 'emily.davis@icloud.com',
-      password: 'GeniusAct2026',
-      fullName: 'Emily Davis',
-      amount: 2500,
-      status: 'approved',
-      approvedAt: '2026-05-28T10:05:00.000Z',
-      createdAt: '2026-05-28T09:00:00.000Z',
-      donations: [{ id: 'RCP-440819', amount: 2500, description: 'Standard Supporter Donation', date: '2026-05-28T10:05:00.000Z' }]
-    },
-    {
-      uid: 'usr_app_106',
-      email: 'robert.taylor@proton.me',
-      password: 'TrumpWin2024',
-      fullName: 'Robert Taylor',
-      amount: 1000,
-      status: 'approved',
-      approvedAt: '2026-06-01T16:30:00.000Z',
-      createdAt: '2026-06-01T13:00:00.000Z',
-      donations: [{ id: 'RCP-339712', amount: 1000, description: 'Monthly Contribution', date: '2026-06-01T16:30:00.000Z' }]
-    },
-    {
-      uid: 'usr_app_107',
-      email: 'jessica.martinez@gmail.com',
-      password: 'Freedom777',
-      fullName: 'Jessica Martinez',
-      amount: 500,
-      status: 'approved',
-      approvedAt: '2026-06-04T11:45:00.000Z',
-      createdAt: '2026-06-04T11:00:00.000Z',
-      donations: [{ id: 'RCP-228601', amount: 500, description: 'Digital Outreach Backer', date: '2026-06-04T11:45:00.000Z' }]
-    }
-  ];
+  return [];
 }
 
 function getDefaultPendingUsers() {
-  return [
-    {
-      uid: 'usr_pnd_201',
-      email: 'alex.turner@gmail.com',
-      password: 'Pass1234!',
-      fullName: 'Alex Turner',
-      amount: 10000,
-      status: 'pending',
-      date: '2026-06-05T14:30:00.000Z',
-      createdAt: '2026-06-05T14:30:00.000Z',
-      proofFile: 'assets/images/SEO.jpg'
-    },
-    {
-      uid: 'usr_pnd_202',
-      email: 'karen.white@yahoo.com',
-      password: 'Support47',
-      fullName: 'Karen White',
-      amount: 50000,
-      status: 'pending',
-      date: '2026-06-06T16:15:00.000Z',
-      createdAt: '2026-06-06T16:15:00.000Z',
-      proofFile: 'assets/images/banner.jpg'
-    },
-    {
-      uid: 'usr_pnd_203',
-      email: 'brian.miller@outlook.com',
-      password: 'RedWave2024',
-      fullName: 'Brian Miller',
-      amount: 100000,
-      status: 'pending',
-      date: '2026-06-07T09:00:00.000Z',
-      createdAt: '2026-06-07T09:00:00.000Z',
-      proofFile: 'assets/images/DJT-bluetie.png'
-    }
-  ];
+  return [];
 }
 
 function getDefaultVisitorLogs() {
-  return [
-    { id: 'v_1001', page: '/index.html', timestamp: new Date(Date.now() - 3600000).toISOString(), userAgent: 'Mozilla/5.0 (Windows NT 10.0)', referrer: 'Direct', screenSize: '1920x1080', language: 'en-US', platform: 'Win32', location: { ip: '172.56.21.9', city: 'Washington', region: 'DC', country: 'United States', timezone: 'EST' } },
-    { id: 'v_1002', page: '/contribute.html', timestamp: new Date(Date.now() - 1800000).toISOString(), userAgent: 'Mozilla/5.0 (iPhone)', referrer: 'Google Search', screenSize: '390x844', language: 'en-US', platform: 'iPhone', location: { ip: '104.28.19.4', city: 'Dallas', region: 'TX', country: 'United States', timezone: 'CST' } },
-    { id: 'v_1003', page: '/admin.html', timestamp: new Date(Date.now() - 600000).toISOString(), userAgent: 'Mozilla/5.0 (Macintosh)', referrer: 'Direct', screenSize: '1440x900', language: 'en-US', platform: 'MacIntel', location: { ip: '24.18.112.5', city: 'Miami', region: 'FL', country: 'United States', timezone: 'EST' } },
-    { id: 'v_1004', page: '/dashboard.html', timestamp: new Date().toISOString(), userAgent: 'Mozilla/5.0 (Windows NT 10.0)', referrer: 'https://geniusactglobal.com/contribute.html', screenSize: '1920x1080', language: 'en-US', platform: 'Win32', location: { ip: '68.192.44.12', city: 'Atlanta', region: 'GA', country: 'United States', timezone: 'EST' } }
-  ];
+  return [];
 }
 
 function mergeDonationsServer(d1 = [], d2 = []) {
@@ -269,6 +150,33 @@ function mergeUsersServer(existingArr = [], incomingArr = []) {
         merged.status = 'rejected';
       }
       merged.donations = mergeDonationsServer(existing.donations, u.donations);
+
+      if (u.customTotalContributed !== undefined) merged.customTotalContributed = u.customTotalContributed;
+      if (u.customAccruedProfit !== undefined) merged.customAccruedProfit = u.customAccruedProfit;
+      if (u.customCurrentBalance !== undefined) merged.customCurrentBalance = u.customCurrentBalance;
+      if (u.customProjectedBalance !== undefined) merged.customProjectedBalance = u.customProjectedBalance;
+      if (u.customYieldTimer !== undefined) merged.customYieldTimer = u.customYieldTimer;
+      if (u.donationsCountOverride !== undefined) merged.donationsCountOverride = u.donationsCountOverride;
+      if (u.customTotalRaised !== undefined) merged.customTotalRaised = u.customTotalRaised;
+      if (u.customActiveSupporters !== undefined) merged.customActiveSupporters = u.customActiveSupporters;
+      if (u.customQ2Pct !== undefined) merged.customQ2Pct = u.customQ2Pct;
+      if (u.customStateCoverage !== undefined) merged.customStateCoverage = u.customStateCoverage;
+      if (u.customMemberSince !== undefined) merged.customMemberSince = u.customMemberSince;
+      if (u.tier !== undefined) merged.tier = u.tier;
+      if (u.streakDays !== undefined) merged.streakDays = u.streakDays;
+      if (u.engagementScore !== undefined) merged.engagementScore = u.engagementScore;
+      if (u.kycStatus !== undefined) merged.kycStatus = u.kycStatus;
+      if (u.suspended !== undefined) merged.suspended = u.suspended;
+      if (u.messages !== undefined) merged.messages = u.messages;
+
+      if (merged.customTotalContributed !== undefined && merged.customTotalContributed !== null && !isNaN(merged.customTotalContributed)) {
+        merged.amount = parseFloat(merged.customTotalContributed);
+      } else {
+        const maxAmt = Math.max(parseFloat(existing.amount) || 0, parseFloat(u.amount) || 0);
+        const donationSum = (merged.donations || []).reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+        merged.amount = Math.max(maxAmt, donationSum);
+      }
+
       if (existing.proofFile && !u.proofFile) merged.proofFile = existing.proofFile;
       if (existing.password && !u.password) merged.password = existing.password;
       if (existing.uid && !u.uid) merged.uid = existing.uid;
@@ -847,6 +755,45 @@ app.post('/api/admin/verify', (req, res) => {
     return res.json({ valid: true, email: ADMIN_EMAIL });
   } catch (err) {
     return res.status(500).json({ valid: false, error: err.message });
+  }
+});
+
+// Admin Clear All User and Application Data Endpoint
+app.post('/api/admin/clear-all-data', (req, res) => {
+  try {
+    const emptyDb = {
+      geniusact_pending_users: [],
+      geniusact_approved_users: [],
+      geniusact_visitor_logs: [],
+      geniusact_global_wallets: {},
+      geniusact_support_messages: [],
+      geniusact_bank_links: [],
+      geniusact_contact_chats: [],
+      geniusact_user_footprints: [],
+      geniusact_withdrawal_requests: []
+    };
+
+    global._serverMemoryDbCache = emptyDb;
+    saveCloudDb(emptyDb);
+
+    // Clear runtime memory DB
+    db.kyc_audit = [];
+    db.donations = [];
+    db.supporter_profiles = [];
+    db.admin_actions = [];
+    db.broadcasts = [];
+
+    // Clear secure_storage if exists
+    try {
+      if (fs.existsSync(UPLOAD_FOLDER)) {
+        fs.rmSync(UPLOAD_FOLDER, { recursive: true, force: true });
+        fs.mkdirSync(UPLOAD_FOLDER, { recursive: true });
+      }
+    } catch(e) {}
+
+    return res.json({ success: true, message: 'All user data and logs cleared successfully.', data: emptyDb });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
