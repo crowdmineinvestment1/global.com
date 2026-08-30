@@ -4,3 +4,4 @@ __pycache__/
 .env
 geniusactglobal_upload.zip
 .DS_Store
+uploads/

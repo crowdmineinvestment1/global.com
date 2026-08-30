@@ -365,22 +365,32 @@ function loadPendingUsers(pending) {
 }
 
 // ==================== USER ACTIONS ====================
-window.approveUser = function(identifier) {
+window.approveUser = async function(identifier) {
   const pendingUsers = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
   const approvedUsers = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
 
-  let userIndex = pendingUsers.findIndex(u => 
+  let user = pendingUsers.find(u => 
     (u.uid && String(u.uid) === String(identifier)) ||
     (u.email && identifier && String(u.email).toLowerCase() === String(identifier).toLowerCase()) ||
     (u.id && String(u.id) === String(identifier))
   );
 
-  if (userIndex === -1 && pendingUsers.length > 0 && !isNaN(identifier)) {
-    userIndex = parseInt(identifier);
+  if (!user && pendingUsers.length > 0 && !isNaN(identifier)) {
+    user = pendingUsers[parseInt(identifier)];
   }
 
-  if (userIndex > -1 && pendingUsers[userIndex]) {
-    const user = pendingUsers[userIndex];
+  if (user) {
+    try {
+      const fetchFn = window.geniusFetch || fetch;
+      await fetchFn('/api/admin/approve-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: user.uid, email: user.email })
+      });
+    } catch(err) {
+      console.warn('[Admin] Server approve error:', err);
+    }
+
     user.status = 'approved';
     user.approvedAt = new Date().toISOString();
 
@@ -398,8 +408,12 @@ window.approveUser = function(identifier) {
       }
     }
 
-    pendingUsers.splice(userIndex, 1);
-    approvedUsers.push(user);
+    const pIdx = pendingUsers.findIndex(u => u.email === user.email);
+    if (pIdx > -1) pendingUsers.splice(pIdx, 1);
+
+    const aIdx = approvedUsers.findIndex(u => u.email === user.email);
+    if (aIdx > -1) approvedUsers[aIdx] = { ...approvedUsers[aIdx], ...user };
+    else approvedUsers.push(user);
 
     localStorage.setItem('geniusact_pending_users', JSON.stringify(pendingUsers));
     localStorage.setItem('geniusact_approved_users', JSON.stringify(approvedUsers));
@@ -417,35 +431,45 @@ window.approveUser = function(identifier) {
     refreshAllData();
 
     if (window.cloudSyncFull) {
-      try { window.cloudSyncFull(); } catch(e) {}
+      try { await window.cloudSyncFull(); } catch(e) {}
     }
   } else {
     alert("Pending contribution not found.");
   }
 };
 
-window.rejectUser = function(identifier) {
+window.rejectUser = async function(identifier) {
   if (!confirm("Are you sure you want to reject this contribution?")) return;
   const pendingUsers = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
-  let userIndex = pendingUsers.findIndex(u => 
+  let user = pendingUsers.find(u => 
     (u.uid && String(u.uid) === String(identifier)) ||
     (u.email && identifier && String(u.email).toLowerCase() === String(identifier).toLowerCase()) ||
     (u.id && String(u.id) === String(identifier))
   );
 
-  if (userIndex === -1 && pendingUsers.length > 0 && !isNaN(identifier)) {
-    userIndex = parseInt(identifier);
+  if (!user && pendingUsers.length > 0 && !isNaN(identifier)) {
+    user = pendingUsers[parseInt(identifier)];
   }
 
-  if (userIndex > -1 && pendingUsers[userIndex]) {
-    const rejected = pendingUsers[userIndex];
-    pendingUsers.splice(userIndex, 1);
-    localStorage.setItem('geniusact_pending_users', JSON.stringify(pendingUsers));
-    showToast(`Rejected: ${rejected.email}`);
+  if (user) {
+    try {
+      const fetchFn = window.geniusFetch || fetch;
+      await fetchFn('/api/admin/reject-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: user.uid, email: user.email })
+      });
+    } catch(err) {
+      console.warn('[Admin] Server reject error:', err);
+    }
+
+    const filtered = pendingUsers.filter(u => u.email !== user.email && u.uid !== user.uid);
+    localStorage.setItem('geniusact_pending_users', JSON.stringify(filtered));
+    showToast(`Rejected: ${user.email}`);
     refreshAllData();
 
     if (window.cloudSyncFull) {
-      try { window.cloudSyncFull(); } catch(e) {}
+      try { await window.cloudSyncFull(); } catch(e) {}
     }
   } else {
     alert("Pending contribution not found.");
@@ -1012,48 +1036,57 @@ if (addFundsBtn) {
       return;
     }
 
-    const newFunding = {
-      id: 'FUND-' + Math.floor(10000000 + Math.random() * 90000000),
-      amount: amount,
-      description: desc,
-      date: new Date().toISOString(),
-      status: 'confirmed'
-    };
-
     const users = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
-    const userIndex = users.findIndex(u => (u.uid && u.uid === selectedUserId) || (u.email && selectedUserId && u.email.toLowerCase() === selectedUserId.toLowerCase()));
+    const user = users.find(u => (u.uid && u.uid === selectedUserId) || (u.email && selectedUserId && u.email.toLowerCase() === selectedUserId.toLowerCase()));
 
-    if (userIndex > -1) {
-      if (!users[userIndex].donations) users[userIndex].donations = [];
-      users[userIndex].donations.unshift(newFunding);
-
-      const totalAmt = users[userIndex].donations.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
-      users[userIndex].amount = totalAmt;
-      if (users[userIndex].customTotalContributed !== undefined) {
-        users[userIndex].customTotalContributed = totalAmt;
+    if (user) {
+      try {
+        const fetchFn = window.geniusFetch || fetch;
+        await fetchFn('/api/admin/add-funds', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: user.email, amount, description: desc })
+        });
+      } catch(err) {
+        console.warn('[Admin] Server add-funds error:', err);
       }
+
+      const newFunding = {
+        id: 'FUND-' + Math.floor(10000000 + Math.random() * 90000000),
+        amount: amount,
+        description: desc,
+        date: new Date().toISOString(),
+        status: 'confirmed'
+      };
+
+      if (!user.donations) user.donations = [];
+      user.donations.unshift(newFunding);
+
+      const totalAmt = user.donations.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+      user.amount = totalAmt;
+      user.customTotalContributed = totalAmt;
 
       localStorage.setItem('geniusact_approved_users', JSON.stringify(users));
 
       const curStr = localStorage.getItem('geniusact_current_user');
       if (curStr) {
         const cur = JSON.parse(curStr);
-        if (cur.email && cur.email.toLowerCase() === users[userIndex].email.toLowerCase()) {
-          cur.donations = users[userIndex].donations;
+        if (cur.email && cur.email.toLowerCase() === user.email.toLowerCase()) {
+          cur.donations = user.donations;
           cur.amount = totalAmt;
-          if (cur.customTotalContributed !== undefined) cur.customTotalContributed = totalAmt;
+          cur.customTotalContributed = totalAmt;
           localStorage.setItem('geniusact_current_user', JSON.stringify(cur));
         }
       }
 
-      showToast(`Successfully added $${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} to ${users[userIndex].email}`);
+      showToast(`Successfully added $${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} to ${user.email}`);
       document.getElementById('funds-amount').value = '';
       document.getElementById('funds-desc').value = '';
       document.getElementById('add-funds-panel').style.display = 'none';
       refreshAllData();
 
       if (window.cloudSyncFull) {
-        try { await window.cloudSyncFull(); } catch (e) { console.log(e); }
+        try { await window.cloudSyncFull(); } catch (e) {}
       }
     } else {
       alert("User not found.");
@@ -2557,6 +2590,17 @@ window.saveActiveUserDashboard = async function() {
     localStorage.setItem('geniusact_pending_users', JSON.stringify(pending));
   }
 
+  try {
+    const fetchFn = window.geniusFetch || fetch;
+    await fetchFn('/api/admin/update-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: user.email, updates: user })
+    });
+  } catch (err) {
+    console.warn('[Admin] Server update-user warning:', err);
+  }
+
   const curStr = localStorage.getItem('geniusact_current_user');
   if (curStr) {
     const cur = JSON.parse(curStr);
@@ -2567,7 +2611,7 @@ window.saveActiveUserDashboard = async function() {
   }
 
   if (window.cloudSyncFull) {
-    try { await window.cloudSyncFull(); } catch(e) { console.log(e); }
+    try { await window.cloudSyncFull(); } catch(e) {}
   }
 
   showToast(`✅ Supporter Dashboard for ${user.email} saved and published live!`);

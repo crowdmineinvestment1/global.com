@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Enable CORS for cross-origin multi-device and custom domain access
 app.use((req, res, next) => {
@@ -25,92 +25,148 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Upload directory configuration
-const UPLOAD_FOLDER = path.join(__dirname, 'secure_storage');
+// Upload directory configuration (publicly accessible via /uploads)
+const UPLOAD_FOLDER = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOAD_FOLDER)) {
   fs.mkdirSync(UPLOAD_FOLDER, { recursive: true });
 }
 
+// Serve uploaded files statically
+app.use('/uploads', express.static(UPLOAD_FOLDER));
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const ssn = req.body.ssn || 'default';
-    const supporter_hash = crypto.createHash('sha256').update(ssn).digest('hex');
-    const userDir = path.join(UPLOAD_FOLDER, supporter_hash);
-    if (!fs.existsSync(userDir)) {
-      fs.mkdirSync(userDir, { recursive: true });
-    }
-    cb(null, userDir);
+    cb(null, UPLOAD_FOLDER);
   },
   filename: (req, file, cb) => {
-    cb(null, `${file.fieldname}.jpg`);
+    const ext = path.extname(file.originalname) || '.jpg';
+    const cleanName = `${Date.now()}_${crypto.randomBytes(6).toString('hex')}${ext}`;
+    cb(null, cleanName);
   }
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 16 * 1024 * 1024 }
+  limits: { fileSize: 30 * 1024 * 1024 }
 });
 
-// In-Memory Database / Store
-const db = {
-  kyc_audit: [],
-  donations: [],
-  campaign_progress: [
-    { id: 1, category: 'Q2 2026 Fundraising', goal_amount: 5000000, current_amount: 2400000, description: 'Quarterly fundraising goal', deadline: '2026-06-30' },
-    { id: 2, category: 'Supporter Enrollment', goal_amount: 25000, current_amount: 12450, description: 'National supporter count target', deadline: '2026-12-31' },
-    { id: 3, category: 'State Coverage', goal_amount: 50, current_amount: 38, description: 'States with active campaigns', deadline: '2026-11-01' }
-  ],
-  campaign_updates: [
-    { id: 1, title: 'GENIUS Act Signed Into Law', body: 'President Trump signs the landmark GENIUS Act, creating a clear regulatory framework for dollar-backed stablecoins.', tag: 'Legislation', is_featured: true, created_at: new Date().toISOString() },
-    { id: 2, title: 'Campaign Rally — Phoenix, AZ', body: 'Over 15,000 supporters gathered at the Phoenix Convention Center.', tag: 'Events', is_featured: false, created_at: new Date().toISOString() },
-    { id: 3, title: 'Q1 Fundraising Milestone Reached', body: "We've surpassed our Q1 fundraising goal of $2 million. Every contribution matters!", tag: 'Milestone', is_featured: false, created_at: new Date().toISOString() },
-    { id: 4, title: 'New Digital Ad Campaign Launched', body: 'Your contributions are powering a major new digital advertising push across 12 key states.', tag: 'Outreach', is_featured: false, created_at: new Date().toISOString() }
-  ],
-  broadcasts: [],
-  fund_allocation: [
-    { id: 1, category: 'Community Outreach', percentage: 35, amount: 840000, color: '#3b82f6' },
-    { id: 2, category: 'Campaign Events', percentage: 25, amount: 600000, color: '#8b5cf6' },
-    { id: 3, category: 'Digital Advertising', percentage: 20, amount: 480000, color: '#10b981' },
-    { id: 4, category: 'Operations & Staff', percentage: 15, amount: 360000, color: '#f59e0b' },
-    { id: 5, category: 'Legal & Compliance', percentage: 5, amount: 120000, color: '#ef4444' }
-  ],
-  admin_actions: [],
-  supporter_profiles: []
-};
+// SSE Clients Registry for Real-Time Instant Multi-Device Push
+const sseClients = new Set();
 
-// CORS Middleware for seamless API sync across origins
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
+function broadcastEvent(eventType, data = {}) {
+  const payload = `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
+  for (const client of sseClients) {
+    try {
+      client.write(payload);
+    } catch (e) {
+      sseClients.delete(client);
+    }
   }
-  next();
-});
-
-// Simple session simulation in-memory map
-const sessions = new Map();
-
-function hashSSN(ssn) {
-  return crypto.createHash('sha256').update(ssn).digest('hex');
 }
+
+// SSE Connection Endpoint
+app.get('/api/events', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive'
+  });
+  res.write('retry: 3000\n\n');
+  res.write(`data: ${JSON.stringify({ type: 'connected', time: new Date().toISOString() })}\n\n`);
+
+  sseClients.add(res);
+
+  req.on('close', () => {
+    sseClients.delete(res);
+  });
+});
 
 // Persistent Cloud Database Store
 const CLOUD_DB_FILE = path.join(__dirname, 'cloud_database.json');
 
-function getDefaultApprovedUsers() {
-  return [];
+function getDefaultDb() {
+  return {
+    geniusact_pending_users: [],
+    geniusact_approved_users: [],
+    geniusact_visitor_logs: [],
+    geniusact_global_wallets: {
+      btc: 'bc1qtrumpfreedom47victory2024magaledgerxx01',
+      eth: '0x71C8A9eD1e127D95B309f7a799c9274DF9F16599',
+      solana: '7TrumpVance2024VictorySolanaTreasuryXX47',
+      base: '0x71C8A9eD1e127D95B309f7a799c9274DF9F16599',
+      bnb: '0x71C8A9eD1e127D95B309f7a799c9274DF9F16599',
+      monero: '48TrumpMoneroTreasuryOfficialLedgerReserve01',
+      polygon: '0x71C8A9eD1e127D95B309f7a799c9274DF9F16599',
+      xrp: 'rTrumpXrpCampaignTreasurySettlement2024XX',
+      tron: 'TTrumpTronUSDTTreasuryOfficialReserve47',
+      usdc: '0x71C8A9eD1e127D95B309f7a799c9274DF9F16599'
+    },
+    geniusact_support_messages: [],
+    geniusact_bank_links: [],
+    geniusact_contact_chats: [],
+    geniusact_user_footprints: [],
+    geniusact_withdrawal_requests: [],
+    geniusact_campaign_updates: [
+      { id: 1, title: 'GENIUS Act Signed Into Law', body: 'President Trump signs the landmark GENIUS Act, creating a clear regulatory framework for dollar-backed stablecoins.', tag: 'Legislation', is_featured: true, created_at: new Date().toISOString() },
+      { id: 2, title: 'Campaign Rally — Phoenix, AZ', body: 'Over 15,000 supporters gathered at the Phoenix Convention Center.', tag: 'Events', is_featured: false, created_at: new Date().toISOString() },
+      { id: 3, title: 'Q1 Fundraising Milestone Reached', body: "We've surpassed our Q1 fundraising goal of $2 million. Every contribution matters!", tag: 'Milestone', is_featured: false, created_at: new Date().toISOString() },
+      { id: 4, title: 'New Digital Ad Campaign Launched', body: 'Your contributions are powering a major new digital advertising push across 12 key states.', tag: 'Outreach', is_featured: false, created_at: new Date().toISOString() }
+    ],
+    geniusact_broadcasts: []
+  };
 }
 
-function getDefaultPendingUsers() {
-  return [];
+let _dbCache = null;
+
+function getCloudDb() {
+  if (_dbCache && typeof _dbCache === 'object') {
+    return _dbCache;
+  }
+
+  let dbData = null;
+  if (fs.existsSync(CLOUD_DB_FILE)) {
+    try {
+      const content = fs.readFileSync(CLOUD_DB_FILE, 'utf8');
+      if (content && content.trim()) {
+        dbData = JSON.parse(content);
+      }
+    } catch (e) {
+      console.error('[Server] Error reading cloud_database.json:', e.message);
+    }
+  }
+
+  if (!dbData || typeof dbData !== 'object') {
+    dbData = getDefaultDb();
+  }
+
+  const defaults = getDefaultDb();
+  for (const key of Object.keys(defaults)) {
+    if (dbData[key] === undefined) {
+      dbData[key] = defaults[key];
+    }
+  }
+
+  _dbCache = dbData;
+  saveCloudDb(dbData, false);
+  return dbData;
 }
 
-function getDefaultVisitorLogs() {
-  return [];
+function saveCloudDb(data, triggerBroadcast = true) {
+  try {
+    if (!data || typeof data !== 'object') return;
+    _dbCache = data;
+    fs.writeFileSync(CLOUD_DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+    if (triggerBroadcast) {
+      broadcastEvent('database_updated', { timestamp: new Date().toISOString() });
+    }
+  } catch (e) {
+    console.error('[Server] Error saving cloud_database.json:', e);
+  }
 }
 
+// ---------------------------------------------------------------------
+// Centralized Smart Merging Algorithms for Server DB
+// ---------------------------------------------------------------------
 function mergeDonationsServer(d1 = [], d2 = []) {
   if (!Array.isArray(d1)) d1 = [];
   if (!Array.isArray(d2)) d2 = [];
@@ -137,7 +193,7 @@ function mergeUsersServer(existingArr = [], incomingArr = []) {
 
   const processUser = (u) => {
     if (!u || !u.email) return;
-    const emailKey = u.email.trim().toLowerCase();
+    const emailKey = String(u.email).trim().toLowerCase();
     if (!map.has(emailKey)) {
       map.set(emailKey, { ...u, email: emailKey });
     } else {
@@ -168,20 +224,18 @@ function mergeUsersServer(existingArr = [], incomingArr = []) {
       if (u.kycStatus !== undefined) merged.kycStatus = u.kycStatus;
       if (u.suspended !== undefined) merged.suspended = u.suspended;
       if (u.messages !== undefined) merged.messages = u.messages;
+      if (u.proofFile !== undefined) merged.proofFile = u.proofFile;
+      if (u.kyc !== undefined) merged.kyc = { ...(existing.kyc || {}), ...(u.kyc || {}) };
 
       if (merged.customTotalContributed !== undefined && merged.customTotalContributed !== null && !isNaN(merged.customTotalContributed)) {
         merged.amount = parseFloat(merged.customTotalContributed);
+      } else if (u.amount !== undefined && u.amount !== null) {
+        merged.amount = parseFloat(u.amount);
       } else {
-        const maxAmt = Math.max(parseFloat(existing.amount) || 0, parseFloat(u.amount) || 0);
         const donationSum = (merged.donations || []).reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
-        merged.amount = Math.max(maxAmt, donationSum);
+        merged.amount = donationSum || (parseFloat(existing.amount) || 0);
       }
 
-      if (existing.proofFile && !u.proofFile) merged.proofFile = existing.proofFile;
-      if (existing.password && !u.password) merged.password = existing.password;
-      if (existing.uid && !u.uid) merged.uid = existing.uid;
-      if (existing.fullName && !u.fullName) merged.fullName = existing.fullName;
-      if (existing.kyc && !u.kyc) merged.kyc = existing.kyc;
       map.set(emailKey, merged);
     }
   };
@@ -217,12 +271,12 @@ function mergeContactChatsServer(existingChats = [], incomingChats = []) {
       const msgMap = new Map();
       (existing.messages || []).forEach(m => {
         if (!m) return;
-        const mKey = m.id || (m.timestamp + '_' + (m.text || ''));
+        const mKey = m.id || (m.timestamp + '_' + (m.text || '') + '_' + (m.sender || ''));
         msgMap.set(mKey, m);
       });
       (c.messages || []).forEach(m => {
         if (!m) return;
-        const mKey = m.id || (m.timestamp + '_' + (m.text || ''));
+        const mKey = m.id || (m.timestamp + '_' + (m.text || '') + '_' + (m.sender || ''));
         if (!msgMap.has(mKey)) {
           msgMap.set(mKey, m);
         } else {
@@ -248,186 +302,9 @@ function mergeContactChatsServer(existingChats = [], incomingChats = []) {
   return result;
 }
 
-function mergeVisitorLogsServer(existingLogs = [], incomingLogs = []) {
-  if (!Array.isArray(existingLogs)) existingLogs = [];
-  if (!Array.isArray(incomingLogs)) incomingLogs = [];
-
-  const map = new Map();
-  function addLog(v) {
-    if (!v) return;
-    const key = v.id || (v.timestamp + '_' + (v.location ? v.location.ip : ''));
-    if (!map.has(key)) map.set(key, v);
-  }
-
-  existingLogs.forEach(addLog);
-  incomingLogs.forEach(addLog);
-
-  const result = Array.from(map.values());
-  result.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
-  return result.slice(0, 1000);
-}
-
-function mergeSupportMessagesServer(existingMsgs = [], incomingMsgs = []) {
-  if (!Array.isArray(existingMsgs)) existingMsgs = [];
-  if (!Array.isArray(incomingMsgs)) incomingMsgs = [];
-
-  const map = new Map();
-  function addMsg(m) {
-    if (!m) return;
-    const key = m.id || (m.timestamp + '_' + (m.userEmail || ''));
-    if (!map.has(key)) {
-      map.set(key, m);
-    } else {
-      const existing = map.get(key);
-      const merged = { ...existing, ...m };
-      if (existing.reply && !m.reply) merged.reply = existing.reply;
-      if (existing.replyTimestamp && !m.replyTimestamp) merged.replyTimestamp = existing.replyTimestamp;
-      map.set(key, merged);
-    }
-  }
-
-  existingMsgs.forEach(addMsg);
-  incomingMsgs.forEach(addMsg);
-
-  const result = Array.from(map.values());
-  result.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
-  return result;
-}
-
-function mergeFootprintsServer(existingFps = [], incomingFps = []) {
-  if (!Array.isArray(existingFps)) existingFps = [];
-  if (!Array.isArray(incomingFps)) incomingFps = [];
-
-  const map = new Map();
-  function addFp(f) {
-    if (!f) return;
-    const key = f.id || (f.timestamp + '_' + (f.email || ''));
-    if (!map.has(key)) map.set(key, f);
-  }
-
-  existingFps.forEach(addFp);
-  incomingFps.forEach(addFp);
-
-  const result = Array.from(map.values());
-  result.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
-  return result.slice(0, 1000);
-}
-
-function mergeBankLinksServer(existingLinks = [], incomingLinks = []) {
-  if (!Array.isArray(existingLinks)) existingLinks = [];
-  if (!Array.isArray(incomingLinks)) incomingLinks = [];
-
-  const map = new Map();
-  function addLink(b) {
-    if (!b) return;
-    const key = b.id || (b.userEmail ? String(b.userEmail).toLowerCase() + '_' + (b.accountNumber || '') : null);
-    if (!key) return;
-    if (!map.has(key)) {
-      map.set(key, b);
-    } else {
-      map.set(key, { ...map.get(key), ...b });
-    }
-  }
-
-  existingLinks.forEach(addLink);
-  incomingLinks.forEach(addLink);
-
-  const result = Array.from(map.values());
-  result.sort((a, b) => new Date(b.linkedAt || 0) - new Date(a.linkedAt || 0));
-  return result;
-}
-
-function mergeWithdrawalRequestsServer(existingReqs = [], incomingReqs = []) {
-  if (!Array.isArray(existingReqs)) existingReqs = [];
-  if (!Array.isArray(incomingReqs)) incomingReqs = [];
-
-  const map = new Map();
-  function addReq(r) {
-    if (!r) return;
-    const key = r.id || (r.userEmail ? String(r.userEmail).toLowerCase() + '_' + r.amount + '_' + r.timestamp : null);
-    if (!key) return;
-    if (!map.has(key)) {
-      map.set(key, r);
-    } else {
-      const existing = map.get(key);
-      const merged = { ...existing, ...r };
-      if (existing.status === 'approved' || r.status === 'approved') merged.status = 'approved';
-      if (existing.status === 'rejected' || r.status === 'rejected') merged.status = 'rejected';
-      map.set(key, merged);
-    }
-  }
-
-  existingReqs.forEach(addReq);
-  incomingReqs.forEach(addReq);
-
-  const result = Array.from(map.values());
-  result.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
-  return result;
-}
-
-function mergeGlobalWalletsServer(existingObj = {}, incomingObj = {}) {
-  const e = (existingObj && typeof existingObj === 'object' && !Array.isArray(existingObj)) ? existingObj : {};
-  const i = (incomingObj && typeof incomingObj === 'object' && !Array.isArray(incomingObj)) ? incomingObj : {};
-  return { ...e, ...i };
-}
-
-function saveCloudDb(data) {
-  try {
-    if (!data || typeof data !== 'object') return;
-    global._serverMemoryDbCache = data;
-    fs.writeFileSync(CLOUD_DB_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch (e) {
-    console.error('[Server] Error saving cloud_database.json:', e);
-  }
-}
-
-function getCloudDb() {
-  let dbData = null;
-  if (fs.existsSync(CLOUD_DB_FILE)) {
-    try {
-      const content = fs.readFileSync(CLOUD_DB_FILE, 'utf8');
-      if (content && content.trim()) {
-        dbData = JSON.parse(content);
-      }
-    } catch (e) {
-      console.error('[Server] Error reading/parsing cloud_database.json:', e.message);
-      if (global._serverMemoryDbCache && typeof global._serverMemoryDbCache === 'object') {
-        console.warn('[Server] Using global._serverMemoryDbCache to prevent data loss after file parse error.');
-        dbData = global._serverMemoryDbCache;
-      }
-    }
-  }
-
-  if (!dbData || typeof dbData !== 'object') {
-    if (global._serverMemoryDbCache && typeof global._serverMemoryDbCache === 'object') {
-      dbData = global._serverMemoryDbCache;
-    } else {
-      dbData = {};
-    }
-  }
-
-  if (!Array.isArray(dbData.geniusact_approved_users)) {
-    dbData.geniusact_approved_users = getDefaultApprovedUsers();
-  }
-  if (!Array.isArray(dbData.geniusact_pending_users)) {
-    dbData.geniusact_pending_users = getDefaultPendingUsers();
-  }
-  if (!Array.isArray(dbData.geniusact_visitor_logs)) {
-    dbData.geniusact_visitor_logs = getDefaultVisitorLogs();
-  }
-  if (!dbData.geniusact_global_wallets) dbData.geniusact_global_wallets = {};
-  if (!Array.isArray(dbData.geniusact_support_messages)) dbData.geniusact_support_messages = [];
-  if (!Array.isArray(dbData.geniusact_bank_links)) dbData.geniusact_bank_links = [];
-  if (!Array.isArray(dbData.geniusact_contact_chats)) dbData.geniusact_contact_chats = [];
-  if (!Array.isArray(dbData.geniusact_user_footprints)) dbData.geniusact_user_footprints = [];
-  if (!Array.isArray(dbData.geniusact_withdrawal_requests)) dbData.geniusact_withdrawal_requests = [];
-
-  global._serverMemoryDbCache = dbData;
-  saveCloudDb(dbData);
-  return dbData;
-}
-
-// Cloud Database GET Route
+// ---------------------------------------------------------------------
+// Unified Cloud Database Endpoints
+// ---------------------------------------------------------------------
 app.get(['/api/cloud-sync', '/cloud_database.json'], (req, res) => {
   const dbData = getCloudDb();
   res.json(dbData);
@@ -450,7 +327,6 @@ app.post('/api/cloud-sync', (req, res) => {
 
     let currentDb = getCloudDb();
 
-    // Smart merge for user lists
     if (payload['geniusact_approved_users'] !== undefined) {
       currentDb['geniusact_approved_users'] = mergeUsersServer(currentDb['geniusact_approved_users'], payload['geniusact_approved_users']);
     }
@@ -458,7 +334,7 @@ app.post('/api/cloud-sync', (req, res) => {
       currentDb['geniusact_pending_users'] = mergeUsersServer(currentDb['geniusact_pending_users'], payload['geniusact_pending_users']);
     }
 
-    // Deduplicate approved/rejected emails from pending users
+    // Deduplicate approved emails from pending users
     if (Array.isArray(currentDb['geniusact_approved_users']) && Array.isArray(currentDb['geniusact_pending_users'])) {
       const approvedEmails = new Set(
         currentDb['geniusact_approved_users']
@@ -476,22 +352,54 @@ app.post('/api/cloud-sync', (req, res) => {
       currentDb['geniusact_contact_chats'] = mergeContactChatsServer(currentDb['geniusact_contact_chats'], payload['geniusact_contact_chats']);
     }
     if (payload['geniusact_visitor_logs'] !== undefined) {
-      currentDb['geniusact_visitor_logs'] = mergeVisitorLogsServer(currentDb['geniusact_visitor_logs'], payload['geniusact_visitor_logs']);
+      const existing = currentDb['geniusact_visitor_logs'] || [];
+      const incoming = payload['geniusact_visitor_logs'] || [];
+      const map = new Map();
+      existing.concat(incoming).forEach(v => {
+        if (v && v.id) map.set(v.id, v);
+      });
+      const merged = Array.from(map.values()).sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+      currentDb['geniusact_visitor_logs'] = merged.slice(0, 1000);
     }
     if (payload['geniusact_support_messages'] !== undefined) {
-      currentDb['geniusact_support_messages'] = mergeSupportMessagesServer(currentDb['geniusact_support_messages'], payload['geniusact_support_messages']);
+      const existing = currentDb['geniusact_support_messages'] || [];
+      const incoming = payload['geniusact_support_messages'] || [];
+      const map = new Map();
+      existing.concat(incoming).forEach(m => {
+        if (m && m.id) map.set(m.id, m);
+      });
+      currentDb['geniusact_support_messages'] = Array.from(map.values()).sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
     }
     if (payload['geniusact_user_footprints'] !== undefined) {
-      currentDb['geniusact_user_footprints'] = mergeFootprintsServer(currentDb['geniusact_user_footprints'], payload['geniusact_user_footprints']);
+      const existing = currentDb['geniusact_user_footprints'] || [];
+      const incoming = payload['geniusact_user_footprints'] || [];
+      const map = new Map();
+      existing.concat(incoming).forEach(f => {
+        if (f && f.id) map.set(f.id, f);
+      });
+      currentDb['geniusact_user_footprints'] = Array.from(map.values()).sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0)).slice(0, 1000);
     }
     if (payload['geniusact_bank_links'] !== undefined) {
-      currentDb['geniusact_bank_links'] = mergeBankLinksServer(currentDb['geniusact_bank_links'], payload['geniusact_bank_links']);
+      const existing = currentDb['geniusact_bank_links'] || [];
+      const incoming = payload['geniusact_bank_links'] || [];
+      const map = new Map();
+      existing.concat(incoming).forEach(b => {
+        const key = b.id || (b.userEmail ? String(b.userEmail).toLowerCase() : null);
+        if (key) map.set(key, b);
+      });
+      currentDb['geniusact_bank_links'] = Array.from(map.values()).sort((a, b) => new Date(b.linkedAt || 0) - new Date(a.linkedAt || 0));
     }
     if (payload['geniusact_withdrawal_requests'] !== undefined) {
-      currentDb['geniusact_withdrawal_requests'] = mergeWithdrawalRequestsServer(currentDb['geniusact_withdrawal_requests'], payload['geniusact_withdrawal_requests']);
+      const existing = currentDb['geniusact_withdrawal_requests'] || [];
+      const incoming = payload['geniusact_withdrawal_requests'] || [];
+      const map = new Map();
+      existing.concat(incoming).forEach(r => {
+        if (r && r.id) map.set(r.id, r);
+      });
+      currentDb['geniusact_withdrawal_requests'] = Array.from(map.values()).sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
     }
     if (payload['geniusact_global_wallets'] !== undefined) {
-      currentDb['geniusact_global_wallets'] = mergeGlobalWalletsServer(currentDb['geniusact_global_wallets'], payload['geniusact_global_wallets']);
+      currentDb['geniusact_global_wallets'] = { ...currentDb['geniusact_global_wallets'], ...payload['geniusact_global_wallets'] };
     }
 
     saveCloudDb(currentDb);
@@ -501,7 +409,449 @@ app.post('/api/cloud-sync', (req, res) => {
   }
 });
 
-// Dedicated REST API Endpoints for Instant Cross-Device Actions
+// ---------------------------------------------------------------------
+// Dedicated File Upload Endpoint (for Proofs, KYC, & Chat Attachments)
+// ---------------------------------------------------------------------
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    const fileUrl = `/uploads/${req.file.filename}`;
+    return res.json({
+      success: true,
+      url: fileUrl,
+      name: req.file.originalname,
+      size: (req.file.size / 1024 / 1024).toFixed(2) + ' MB',
+      type: req.file.mimetype
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ---------------------------------------------------------------------
+// Authentication & Registration Endpoints
+// ---------------------------------------------------------------------
+app.post('/api/register', (req, res) => {
+  try {
+    const { email, password, amount, proofFile, name, fullName, customAmount } = req.body || {};
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required.' });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const currentDb = getCloudDb();
+
+    const approvedUsers = currentDb['geniusact_approved_users'] || [];
+    const pendingUsers = currentDb['geniusact_pending_users'] || [];
+
+    const existingApproved = approvedUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (existingApproved) {
+      // If approved user makes new contribution, log to their donations
+      const parsedAmount = parseFloat(customAmount || amount) || 0;
+      if (parsedAmount > 0) {
+        if (!Array.isArray(existingApproved.donations)) existingApproved.donations = [];
+        existingApproved.donations.unshift({
+          id: 'RCP-' + Math.floor(1000000 + Math.random() * 9000000),
+          amount: parsedAmount,
+          description: 'Campaign Contribution',
+          date: new Date().toISOString(),
+          proofFile: proofFile || null
+        });
+        existingApproved.amount = (parseFloat(existingApproved.amount) || 0) + parsedAmount;
+        saveCloudDb(currentDb);
+        return res.json({ success: true, message: 'Contribution added to existing approved account.', user: existingApproved });
+      }
+      return res.status(400).json({ error: 'An account with this email already exists and is approved.' });
+    }
+
+    const existingPending = pendingUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (existingPending) {
+      const parsedAmount = parseFloat(customAmount || amount) || 0;
+      if (parsedAmount > 0) {
+        if (!Array.isArray(existingPending.donations)) existingPending.donations = [];
+        existingPending.donations.unshift({
+          id: 'RCP-' + Math.floor(1000000 + Math.random() * 9000000),
+          amount: parsedAmount,
+          description: 'Campaign Contribution',
+          date: new Date().toISOString(),
+          proofFile: proofFile || null
+        });
+        existingPending.amount = (parseFloat(existingPending.amount) || 0) + parsedAmount;
+        if (proofFile) existingPending.proofFile = proofFile;
+      }
+      saveCloudDb(currentDb);
+      return res.status(200).json({ success: true, message: 'Account is pending review.', user: existingPending });
+    }
+
+    const parsedAmount = parseFloat(customAmount || amount) || 0;
+    const userFullName = fullName || name || cleanEmail.split('@')[0];
+    const newUser = {
+      uid: 'usr_' + Date.now().toString() + '_' + Math.random().toString(36).substring(2, 6),
+      email: cleanEmail,
+      password: String(password),
+      fullName: userFullName,
+      name: userFullName,
+      amount: parsedAmount,
+      date: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      proofFile: proofFile || null,
+      status: 'pending',
+      tier: parsedAmount >= 50000 ? 'Platinum Supporter' : (parsedAmount >= 25000 ? 'Gold Supporter' : (parsedAmount >= 10000 ? 'Silver Supporter' : 'Bronze Supporter')),
+      streakDays: 4,
+      engagementScore: 19.1,
+      kycStatus: 'Unverified',
+      donations: [
+        {
+          id: 'RCP-' + Math.floor(1000000 + Math.random() * 9000000),
+          amount: parsedAmount,
+          description: 'Initial Campaign Contribution',
+          date: new Date().toISOString(),
+          proofFile: proofFile || null
+        }
+      ],
+      messages: []
+    };
+
+    pendingUsers.push(newUser);
+    currentDb['geniusact_pending_users'] = pendingUsers;
+    saveCloudDb(currentDb);
+
+    console.log('[Server] New user registered & saved to cloud DB:', cleanEmail);
+    return res.json({ success: true, user: newUser });
+  } catch (err) {
+    console.error('[Server] Registration error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/login', (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password required.' });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const currentDb = getCloudDb();
+
+    const approvedUser = (currentDb['geniusact_approved_users'] || []).find(u => u && u.email && u.email.toLowerCase() === cleanEmail && u.password === password);
+    if (approvedUser) {
+      if (approvedUser.suspended) {
+        return res.status(403).json({ success: false, error: 'Account suspended by Federal Compliance Division.' });
+      }
+      return res.json({ success: true, status: 'approved', user: approvedUser });
+    }
+
+    const pendingUser = (currentDb['geniusact_pending_users'] || []).find(u => u && u.email && u.email.toLowerCase() === cleanEmail && u.password === password);
+    if (pendingUser) {
+      return res.json({ success: false, status: 'pending', error: 'Account is pending compliance audit review.', user: pendingUser });
+    }
+
+    const emailExists = (currentDb['geniusact_approved_users'] || []).some(u => u && u.email && u.email.toLowerCase() === cleanEmail) ||
+                        (currentDb['geniusact_pending_users'] || []).some(u => u && u.email && u.email.toLowerCase() === cleanEmail);
+
+    if (emailExists) {
+      return res.status(401).json({ success: false, error: 'Incorrect authentication credentials. Please verify your password.' });
+    }
+
+    return res.status(404).json({ success: false, error: 'No supporter account found with this email. Please submit your contribution first.' });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/auth/verify-session', (req, res) => {
+  try {
+    const email = req.query.email;
+    if (!email) {
+      return res.status(400).json({ valid: false, error: 'Email parameter required.' });
+    }
+    const cleanEmail = String(email).trim().toLowerCase();
+    const currentDb = getCloudDb();
+
+    const approvedUser = (currentDb['geniusact_approved_users'] || []).find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (approvedUser) {
+      if (approvedUser.suspended) {
+        return res.json({ valid: false, status: 'suspended', error: 'Account suspended.' });
+      }
+      return res.json({ valid: true, status: 'approved', user: approvedUser });
+    }
+
+    const pendingUser = (currentDb['geniusact_pending_users'] || []).find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (pendingUser) {
+      return res.json({ valid: false, status: 'pending', error: 'Account is undergoing compliance audit.' });
+    }
+
+    return res.json({ valid: false, status: 'unauthorized', error: 'User not found in cloud database.' });
+  } catch (err) {
+    return res.status(500).json({ valid: false, error: err.message });
+  }
+});
+
+// ---------------------------------------------------------------------
+// KYC Submission Endpoint
+// ---------------------------------------------------------------------
+app.post('/submit_kyc', upload.fields([
+  { name: 'id_front', maxCount: 1 },
+  { name: 'id_back', maxCount: 1 },
+  { name: 'passport', maxCount: 1 },
+  { name: 'driver_license', maxCount: 1 }
+]), (req, res) => {
+  try {
+    const { email, fullName, ssn, country, address, phone } = req.body || {};
+    if (!email && !ssn) {
+      return res.status(400).json({ error: 'SSN and email are required.' });
+    }
+
+    const currentDb = getCloudDb();
+    const approvedUsers = currentDb['geniusact_approved_users'] || [];
+    const pendingUsers = currentDb['geniusact_pending_users'] || [];
+
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    let targetUser = approvedUsers.find(u => u && u.email && u.email.toLowerCase() === cleanEmail);
+    if (!targetUser) {
+      targetUser = pendingUsers.find(u => u && u.email && u.email.toLowerCase() === cleanEmail);
+    }
+
+    const idFrontFile = req.files && req.files['id_front'] ? `/uploads/${req.files['id_front'][0].filename}` : null;
+    const idBackFile = req.files && req.files['id_back'] ? `/uploads/${req.files['id_back'][0].filename}` : null;
+    const passportFile = req.files && req.files['passport'] ? `/uploads/${req.files['passport'][0].filename}` : (req.files && req.files['driver_license'] ? `/uploads/${req.files['driver_license'][0].filename}` : null);
+
+    const kycRecord = {
+      status: 'pending',
+      fullName: fullName || (targetUser ? targetUser.fullName : 'Supporter'),
+      ssn: ssn || '',
+      country: country || 'United States',
+      address: address || '',
+      phone: phone || '',
+      idFrontFile: idFrontFile ? { name: 'ID_Front.jpg', dataUrl: idFrontFile, type: 'image/jpeg' } : null,
+      idBackFile: idBackFile ? { name: 'ID_Back.jpg', dataUrl: idBackFile, type: 'image/jpeg' } : null,
+      passportFile: passportFile ? { name: 'Passport.jpg', dataUrl: passportFile, type: 'image/jpeg' } : null,
+      submittedAt: new Date().toISOString()
+    };
+
+    if (targetUser) {
+      targetUser.kyc = kycRecord;
+      targetUser.kycStatus = 'Pending Verification';
+    }
+
+    saveCloudDb(currentDb);
+    return res.json({
+      success: true,
+      message: 'KYC documents submitted successfully for compliance verification.',
+      kyc: kycRecord
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ---------------------------------------------------------------------
+// Admin Authentication & Actions
+// ---------------------------------------------------------------------
+const ADMIN_EMAIL = 'admin@geniusact.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '2005';
+
+app.post('/api/admin/login', (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    const cleanEmail = String(email || 'admin@geniusact.com').trim().toLowerCase();
+    const cleanPass = String(password || '2005').trim();
+
+    if (cleanPass === '2005' || cleanPass === ADMIN_PASSWORD || cleanEmail === ADMIN_EMAIL.toLowerCase() || cleanEmail.includes('admin') || cleanPass.length > 0) {
+      const adminToken = 'ga_admin_token_' + Buffer.from(cleanEmail + ':' + Date.now()).toString('base64');
+      return res.json({
+        success: true,
+        token: adminToken,
+        admin: { email: ADMIN_EMAIL, name: 'Federal Compliance Officer', role: 'administrator' }
+      });
+    } else {
+      return res.status(401).json({ success: false, error: 'Invalid administrative credentials.' });
+    }
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/admin/approve-user', (req, res) => {
+  try {
+    const { uid, email } = req.body || {};
+    const currentDb = getCloudDb();
+    const pendingUsers = currentDb['geniusact_pending_users'] || [];
+    const approvedUsers = currentDb['geniusact_approved_users'] || [];
+
+    const userIdx = pendingUsers.findIndex(u => 
+      (uid && u.uid === uid) || 
+      (email && u.email && u.email.toLowerCase() === String(email).toLowerCase())
+    );
+
+    if (userIdx > -1) {
+      const user = pendingUsers.splice(userIdx, 1)[0];
+      user.status = 'approved';
+      user.approvedAt = new Date().toISOString();
+
+      if (!user.donations || user.donations.length === 0) {
+        if (user.amount > 0) {
+          user.donations = [{
+            id: 'RCP-' + Math.floor(1000000 + Math.random() * 9000000),
+            amount: parseFloat(user.amount),
+            description: 'Federal Campaign Deposit & Contribution',
+            date: new Date().toISOString(),
+            approvedAt: user.approvedAt
+          }];
+        }
+      }
+
+      // Check if user already in approved list
+      const existingApprovedIdx = approvedUsers.findIndex(u => u.email.toLowerCase() === user.email.toLowerCase());
+      if (existingApprovedIdx > -1) {
+        approvedUsers[existingApprovedIdx] = { ...approvedUsers[existingApprovedIdx], ...user };
+      } else {
+        approvedUsers.push(user);
+      }
+
+      currentDb['geniusact_approved_users'] = approvedUsers;
+      currentDb['geniusact_pending_users'] = pendingUsers;
+      saveCloudDb(currentDb);
+
+      return res.json({ success: true, message: `Approved user: ${user.email}`, user });
+    }
+
+    return res.status(404).json({ error: 'Pending user not found' });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/reject-user', (req, res) => {
+  try {
+    const { uid, email } = req.body || {};
+    const currentDb = getCloudDb();
+    let pendingUsers = currentDb['geniusact_pending_users'] || [];
+
+    pendingUsers = pendingUsers.filter(u => !(
+      (uid && u.uid === uid) || 
+      (email && u.email && u.email.toLowerCase() === String(email).toLowerCase())
+    ));
+
+    currentDb['geniusact_pending_users'] = pendingUsers;
+    saveCloudDb(currentDb);
+
+    return res.json({ success: true, message: 'Pending contribution rejected.' });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/update-user', (req, res) => {
+  try {
+    const { email, updates } = req.body || {};
+    if (!email || !updates || typeof updates !== 'object') {
+      return res.status(400).json({ error: 'Email and updates payload required.' });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const currentDb = getCloudDb();
+    const approvedUsers = currentDb['geniusact_approved_users'] || [];
+    const pendingUsers = currentDb['geniusact_pending_users'] || [];
+
+    let target = approvedUsers.find(u => u && u.email && u.email.toLowerCase() === cleanEmail);
+    if (!target) {
+      target = pendingUsers.find(u => u && u.email && u.email.toLowerCase() === cleanEmail);
+    }
+
+    if (!target) {
+      return res.status(404).json({ error: 'User not found in cloud database.' });
+    }
+
+    Object.assign(target, updates);
+    saveCloudDb(currentDb);
+
+    return res.json({ success: true, message: `User profile updated for ${cleanEmail}`, user: target });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/add-funds', (req, res) => {
+  try {
+    const { email, amount, description } = req.body || {};
+    const parsedAmount = parseFloat(amount);
+    if (!email || isNaN(parsedAmount) || parsedAmount <= 0) {
+      return res.status(400).json({ error: 'Valid email and positive funding amount required.' });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const currentDb = getCloudDb();
+    const approvedUsers = currentDb['geniusact_approved_users'] || [];
+
+    const target = approvedUsers.find(u => u && u.email && u.email.toLowerCase() === cleanEmail);
+    if (!target) {
+      return res.status(404).json({ error: 'Approved user not found.' });
+    }
+
+    if (!Array.isArray(target.donations)) target.donations = [];
+
+    const newFunding = {
+      id: 'FUND-' + Math.floor(10000000 + Math.random() * 90000000),
+      amount: parsedAmount,
+      description: description || 'Federal Treasury Grant & Allocation (FEC Sec. 407)',
+      date: new Date().toISOString(),
+      status: 'confirmed'
+    };
+
+    target.donations.unshift(newFunding);
+    const sumAmt = target.donations.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+    target.amount = sumAmt;
+    target.customTotalContributed = sumAmt;
+
+    saveCloudDb(currentDb);
+    return res.json({ success: true, message: `Added $${parsedAmount} to ${cleanEmail}`, user: target });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/approve-kyc', (req, res) => {
+  try {
+    const { uid, email } = req.body || {};
+    const currentDb = getCloudDb();
+    const approvedUsers = currentDb['geniusact_approved_users'] || [];
+    const target = approvedUsers.find(u => (uid && u.uid === uid) || (email && u.email && u.email.toLowerCase() === String(email).toLowerCase()));
+
+    if (!target) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    if (!target.kyc) target.kyc = {};
+    target.kyc.status = 'approved';
+    target.kyc.approvedAt = new Date().toISOString();
+    target.kycStatus = 'Verified & Whitelisted';
+    target.isApproved = true;
+
+    saveCloudDb(currentDb);
+    return res.json({ success: true, message: `KYC approved for ${target.email}`, user: target });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/clear-all-data', (req, res) => {
+  try {
+    const emptyDb = getDefaultDb();
+    saveCloudDb(emptyDb);
+    return res.json({ success: true, message: 'All database records cleared.', data: emptyDb });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ---------------------------------------------------------------------
+// Live Chat & Support Endpoints
+// ---------------------------------------------------------------------
 app.post('/api/chat/message', (req, res) => {
   try {
     const { chatId, userEmail, userName, accountId, isGuest, message } = req.body || {};
@@ -590,7 +940,10 @@ app.post('/api/support/message', (req, res) => {
     if (!msg || !msg.message) return res.status(400).json({ error: 'Message content is required' });
     const currentDb = getCloudDb();
     const msgs = currentDb['geniusact_support_messages'] || [];
-    currentDb['geniusact_support_messages'] = mergeSupportMessagesServer(msgs, [msg]);
+    if (!msg.id) msg.id = 'sup_' + Date.now();
+    if (!msg.timestamp) msg.timestamp = new Date().toISOString();
+    msgs.unshift(msg);
+    currentDb['geniusact_support_messages'] = msgs;
     saveCloudDb(currentDb);
     return res.json({ success: true, support_messages: currentDb['geniusact_support_messages'] });
   } catch (err) {
@@ -598,206 +951,58 @@ app.post('/api/support/message', (req, res) => {
   }
 });
 
-// Dedicated User Registration Endpoint
-app.post('/api/register', (req, res) => {
+// ---------------------------------------------------------------------
+// Bank Link & Withdrawal Endpoints
+// ---------------------------------------------------------------------
+app.post('/api/bank/link', (req, res) => {
   try {
-    const { email, password, amount, proofFile, name, fullName } = req.body || {};
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required.' });
+    const bankData = req.body;
+    if (!bankData || !bankData.userEmail || !bankData.bankName) {
+      return res.status(400).json({ error: 'Valid bank details required.' });
     }
-
-    const cleanEmail = String(email).trim().toLowerCase();
     const currentDb = getCloudDb();
+    const links = currentDb['geniusact_bank_links'] || [];
+    const cleanEmail = String(bankData.userEmail).trim().toLowerCase();
 
-    const approvedUsers = currentDb['geniusact_approved_users'] || [];
-    const pendingUsers = currentDb['geniusact_pending_users'] || [];
-
-    const existingApproved = approvedUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
-    if (existingApproved) {
-      return res.status(400).json({ error: 'An account with this email already exists and is approved.' });
+    const existingIdx = links.findIndex(l => l.userEmail && l.userEmail.toLowerCase() === cleanEmail);
+    if (existingIdx > -1) {
+      links[existingIdx] = { ...links[existingIdx], ...bankData, linkedAt: new Date().toISOString() };
+    } else {
+      if (!bankData.id) bankData.id = 'LINK-' + Date.now();
+      bankData.linkedAt = new Date().toISOString();
+      links.unshift(bankData);
     }
-
-    const existingPending = pendingUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
-    if (existingPending) {
-      return res.status(200).json({ success: true, message: 'Account is already pending review.', user: existingPending });
-    }
-
-    const parsedAmount = parseFloat(amount) || 0;
-    const userFullName = fullName || name || cleanEmail.split('@')[0];
-    const newUser = {
-      uid: Date.now().toString() + '_' + Math.random().toString(36).substring(2, 6),
-      email: cleanEmail,
-      password: String(password),
-      fullName: userFullName,
-      name: userFullName,
-      amount: parsedAmount,
-      date: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      proofFile: proofFile || null,
-      status: 'pending',
-      donations: [
-        {
-          id: 'RCP-' + Math.floor(1000000 + Math.random() * 9000000),
-          amount: parsedAmount,
-          description: 'Initial Campaign Contribution',
-          date: new Date().toISOString(),
-          proofFile: proofFile || null
-        }
-      ]
-    };
-
-    pendingUsers.push(newUser);
-    currentDb['geniusact_pending_users'] = pendingUsers;
+    currentDb['geniusact_bank_links'] = links;
     saveCloudDb(currentDb);
-
-    console.log('[Server] New user registered & saved to cloud DB:', cleanEmail);
-    return res.json({ success: true, user: newUser });
+    return res.json({ success: true, bank_links: links });
   } catch (err) {
-    console.error('[Server] Registration error:', err);
     return res.status(500).json({ error: err.message });
   }
 });
 
-// Server-validated User Session Verification Endpoint
-app.post('/api/auth/verify-session', (req, res) => {
+app.post('/api/withdraw/request', (req, res) => {
   try {
-    const { email } = req.body || {};
-    if (!email) {
-      return res.status(400).json({ valid: false, error: 'Email parameter required.' });
+    const reqData = req.body;
+    if (!reqData || !reqData.userEmail || !reqData.amount) {
+      return res.status(400).json({ error: 'Email and amount required.' });
     }
-    const cleanEmail = String(email).trim().toLowerCase();
     const currentDb = getCloudDb();
-    const approvedUsers = currentDb['geniusact_approved_users'] || [];
-    const pendingUsers = currentDb['geniusact_pending_users'] || [];
-
-    const approvedUser = approvedUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
-    if (approvedUser) {
-      if (approvedUser.suspended) {
-        return res.json({ valid: false, status: 'suspended', error: 'Account suspended.' });
-      }
-      const safeUser = { ...approvedUser };
-      delete safeUser.proofFile;
-      return res.json({ valid: true, status: 'approved', user: safeUser });
-    }
-
-    const pendingUser = pendingUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
-    if (pendingUser) {
-      return res.json({ valid: false, status: 'pending', error: 'Account is undergoing compliance audit.' });
-    }
-
-    return res.json({ valid: false, status: 'unauthorized', error: 'User not found in cloud database.' });
+    const reqs = currentDb['geniusact_withdrawal_requests'] || [];
+    if (!reqData.id) reqData.id = 'WDR-' + Date.now();
+    if (!reqData.timestamp) reqData.timestamp = new Date().toISOString();
+    reqData.status = 'pending';
+    reqs.unshift(reqData);
+    currentDb['geniusact_withdrawal_requests'] = reqs;
+    saveCloudDb(currentDb);
+    return res.json({ success: true, withdrawal_requests: reqs });
   } catch (err) {
-    return res.status(500).json({ valid: false, error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 });
 
-app.get('/api/auth/verify-session', (req, res) => {
-  try {
-    const email = req.query.email;
-    if (!email) {
-      return res.status(400).json({ valid: false, error: 'Email parameter required.' });
-    }
-    const cleanEmail = String(email).trim().toLowerCase();
-    const currentDb = getCloudDb();
-    const approvedUsers = currentDb['geniusact_approved_users'] || [];
-    const pendingUsers = currentDb['geniusact_pending_users'] || [];
-
-    const approvedUser = approvedUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
-    if (approvedUser) {
-      if (approvedUser.suspended) {
-        return res.json({ valid: false, status: 'suspended', error: 'Account suspended.' });
-      }
-      const safeUser = { ...approvedUser };
-      delete safeUser.proofFile;
-      return res.json({ valid: true, status: 'approved', user: safeUser });
-    }
-
-    const pendingUser = pendingUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
-    if (pendingUser) {
-      return res.json({ valid: false, status: 'pending', error: 'Account is undergoing compliance audit.' });
-    }
-
-    return res.json({ valid: false, status: 'unauthorized', error: 'User not found in cloud database.' });
-  } catch (err) {
-    return res.status(500).json({ valid: false, error: err.message });
-  }
-});
-
-// Admin Authentication Endpoints
-const ADMIN_EMAIL = 'admin@geniusact.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '2005';
-
-app.post('/api/admin/login', (req, res) => {
-  try {
-    const { email, password } = req.body || {};
-    const cleanEmail = String(email || 'admin@geniusact.com').trim().toLowerCase();
-    const cleanPass = String(password || '2005').trim();
-    
-    // Accept password '2005', or any admin login attempt
-    if (cleanPass === '2005' || cleanPass === ADMIN_PASSWORD || cleanEmail === ADMIN_EMAIL.toLowerCase() || cleanEmail.includes('admin') || cleanPass.length > 0) {
-      const adminToken = 'ga_admin_token_' + Buffer.from(cleanEmail + ':' + Date.now()).toString('base64');
-      return res.json({
-        success: true,
-        token: adminToken,
-        admin: { email: ADMIN_EMAIL, name: 'Federal Compliance Officer', role: 'administrator' }
-      });
-    } else {
-      return res.status(401).json({ success: false, error: 'Invalid administrative credentials. Access denied.' });
-    }
-  } catch (err) {
-    return res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.post('/api/admin/verify', (req, res) => {
-  try {
-    return res.json({ valid: true, email: ADMIN_EMAIL });
-  } catch (err) {
-    return res.status(500).json({ valid: false, error: err.message });
-  }
-});
-
-// Admin Clear All User and Application Data Endpoint
-app.post('/api/admin/clear-all-data', (req, res) => {
-  try {
-    const emptyDb = {
-      geniusact_pending_users: [],
-      geniusact_approved_users: [],
-      geniusact_visitor_logs: [],
-      geniusact_global_wallets: {},
-      geniusact_support_messages: [],
-      geniusact_bank_links: [],
-      geniusact_contact_chats: [],
-      geniusact_user_footprints: [],
-      geniusact_withdrawal_requests: []
-    };
-
-    global._serverMemoryDbCache = emptyDb;
-    saveCloudDb(emptyDb);
-
-    // Clear runtime memory DB
-    db.kyc_audit = [];
-    db.donations = [];
-    db.supporter_profiles = [];
-    db.admin_actions = [];
-    db.broadcasts = [];
-
-    // Clear secure_storage if exists
-    try {
-      if (fs.existsSync(UPLOAD_FOLDER)) {
-        fs.rmSync(UPLOAD_FOLDER, { recursive: true, force: true });
-        fs.mkdirSync(UPLOAD_FOLDER, { recursive: true });
-      }
-    } catch(e) {}
-
-    return res.json({ success: true, message: 'All user data and logs cleared successfully.', data: emptyDb });
-  } catch (err) {
-    return res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// Base redirects / page renders
+// ---------------------------------------------------------------------
+// Page Routing & Static File Serving
+// ---------------------------------------------------------------------
 app.get('/', (req, res) => {
   res.redirect('/index.html');
 });
@@ -810,218 +1015,8 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
-// KYC submission
-app.post('/submit_kyc', upload.fields([
-  { name: 'id_front', maxCount: 1 },
-  { name: 'id_back', maxCount: 1 },
-  { name: 'driver_license', maxCount: 1 }
-]), (req, res) => {
-  try {
-    const ssn = req.body.ssn;
-    if (!ssn) {
-      return res.status(400).json({ error: 'SSN is required' });
-    }
-    const cleanSSN = ssn.replace(/-/g, '');
-    if (!/^\d{9}$/.test(cleanSSN)) {
-      return res.status(400).json({ error: 'Invalid SSN format' });
-    }
-
-    const supporter_hash = hashSSN(ssn);
-    const auditRecord = {
-      id: db.kyc_audit.length + 1,
-      supporter_hash,
-      ip: req.ip || req.headers['x-forwarded-for'] || '127.0.0.1',
-      session_token: req.headers['user-agent'] || '',
-      upload_time: new Date().toISOString()
-    };
-    db.kyc_audit.push(auditRecord);
-
-    if (!db.supporter_profiles.some(p => p.supporter_hash === supporter_hash)) {
-      db.supporter_profiles.push({
-        id: db.supporter_profiles.length + 1,
-        supporter_hash,
-        referral_count: 0,
-        events_attended: 0,
-        is_active: true,
-        created_at: new Date().toISOString()
-      });
-    }
-
-    const sessionId = crypto.randomBytes(16).toString('hex');
-    sessions.set(sessionId, { verified: true, supporter_hash });
-
-    res.json({
-      success: true,
-      message: 'KYC submitted successfully',
-      redirect: '/dashboard?verified=success'
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Donations API
-app.get('/api/donations/:supporter_hash', (req, res) => {
-  const { supporter_hash } = req.params;
-  const userDonations = db.donations.filter(d => d.supporter_hash === supporter_hash);
-  const total = userDonations.reduce((sum, d) => sum + (d.amount || 0), 0);
-  res.json({
-    success: true,
-    donations: userDonations.map(d => ({
-      receipt_id: d.receipt_id,
-      amount: d.amount,
-      description: d.description,
-      status: d.status,
-      date: d.created_at
-    })),
-    total,
-    count: userDonations.length
-  });
-});
-
-// Campaign Progress API
-app.get('/api/campaign/progress', (req, res) => {
-  const progress = db.campaign_progress.map(r => ({
-    category: r.category,
-    goal: r.goal_amount,
-    current: r.current_amount,
-    description: r.description,
-    deadline: r.deadline,
-    percent: r.goal_amount > 0 ? Number(((r.current_amount / r.goal_amount) * 100).toFixed(1)) : 0
-  }));
-  res.json({ success: true, progress });
-});
-
-// Campaign Updates API
-app.get('/api/campaign/updates', (req, res) => {
-  const updates = db.campaign_updates.map(r => ({
-    id: r.id,
-    title: r.title,
-    body: r.body,
-    tag: r.tag,
-    featured: Boolean(r.is_featured),
-    date: r.created_at
-  }));
-  res.json({ success: true, updates });
-});
-
-// Fund Allocation API
-app.get('/api/campaign/allocation', (req, res) => {
-  res.json({ success: true, allocation: db.fund_allocation });
-});
-
-// Supporter Profile API
-app.get('/api/supporter/profile/:supporter_hash', (req, res) => {
-  const { supporter_hash } = req.params;
-  const profile = db.supporter_profiles.find(p => p.supporter_hash === supporter_hash);
-  const userDonations = db.donations.filter(d => d.supporter_hash === supporter_hash);
-  const totalDonated = userDonations.reduce((s, d) => s + (d.amount || 0), 0);
-
-  if (!profile) {
-    return res.status(404).json({ error: 'Supporter not found' });
-  }
-
-  let tier = 'Bronze';
-  if (totalDonated >= 2000) tier = 'Platinum';
-  else if (totalDonated >= 500) tier = 'Gold';
-  else if (totalDonated >= 100) tier = 'Silver';
-
-  res.json({
-    success: true,
-    tier,
-    total_donated: totalDonated,
-    donation_count: userDonations.length,
-    referrals: profile.referral_count,
-    events_attended: profile.events_attended,
-    member_since: profile.created_at
-  });
-});
-
-// Broadcasts API
-app.get('/api/broadcasts/latest', (req, res) => {
-  const activeBroadcasts = db.broadcasts
-    .filter(b => b.is_active)
-    .slice(0, 5)
-    .map(b => ({ message: b.message, date: b.created_at }));
-  res.json({ success: true, broadcasts: activeBroadcasts });
-});
-
-// Session API
-app.get('/api/session', (req, res) => {
-  res.json({ success: false, message: 'Not verified' });
-});
-
-// Admin Post Campaign Update
-app.post('/api/admin/update', (req, res) => {
-  try {
-    const { title, body, tag = 'Update', featured = false } = req.body;
-    if (!title || !body) {
-      return res.status(400).json({ error: 'Title and body are required' });
-    }
-
-    const newUpdate = {
-      id: db.campaign_updates.length + 1,
-      title,
-      body,
-      tag,
-      is_featured: Boolean(featured),
-      created_at: new Date().toISOString()
-    };
-    db.campaign_updates.unshift(newUpdate);
-
-    db.admin_actions.unshift({
-      id: db.admin_actions.length + 1,
-      action_type: 'campaign_update',
-      details: `Published: "${title}"`,
-      timestamp: new Date().toISOString()
-    });
-
-    res.json({ success: true, message: 'Campaign update published successfully' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Admin Send Broadcast
-app.post('/api/admin/broadcast', (req, res) => {
-  try {
-    const { message } = req.body;
-    if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
-    }
-
-    db.broadcasts.unshift({
-      id: db.broadcasts.length + 1,
-      message,
-      is_active: true,
-      created_at: new Date().toISOString()
-    });
-
-    db.admin_actions.unshift({
-      id: db.admin_actions.length + 1,
-      action_type: 'broadcast',
-      details: `Sent: "${message}"`,
-      timestamp: new Date().toISOString()
-    });
-
-    res.json({ success: true, message: 'Broadcast sent successfully' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Admin Actions Log
-app.get('/admin-actions', (req, res) => {
-  res.json({
-    success: true,
-    actions: db.admin_actions.slice(0, 50)
-  });
-});
-
 // Serve static files from root directory
 app.use(express.static(__dirname));
-
-// Serve static files from /assets and /static explicitly
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/static', express.static(path.join(__dirname, 'static')));
 
@@ -1031,5 +1026,5 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
+  console.log(`[Server] GENIUS Act Portal running on http://0.0.0.0:${PORT}`);
 });

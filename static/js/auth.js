@@ -1,8 +1,7 @@
 // ==================== AUTH.JS ====================
-// GeniusAct Global — Authentication (Login Only)
-// Account creation happens on contribute.html → goes to pending → admin approves
+// GeniusAct Global — Centralized Authentication & Session Management
 
-const loginForm = document.getElementById('login_form'); 
+const loginForm = document.getElementById('login_form');
 
 // Check Auth state — validate user session against server on page load
 (async function() {
@@ -11,11 +10,10 @@ const loginForm = document.getElementById('login_form');
     try {
       const u = JSON.parse(currentUser);
       if (u && u.email) {
-        // Server validation check
         try {
           const fetchFn = window.geniusFetch || fetch;
           const res = await fetchFn('/api/auth/verify-session?email=' + encodeURIComponent(u.email));
-          if (res.ok) {
+          if (res && res.ok) {
             const data = await res.json();
             if (!data.valid || data.status === 'pending' || data.status === 'suspended') {
               console.warn('[Auth] Session invalid or pending according to server. Clearing local session.');
@@ -25,14 +23,15 @@ const loginForm = document.getElementById('login_form');
                 window.location.href = 'login.html?status=pending';
               }
               return;
+            } else if (data.valid && data.user) {
+              localStorage.setItem('geniusact_current_user', JSON.stringify(data.user));
             }
           }
         } catch (e) {
-          console.warn('[Auth] Server verify failed, offline fallback check:', e);
+          console.warn('[Auth] Server verify check error:', e);
         }
 
         const path = window.location.pathname.toLowerCase();
-        // Redirect only if user tries to open login page while already logged in
         if (path.includes('login.html')) {
           window.location.href = 'dashboard.html';
         }
@@ -59,72 +58,37 @@ if (loginForm) {
     }
 
     const origText = submitBtn.textContent;
-    submitBtn.textContent = 'Syncing data...';
+    submitBtn.textContent = 'Verifying credentials...';
     submitBtn.disabled = true;
 
     try {
-      // CRITICAL: Wait for initial cloud sync to pull all user data from Supabase
-      await window._cloudSyncReady;
+      const fetchFn = window.geniusFetch || fetch;
+      const res = await fetchFn('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass })
+      });
 
-      // Do a FRESH sync to guarantee we have the absolute latest data from cloud
-      await window.cloudSyncFull();
+      const data = res ? await res.json() : null;
 
-      submitBtn.textContent = 'Verifying...';
-
-      const approvedUsers = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
-      const pendingUsers = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
-      
-      // Check approved users first
-      const approvedUser = approvedUsers.find(u => u.email && u.email.toLowerCase() === email && u.password === pass);
-      
-      // Check pending users
-      const pendingUser = pendingUsers.find(u => u.email && u.email.toLowerCase() === email && u.password === pass);
-
-      // Check if email exists but wrong password
-      const emailExistsApproved = approvedUsers.find(u => u.email && u.email.toLowerCase() === email);
-      const emailExistsPending = pendingUsers.find(u => u.email && u.email.toLowerCase() === email);
-
-      if (approvedUser) {
-        if (approvedUser.suspended) {
-          throw new Error("Account suspended by Federal Compliance Division. Please contact official support.");
-        }
-        // ✅ Approved — allow login
-        const userToSave = { ...approvedUser };
-        delete userToSave.proofFile; // Remove heavy proof file base64
-        try {
-          localStorage.setItem('geniusact_current_user', JSON.stringify(userToSave));
-        } catch (storageErr) {
-          console.warn("Storage quota error on login, clearing logs and retrying...", storageErr);
-          try {
-            localStorage.removeItem('geniusact_visitor_logs');
-            localStorage.removeItem('geniusact_user_footprints');
-            localStorage.setItem('geniusact_current_user', JSON.stringify({
-              uid: userToSave.uid,
-              email: userToSave.email,
-              fullName: userToSave.fullName || userToSave.email.split('@')[0],
-              amount: userToSave.amount || 0,
-              status: userToSave.status || 'approved',
-              donations: userToSave.donations || []
-            }));
-          } catch (e2) {
-            console.error("Critical storage error:", e2);
-          }
-        }
+      if (res && res.ok && data && data.success && data.user) {
+        localStorage.setItem('geniusact_current_user', JSON.stringify(data.user));
         window.location.href = 'dashboard.html';
-      } else if (pendingUser) {
-        // ⏳ Pending — show professional GENIUS Act compliance modal with loading spinner
-        showPendingAuditModal(pendingUser);
+        return;
+      }
+
+      if (data && data.status === 'pending') {
+        showPendingAuditModal(data.user || { email, date: new Date().toISOString() });
         submitBtn.textContent = origText;
         submitBtn.disabled = false;
         return;
-      } else if (emailExistsApproved || emailExistsPending) {
-        // ❌ Email found but wrong password
-        throw new Error("Incorrect authentication credentials. Please verify your password.");
-      } else {
-        // ❌ No account found
-        throw new Error("No supporter account found with this email. Please submit your campaign contribution first to initiate registration.");
       }
 
+      if (data && data.error) {
+        throw new Error(data.error);
+      }
+
+      throw new Error("Unable to authenticate. Please check your credentials or register a contribution first.");
     } catch (error) {
       console.error("Login error:", error);
       alert(error.message);
