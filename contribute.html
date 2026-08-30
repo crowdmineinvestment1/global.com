@@ -360,13 +360,34 @@
     .landing-page-container,
     .landing-page-content-background,
     .top-panel {
-      background: linear-gradient(180deg, rgba(15, 23, 42, 0.65) 0%, rgba(15, 23, 42, 0.82) 100%), url('assets/img/image_2_5.png') center top / cover no-repeat fixed !important;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.72) 0%, rgba(15, 23, 42, 0.88) 100%), url('assets/img/image_2_5.png') center top / cover no-repeat fixed !important;
+    }
+
+    .trump-hero-portrait {
+      width: 100%;
+      max-width: 480px;
+      height: auto;
+      border-radius: 14px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.12);
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      display: inline-block;
+    }
+
+    .trump-hero-portrait:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(220, 53, 69, 0.4);
     }
 
     @media (max-width: 768px) {
       .landing-page-container,
       .landing-page-content-background {
-        background: linear-gradient(180deg, rgba(15, 23, 42, 0.7) 0%, rgba(15, 23, 42, 0.88) 100%), url('assets/img/image_2_5.png') center top / cover no-repeat fixed !important;
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.75) 0%, rgba(15, 23, 42, 0.92) 100%), url('assets/img/image_2_5.png') center top / cover no-repeat fixed !important;
+      }
+      .trump-hero-portrait {
+        max-width: 100%;
+        border-radius: 10px;
       }
     }
   </style>
@@ -417,10 +438,9 @@
                 <div class="landing-page-paragraph">
                   <div class="row">
                     <div class="col-sm-12">
-                      <p style="text-align:center"><span
-                          id="docs-internal-guid-a453895d-7fff-851e-e8be-b0a04e89440c"><span
-                            style="font-size:11pt;font-family:Arial,sans-serif;background-color:transparent"><span><img
-                                height="338" src="assets/img/image_2_5.png" width="338" /></span></span></span></p>
+                      <p style="text-align:center; margin-bottom: 20px;">
+                        <img class="trump-hero-portrait" src="assets/img/trump_thumbsup_4k.jpg" alt="President Donald J. Trump" loading="eager" />
+                      </p>
                       <p style="text-align:center"><span style="font-size:14pt"><b><span style="color:#000000">I want to
                               thank the American people for the extraordinary honor of being elected your 47th
                               President.</span></b></span></p>

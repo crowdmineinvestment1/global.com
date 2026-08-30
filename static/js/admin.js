@@ -1984,11 +1984,13 @@ function renderAdminChatThread(chatId) {
 
   const displayName = chat.userName || chat.userEmail || ('Visitor #' + (chat.chatId ? chat.chatId.substr(-4) : 'Guest'));
   const accIdStr = chat.accountId || 'FEC-87492109';
-  headerName.textContent = `${displayName} (Account ID: ${accIdStr})`;
-  headerEmail.textContent = `${chat.userEmail || 'Guest Visitor'} • Account ID: ${accIdStr} • Session: ${chat.chatId}`;
-  headerStatus.style.display = 'inline-block';
-  headerStatus.textContent = chat.isGuest ? 'Guest Visitor' : 'Registered Supporter';
-  headerStatus.className = `status-badge ${chat.isGuest ? 'status-pending' : 'status-approved'}`;
+  if (headerName) headerName.textContent = `${displayName} (Account ID: ${accIdStr})`;
+  if (headerEmail) headerEmail.textContent = `${chat.userEmail || 'Guest Visitor'} • Account ID: ${accIdStr} • Session: ${chat.chatId}`;
+  if (headerStatus) {
+    headerStatus.style.display = 'inline-block';
+    headerStatus.textContent = chat.isGuest ? 'Guest Visitor' : 'Registered Supporter';
+    headerStatus.className = `status-badge ${chat.isGuest ? 'status-pending' : 'status-approved'}`;
+  }
 
   // Add or update Clear Chat button in header
   let clearBtn = document.getElementById('btn-clear-chat-session');
@@ -2004,11 +2006,12 @@ function renderAdminChatThread(chatId) {
     clearBtn.onclick = () => window.deleteAdminChatSession(chat.chatId);
   }
 
-  replyInput.disabled = false;
-  sendBtn.disabled = false;
+  if (replyInput) replyInput.disabled = false;
+  if (sendBtn) sendBtn.disabled = false;
 
   const msgs = Array.isArray(chat.messages) ? chat.messages : [];
   if (msgs.length === 0) {
+    threadBody.dataset.renderedHash = 'empty_' + chatId;
     threadBody.innerHTML = `
       <div style="text-align: center; color: #64748b; margin-top: 4rem;">
         <i class="fas fa-comments" style="font-size: 3rem; margin-bottom: 0.5rem; color: #334155;"></i>
@@ -2018,9 +2021,24 @@ function renderAdminChatThread(chatId) {
     return;
   }
 
-  const isNearBottom = threadBody.scrollHeight - threadBody.scrollTop - threadBody.clientHeight < 120;
-  const isFirstLoadOrSwitched = window._lastRenderedChatId !== activeAdminChatId || window._forceChatScrollBottom;
-  window._lastRenderedChatId = activeAdminChatId;
+  // Check if messages have actually changed before modifying DOM to allow seamless scrolling
+  const currentMsgCount = msgs.length;
+  const lastMsgId = msgs.length > 0 ? (msgs[msgs.length - 1].id || msgs[msgs.length - 1].timestamp) : '';
+  const currentHash = `${chatId}_${currentMsgCount}_${lastMsgId}`;
+
+  const isSwitchedChat = window._lastRenderedChatId !== chatId;
+  const isForceScroll = Boolean(window._forceChatScrollBottom);
+
+  if (threadBody.dataset.renderedHash === currentHash && !isSwitchedChat && !isForceScroll) {
+    // State is unchanged; do not overwrite innerHTML so user scroll position is completely preserved
+    return;
+  }
+
+  const prevScrollTop = threadBody.scrollTop;
+  const isNearBottom = (threadBody.scrollHeight - threadBody.scrollTop - threadBody.clientHeight) < 80;
+
+  threadBody.dataset.renderedHash = currentHash;
+  window._lastRenderedChatId = chatId;
 
   threadBody.innerHTML = msgs.map(m => {
     const isAdmin = m.sender === 'admin';
@@ -2064,13 +2082,14 @@ function renderAdminChatThread(chatId) {
     `;
   }).join('');
 
-  if (isNearBottom || isFirstLoadOrSwitched) {
+  if (isSwitchedChat || isForceScroll || isNearBottom) {
     setTimeout(() => {
-      if (threadBody) {
-        threadBody.scrollTop = threadBody.scrollHeight;
-      }
-    }, 50);
+      if (threadBody) threadBody.scrollTop = threadBody.scrollHeight;
+    }, 40);
     window._forceChatScrollBottom = false;
+  } else {
+    // Preserve exact scroll position if user was reading/scrolling up
+    threadBody.scrollTop = prevScrollTop;
   }
 }
 
