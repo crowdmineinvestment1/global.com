@@ -81,6 +81,38 @@ app.get('/api/events', (req, res) => {
   });
 });
 
+// ---------------------------------------------------------------------
+// Password Change Endpoint
+// ---------------------------------------------------------------------
+app.post('/api/auth/change-password', (req, res) => {
+  try {
+    const { email, currentPassword, newPassword } = req.body || {};
+    if (!email || !currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, error: 'Email, current password, and new password are required.' });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const currentDb = getCloudDb();
+    const approvedUsers = currentDb['geniusact_approved_users'] || [];
+    const target = approvedUsers.find(u => u && u.email && u.email.toLowerCase() === cleanEmail);
+
+    if (!target) {
+      return res.status(404).json({ success: false, error: 'User not found.' });
+    }
+
+    if (target.password !== currentPassword) {
+      return res.status(401).json({ success: false, error: 'Current password is incorrect.' });
+    }
+
+    target.password = newPassword;
+    saveCloudDb(currentDb);
+
+    return res.json({ success: true, message: 'Password updated successfully.', user: target });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Persistent Cloud Database Store
 const CLOUD_DB_FILE = path.join(__dirname, 'cloud_database.json');
 

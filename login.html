@@ -177,6 +177,7 @@
               donations: [{ id: 'RCP-' + Math.floor(Math.random() * 10000000), amount: parseFloat(amount) || 0, description: 'Initial Contribution', date: new Date().toISOString() }]
             };
 
+            let serverRegistered = false;
             try {
               const res = await (window.geniusFetch || fetch)('/api/register', {
                 method: 'POST',
@@ -184,12 +185,22 @@
                 body: JSON.stringify({ email, password, fullName, amount: parseFloat(amount) || 0 })
               });
               const data = await res.json();
-              if (data && data.user) {
+              if (res.ok && data && data.success && data.user) {
                 newUser = data.user;
+                serverRegistered = true;
+              } else if (!res.ok && data && data.error) {
+                // Server rejected the registration (e.g. duplicate email)
+                msg.style.color = '#dc2626';
+                msg.textContent = data.error;
+                btn.disabled = false;
+                btn.textContent = 'Create Account & Submit';
+                return;
               }
-            } catch(e) {}
+            } catch(e) {
+              console.warn('[Login] Server registration failed, saving locally:', e);
+            }
 
-            // Save locally & sync to cloud
+            // Save locally as cache & sync to cloud
             const pending = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
             const existingIdx = pending.findIndex(u => u.email && u.email.toLowerCase() === email);
             if (existingIdx === -1) {

@@ -28,7 +28,14 @@ const loginForm = document.getElementById('login_form');
             }
           }
         } catch (e) {
-          console.warn('[Auth] Server verify check error:', e);
+          console.warn('[Auth] Server verify check error — clearing local session for safety:', e);
+          // Server unreachable: do NOT trust localStorage alone — force re-login
+          localStorage.removeItem('geniusact_current_user');
+          const path = window.location.pathname.toLowerCase();
+          if (path.includes('dashboard.html')) {
+            window.location.href = 'login.html';
+          }
+          return;
         }
 
         const path = window.location.pathname.toLowerCase();

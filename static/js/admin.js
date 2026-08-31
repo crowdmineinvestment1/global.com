@@ -47,15 +47,24 @@ window.loginAdmin = async function() {
       return;
     }
   } catch(err) {
-    console.warn('[Admin] Server login error, fallback check:', err);
+    console.warn('[Admin] Server login error, attempting local credential check:', err);
   }
 
-  // Fallback: Direct grant for admin login
-  const token = 'ga_admin_token_' + btoa((email || 'admin@geniusact.com') + ':' + Date.now());
-  sessionStorage.setItem('genius_admin_session', 'active');
-  localStorage.setItem('genius_admin_token', token);
-  localStorage.setItem('genius_current_admin', JSON.stringify({ email: email || 'admin@geniusact.com', token: token }));
-  showDashboard();
+  // Fallback: Only allow login if credentials match hardcoded admin credentials
+  if (email === ADMIN_CREDENTIALS.email.toLowerCase() && pass === ADMIN_CREDENTIALS.password) {
+    const token = 'ga_admin_token_' + btoa(email + ':' + Date.now());
+    sessionStorage.setItem('genius_admin_session', 'active');
+    localStorage.setItem('genius_admin_token', token);
+    localStorage.setItem('genius_current_admin', JSON.stringify({ email: email, token: token }));
+    showDashboard();
+  } else {
+    if (errorEl) {
+      errorEl.textContent = 'Invalid admin credentials. Please check your email and password.';
+      errorEl.style.display = 'block';
+    } else {
+      alert('Invalid admin credentials.');
+    }
+  }
 };
 
 async function checkAdminAuth() {
@@ -224,13 +233,46 @@ document.addEventListener('click', (e) => {
 
 // ==================== DATA LOADING ====================
 async function refreshAllData(skipSync = false) {
-  if (!skipSync && window.cloudSyncFull) {
-    try { await window.cloudSyncFull(); } catch(e) {}
+  let approved = [];
+  let pending = [];
+  let visitors = [];
+  let serverData = null;
+
+  // PRIMARY: Fetch data directly from the server (single source of truth)
+  try {
+    const fetchFn = window.geniusFetch || fetch;
+    const res = await fetchFn('/api/cloud-sync?cb=' + Date.now());
+    if (res && res.ok) {
+      serverData = await res.json();
+      if (serverData && typeof serverData === 'object') {
+        approved = serverData.geniusact_approved_users || [];
+        pending = serverData.geniusact_pending_users || [];
+        visitors = serverData.geniusact_visitor_logs || [];
+        // Update localStorage cache so other components stay in sync
+        localStorage.setItem('geniusact_approved_users', JSON.stringify(approved));
+        localStorage.setItem('geniusact_pending_users', JSON.stringify(pending));
+        localStorage.setItem('geniusact_visitor_logs', JSON.stringify(visitors));
+        if (serverData.geniusact_support_messages) localStorage.setItem('geniusact_support_messages', JSON.stringify(serverData.geniusact_support_messages));
+        if (serverData.geniusact_contact_chats) localStorage.setItem('geniusact_contact_chats', JSON.stringify(serverData.geniusact_contact_chats));
+        if (serverData.geniusact_bank_links) localStorage.setItem('geniusact_bank_links', JSON.stringify(serverData.geniusact_bank_links));
+        if (serverData.geniusact_withdrawal_requests) localStorage.setItem('geniusact_withdrawal_requests', JSON.stringify(serverData.geniusact_withdrawal_requests));
+        if (serverData.geniusact_user_footprints) localStorage.setItem('geniusact_user_footprints', JSON.stringify(serverData.geniusact_user_footprints));
+        if (serverData.geniusact_global_wallets) localStorage.setItem('geniusact_global_wallets', JSON.stringify(serverData.geniusact_global_wallets));
+      }
+    }
+  } catch(e) {
+    console.warn('[Admin] Server fetch failed, falling back to localStorage:', e);
   }
 
-  const approved = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
-  const pending = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
-  const visitors = JSON.parse(localStorage.getItem('geniusact_visitor_logs')) || [];
+  // FALLBACK: Use localStorage if server fetch failed
+  if (!serverData) {
+    if (!skipSync && window.cloudSyncFull) {
+      try { await window.cloudSyncFull(); } catch(e) {}
+    }
+    approved = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
+    pending = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
+    visitors = JSON.parse(localStorage.getItem('geniusact_visitor_logs')) || [];
+  }
 
   // Update stats
   const totalEl = document.getElementById('stat-total-users');
@@ -380,19 +422,33 @@ window.approveUser = async function(identifier) {
   }
 
   if (user) {
+    // SERVER-FIRST: Send approval to server and only update locally on success
+    let serverSuccess = false;
     try {
       const fetchFn = window.geniusFetch || fetch;
-      await fetchFn('/api/admin/approve-user', {
+      const res = await fetchFn('/api/admin/approve-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid, email: user.email })
       });
+      if (res && res.ok) {
+        const data = await res.json();
+        if (data && data.success) {
+          serverSuccess = true;
+          // Use server-returned user data if available
+          if (data.user) user = data.user;
+        }
+      }
     } catch(err) {
       console.warn('[Admin] Server approve error:', err);
     }
 
+    if (!serverSuccess) {
+      showToast('⚠️ Server unreachable — approval may not sync to other devices.', 'warning');
+    }
+
     user.status = 'approved';
-    user.approvedAt = new Date().toISOString();
+    user.approvedAt = user.approvedAt || new Date().toISOString();
 
     if (!user.donations || user.donations.length === 0) {
       if (user.amount > 0) {
@@ -418,21 +474,8 @@ window.approveUser = async function(identifier) {
     localStorage.setItem('geniusact_pending_users', JSON.stringify(pendingUsers));
     localStorage.setItem('geniusact_approved_users', JSON.stringify(approvedUsers));
 
-    const curStr = localStorage.getItem('geniusact_current_user');
-    if (curStr) {
-      const cur = JSON.parse(curStr);
-      if (cur.email && cur.email.toLowerCase() === user.email.toLowerCase()) {
-        Object.assign(cur, user);
-        localStorage.setItem('geniusact_current_user', JSON.stringify(cur));
-      }
-    }
-
     showToast(`Approved: ${user.email}`);
     refreshAllData();
-
-    if (window.cloudSyncFull) {
-      try { await window.cloudSyncFull(); } catch(e) {}
-    }
   } else {
     alert("Pending contribution not found.");
   }
@@ -1754,7 +1797,7 @@ function loadContactUsChats() {
     const existing = chats.find(c => c.userEmail && m.userEmail && c.userEmail.toLowerCase() === m.userEmail.toLowerCase());
     if (!existing) {
       chats.push({
-        chatId: 'chat_' + (m.userEmail ? m.userEmail.toLowerCase().replace(/[^a-z0-9]/g, '_') : ('guest_' + Date.now())),
+        chatId: 'user_' + (m.userEmail ? m.userEmail.toLowerCase().replace(/[^a-z0-9]/g, '_') : ('guest_' + Date.now())),
         userEmail: m.userEmail || 'supportgeniusactglobal@gmail.com',
         userName: m.userEmail ? m.userEmail.split('@')[0] : 'Visitor',
         isGuest: false,

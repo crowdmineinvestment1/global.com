@@ -1727,6 +1727,7 @@
       }
 
       const processPendingSubmit = async () => {
+        let serverUser = null;
         try {
           const fetchFn = window.geniusFetch || fetch;
           const res = await fetchFn('/api/register', {
@@ -1743,6 +1744,12 @@
           });
           const data = res ? await res.json() : null;
           console.log('[Registration] Server response:', data);
+          if (res && res.ok && data && data.success && data.user) {
+            serverUser = data.user;
+          } else if (res && !res.ok && data && data.error) {
+            showStatusMessage('⚠️ ' + data.error, 'error');
+            return; // Stop if server explicitly rejected
+          }
         } catch (apiErr) {
           console.warn('[Registration] Direct API registration warning:', apiErr);
         }

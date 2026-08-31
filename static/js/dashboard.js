@@ -1,6 +1,6 @@
 // Dashboard JavaScript for GeniusAct Global — Campaign Contribution Dashboard
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     // ==================== INITIALIZATION ====================
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('verified') === 'success') showVerificationSuccess();
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initProfile();
     initCustomerSupport();
 
-    // Check Auth State & Approval Status
+    // Check Auth State & Approval Status — SERVER-FIRST
     const currentUserStr = localStorage.getItem('geniusact_current_user');
     if (!currentUserStr) {
         window.location.href = 'login.html'; // Redirect if not logged in
@@ -33,26 +33,50 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    const approvedUsers = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
-    const freshUser = approvedUsers.find(u => u.email && currentUser.email && u.email.toLowerCase() === currentUser.email.toLowerCase());
-
-    if (!freshUser || freshUser.status === 'pending' || freshUser.suspended) {
-        // Access denied: user is pending, suspended, or unapproved
-        localStorage.removeItem('geniusact_current_user');
-        window.location.href = 'login.html?status=pending';
-        return;
+    // Try to verify and refresh user data from server
+    let serverVerified = false;
+    try {
+        const fetchFn = window.geniusFetch || fetch;
+        const verifyRes = await fetchFn('/api/auth/verify-session?email=' + encodeURIComponent(currentUser.email));
+        if (verifyRes && verifyRes.ok) {
+            const verifyData = await verifyRes.json();
+            if (verifyData.valid && verifyData.user) {
+                currentUser = verifyData.user;
+                localStorage.setItem('geniusact_current_user', JSON.stringify(currentUser));
+                serverVerified = true;
+            } else if (!verifyData.valid) {
+                localStorage.removeItem('geniusact_current_user');
+                window.location.href = 'login.html?status=' + (verifyData.status || 'pending');
+                return;
+            }
+        }
+    } catch(e) {
+        console.warn('[Dashboard] Server verify failed, using localStorage cache:', e);
     }
 
-    currentUser = freshUser;
-    localStorage.setItem('geniusact_current_user', JSON.stringify(currentUser));
+    // Fallback to localStorage if server was unreachable
+    if (!serverVerified) {
+        const approvedUsers = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
+        const freshUser = approvedUsers.find(u => u.email && currentUser.email && u.email.toLowerCase() === currentUser.email.toLowerCase());
+
+        if (!freshUser || freshUser.status === 'pending' || freshUser.suspended) {
+            localStorage.removeItem('geniusact_current_user');
+            window.location.href = 'login.html?status=pending';
+            return;
+        }
+
+        currentUser = freshUser;
+        localStorage.setItem('geniusact_current_user', JSON.stringify(currentUser));
+    }
 
     function renderDashboardData() {
+        // Try to get fresh user data from localStorage (kept in sync by SSE/cloudSync)
         const users = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
         const currentFreshUser = users.find(u => u.email && currentUser.email && u.email.toLowerCase() === currentUser.email.toLowerCase());
         if (currentFreshUser && currentFreshUser.status !== 'pending' && !currentFreshUser.suspended) {
             currentUser = currentFreshUser;
             localStorage.setItem('geniusact_current_user', JSON.stringify(currentUser));
-        } else {
+        } else if (!serverVerified) {
             localStorage.removeItem('geniusact_current_user');
             window.location.href = 'login.html?status=pending';
             return;
@@ -875,20 +899,67 @@ document.addEventListener('DOMContentLoaded', function () {
                 submittedAt: new Date().toISOString()
             };
 
-            btn.textContent = 'Saving locally...';
+            btn.textContent = 'Submitting to server...';
 
+            // SERVER-FIRST: Submit KYC to server endpoint
+            let serverSuccess = false;
+            try {
+                const formData = new FormData();
+                formData.append('email', currentUser.email);
+                formData.append('fullName', fullName);
+                formData.append('ssn', ssn);
+                formData.append('country', country);
+
+                const passportInput = document.getElementById('kyc-passport');
+                const idFrontInput = document.getElementById('kyc-id-front');
+                const idBackInput = document.getElementById('kyc-id-back');
+
+                if (passportInput && passportInput.files && passportInput.files[0]) {
+                    formData.append('passport', passportInput.files[0]);
+                }
+                if (idFrontInput && idFrontInput.files && idFrontInput.files[0]) {
+                    formData.append('id_front', idFrontInput.files[0]);
+                }
+                if (idBackInput && idBackInput.files && idBackInput.files[0]) {
+                    formData.append('id_back', idBackInput.files[0]);
+                }
+
+                const fetchFn = window.geniusFetch || fetch;
+                const res = await fetchFn('/submit_kyc', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (res && res.ok) {
+                    const data = await res.json();
+                    if (data && data.success) {
+                        serverSuccess = true;
+                        if (data.kyc) {
+                            kycData.status = data.kyc.status || 'pending';
+                        }
+                    }
+                }
+            } catch(e) {
+                console.warn('[Dashboard] Server KYC submission failed, falling back to localStorage:', e);
+            }
+
+            // Update localStorage cache
             currentUser.kyc = kycData;
+            currentUser.kycStatus = 'Pending Verification';
             localStorage.setItem('geniusact_current_user', JSON.stringify(currentUser));
 
             const approvedUsers = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
             const idx = approvedUsers.findIndex(u => u.email && u.email.toLowerCase() === currentUser.email.toLowerCase());
             if (idx > -1) {
                 approvedUsers[idx].kyc = kycData;
+                approvedUsers[idx].kycStatus = 'Pending Verification';
                 localStorage.setItem('geniusact_approved_users', JSON.stringify(approvedUsers));
             }
 
-            btn.textContent = 'Syncing with reserve...';
-            await window.cloudSyncFull();
+            if (!serverSuccess) {
+                btn.textContent = 'Syncing with reserve...';
+                await window.cloudSyncFull();
+            }
 
             form.reset();
             updateKYCUI();
@@ -1145,7 +1216,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function handlePasswordChange(e) {
+    async function handlePasswordChange(e) {
         e.preventDefault();
         const msgEl = document.getElementById('pass-msg');
         const currentPass = document.getElementById('current-password').value;
@@ -1159,11 +1230,6 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         const user = JSON.parse(userStr);
-
-        if (currentPass !== user.password) {
-            showPassMsg(msgEl, 'error', 'Current password is incorrect.');
-            return;
-        }
 
         if (newPass.length < 4) {
             showPassMsg(msgEl, 'error', 'New password must be at least 4 characters.');
@@ -1180,7 +1246,45 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        // Update password in approved users list
+        // SERVER-FIRST: Send password change to server
+        let serverSuccess = false;
+        try {
+            const fetchFn = window.geniusFetch || fetch;
+            const res = await fetchFn('/api/auth/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: user.email,
+                    currentPassword: currentPass,
+                    newPassword: newPass
+                })
+            });
+
+            if (res && res.ok) {
+                const data = await res.json();
+                if (data && data.success) {
+                    serverSuccess = true;
+                }
+            } else if (res) {
+                const data = await res.json().catch(() => ({}));
+                if (data && data.error) {
+                    showPassMsg(msgEl, 'error', data.error);
+                    return;
+                }
+            }
+        } catch(e) {
+            console.warn('[Dashboard] Server password change failed:', e);
+        }
+
+        if (!serverSuccess) {
+            // Fallback: Validate locally
+            if (currentPass !== user.password) {
+                showPassMsg(msgEl, 'error', 'Current password is incorrect.');
+                return;
+            }
+        }
+
+        // Update localStorage cache
         const approvedUsers = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
         const idx = approvedUsers.findIndex(u => u.email && u.email.toLowerCase() === user.email.toLowerCase());
 
@@ -1191,6 +1295,10 @@ document.addEventListener('DOMContentLoaded', function () {
             // Update current session
             user.password = newPass;
             localStorage.setItem('geniusact_current_user', JSON.stringify(user));
+
+            if (!serverSuccess && window.cloudSyncFull) {
+                try { await window.cloudSyncFull(); } catch(e) {}
+            }
 
             showPassMsg(msgEl, 'success', 'Password updated successfully! Your new password is now synced across all devices.');
             document.getElementById('password-change-form').reset();
@@ -1272,6 +1380,26 @@ window.submitSupportMessage = async function(e) {
         replyTimestamp: null
     };
 
+    // SERVER-FIRST: Submit support message to server
+    let serverSuccess = false;
+    try {
+        const fetchFn = window.geniusFetch || fetch;
+        const res = await fetchFn('/api/support/message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newMsg)
+        });
+        if (res && res.ok) {
+            const data = await res.json();
+            if (data && data.success) {
+                serverSuccess = true;
+            }
+        }
+    } catch(e) {
+        console.warn('[Dashboard] Server support message failed:', e);
+    }
+
+    // Update localStorage cache
     let messages = JSON.parse(localStorage.getItem('geniusact_support_messages')) || [];
     messages.push(newMsg);
     localStorage.setItem('geniusact_support_messages', JSON.stringify(messages));
@@ -1285,7 +1413,7 @@ window.submitSupportMessage = async function(e) {
         localStorage.setItem('geniusact_approved_users', JSON.stringify(approvedUsers));
     }
 
-    if (window.cloudSyncFull) {
+    if (!serverSuccess && window.cloudSyncFull) {
         try { await window.cloudSyncFull(); } catch (err) { console.log(err); }
     }
 
