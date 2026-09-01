@@ -1,0 +1,6 @@
+{
+  "name": "GeniusAct Global",
+  "description": "Campaign administration portal and supporter platform for Donald J. Trump For President 2024 and GENIUS Act initiatives.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

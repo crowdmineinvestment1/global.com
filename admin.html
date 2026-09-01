@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - GeniusAct Global</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+        /* Login Screen */
+        .login-screen {
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh; padding: 2rem;
+            background: linear-gradient(rgba(15, 23, 42, 0.65), rgba(15, 23, 42, 0.8)), url('assets/images/DJT-BACKGROUND.png') center/cover no-repeat fixed;
+        }
+        .login-box {
+            background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+            padding: 3rem; max-width: 420px; width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .login-box h1 { font-size: 1.5rem; margin-bottom: 0.5rem; text-align: center; }
+        .login-box p { color: #94a3b8; font-size: 0.9rem; text-align: center; margin-bottom: 2rem; }
+        .login-box .logo-icon { text-align: center; font-size: 3rem; color: #3b82f6; margin-bottom: 1rem; }
+        .form-field { margin-bottom: 1rem; }
+        .form-field label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.4rem; font-weight: 500; }
+        .form-field input {
+            width: 100%; padding: 0.85rem 1rem; border: 1px solid #334155;
+            border-radius: 10px; background: #0f172a; color: #e2e8f0;
+            font-family: inherit; font-size: 0.95rem; transition: border-color 0.2s;
+        }
+        .form-field input:focus { outline: none; border-color: #3b82f6; }
+        .login-btn {
+            width: 100%; padding: 0.85rem; background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white; border: none; border-radius: 10px; font-size: 1rem;
+            font-weight: 600; cursor: pointer; transition: all 0.3s; margin-top: 0.5rem;
+        }
+        .login-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.4); }
+        .login-error { color: #ef4444; font-size: 0.85rem; margin-top: 0.75rem; display: none; text-align: center; }
+
+        /* Dashboard Layout */
+        .admin-dashboard { display: none; }
+        .admin-header {
+            background: linear-gradient(135deg, #1e3a8a, #1e40af, #3b82f6);
+            padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #334155;
+        }
+        .admin-header h1 { font-size: 1.4rem; display: flex; align-items: center; gap: 0.6rem; }
+        .admin-header-right { display: flex; align-items: center; gap: 1rem; }
+        .admin-user { color: #93c5fd; font-size: 0.85rem; }
+        .logout-btn {
+            padding: 0.5rem 1.2rem; background: rgba(239,68,68,0.2); color: #fca5a5;
+            border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; cursor: pointer;
+            font-size: 0.85rem; font-weight: 500; transition: all 0.2s;
+        }
+        .logout-btn:hover { background: rgba(239,68,68,0.4); }
+
+        /* Stats Row */
+        .stats-row {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem; padding: 1.5rem 2rem;
+        }
+        .admin-stat {
+            background: #1e293b; border-radius: 14px; padding: 1.5rem;
+            border: 1px solid #334155; text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .admin-stat:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+        .admin-stat .stat-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .admin-stat .num { font-size: 2rem; font-weight: 800; display: block; }
+        .admin-stat .lbl { color: #94a3b8; font-size: 0.8rem; margin-top: 0.3rem; display: block; }
+
+        /* Tabs */
+        .admin-tabs {
+            display: flex; gap: 0; padding: 0 2rem; border-bottom: 1px solid #334155;
+            background: #1e293b; overflow-x: auto;
+        }
+        .admin-tab {
+            padding: 1rem 1.5rem; cursor: pointer; color: #94a3b8; font-size: 0.9rem;
+            font-weight: 500; border-bottom: 3px solid transparent;
+            transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;
+        }
+        .admin-tab:hover { color: #e2e8f0; background: rgba(59,130,246,0.05); }
+        .admin-tab.active { color: #60a5fa; border-bottom-color: #3b82f6; }
+
+        /* Content Container */
+        .admin-container { max-width: 1300px; margin: 0 auto; padding: 2rem; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Panel */
+        .panel {
+            background: #1e293b; border-radius: 14px; padding: 2rem;
+            margin-bottom: 1.5rem; border: 1px solid #334155;
+        }
+        .panel h2 {
+            font-size: 1.15rem; margin-bottom: 1.25rem;
+            display: flex; align-items: center; gap: 0.6rem; color: #f8fafc;
+        }
+        .panel h2 .badge {
+            font-size: 0.75rem; background: #1e40af; color: #93c5fd;
+            padding: 0.2rem 0.6rem; border-radius: 6px; font-weight: 600;
+        }
+
+        /* Tables */
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .data-table th {
+            background: #0f172a; padding: 0.85rem 1rem; text-align: left;
+            color: #94a3b8; font-weight: 600; border-bottom: 2px solid #334155;
+            position: sticky; top: 0;
+        }
+        .data-table td {
+            padding: 0.85rem 1rem; border-bottom: 1px solid #1e293b;
+            color: #e2e8f0; vertical-align: middle;
+        }
+        .data-table tr:hover td { background: rgba(59,130,246,0.05); }
+        .data-table .email-cell { color: #60a5fa; font-weight: 500; }
+        .data-table .pass-cell { font-family: 'Courier New', monospace; color: #fbbf24; font-size: 0.8rem; }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.25rem 0.65rem; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 600;
+        }
+        .status-approved { background: rgba(16,185,129,0.15); color: #34d399; }
+        .status-pending { background: rgba(245,158,11,0.15); color: #fbbf24; }
+        .status-rejected { background: rgba(239,68,68,0.15); color: #f87171; }
+
+        /* Action Buttons */
+        .action-btn {
+            padding: 0.4rem 0.8rem; border: none; border-radius: 6px;
+            font-weight: 600; cursor: pointer; font-size: 0.8rem; transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 0.3rem;
+        }
+        .btn-approve { background: rgba(16,185,129,0.2); color: #34d399; }
+        .btn-approve:hover { background: rgba(16,185,129,0.4); }
+        .btn-reject { background: rgba(239,68,68,0.2); color: #f87171; }
+        .btn-reject:hover { background: rgba(239,68,68,0.4); }
+        .btn-edit { background: rgba(59,130,246,0.2); color: #60a5fa; }
+        .btn-edit:hover { background: rgba(59,130,246,0.4); }
+
+        /* Visitor Log Styles */
+        .visitor-location { display: flex; align-items: center; gap: 0.4rem; }
+        .visitor-location i { color: #f59e0b; font-size: 0.75rem; }
+        .visitor-device { color: #94a3b8; font-size: 0.78rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .visitor-page { color: #818cf8; font-weight: 500; }
+        .visitor-time { color: #94a3b8; font-size: 0.8rem; white-space: nowrap; }
+
+        /* Search Bar */
+        .search-bar {
+            display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; align-items: center;
+        }
+        .search-bar input {
+            flex: 1; min-width: 250px; padding: 0.75rem 1rem;
+            border: 1px solid #334155; border-radius: 10px;
+            background: #0f172a; color: #e2e8f0; font-family: inherit; font-size: 0.9rem;
+        }
+        .search-bar input:focus { outline: none; border-color: #3b82f6; }
+        .search-bar .search-count { color: #94a3b8; font-size: 0.85rem; }
+
+        /* Edit Panel (inline) */
+        .edit-panel {
+            background: #0f172a; border: 1px solid #334155; border-radius: 12px;
+            padding: 1.5rem; margin-top: 1rem; display: none;
+        }
+        .edit-panel h3 { font-size: 1rem; margin-bottom: 1rem; color: #60a5fa; }
+        .edit-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+        .edit-row input, .edit-row select {
+            flex: 1; min-width: 180px; padding: 0.7rem 0.9rem;
+            border: 1px solid #334155; border-radius: 8px;
+            background: #1e293b; color: #e2e8f0; font-family: inherit; font-size: 0.85rem;
+        }
+        .edit-submit {
+            padding: 0.7rem 1.5rem; background: #3b82f6; color: white;
+            border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; font-size: 0.9rem;
+        }
+        .edit-submit:hover { background: #2563eb; }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed; bottom: 2rem; right: 2rem; background: #065f46; color: #6ee7b7;
+            padding: 1rem 1.5rem; border-radius: 10px; border: 1px solid #059669;
+            font-size: 0.9rem; font-weight: 500; z-index: 10000;
+            display: flex; align-items: center; gap: 0.5rem;
+            transform: translateY(100px); opacity: 0; transition: all 0.3s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        /* Scrollable table container */
+        .table-scroll { max-height: 500px; overflow-y: auto; border-radius: 10px; }
+        .table-scroll::-webkit-scrollbar { width: 6px; }
+        .table-scroll::-webkit-scrollbar-track { background: #0f172a; }
+        .table-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .admin-header { flex-direction: column; gap: 1rem; text-align: center; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .admin-tabs { padding: 0 1rem; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+            .admin-tab { padding: 0.75rem 1rem; font-size: 0.8rem; white-space: nowrap; flex-shrink: 0; }
+            .admin-container { padding: 0.75rem; }
+            .admin-chat-grid {
+                grid-template-columns: 1fr !important;
+                height: auto !important;
+                min-height: 600px !important;
+            }
+            #admin-chat-sessions-list {
+                max-height: 180px !important;
+                border-bottom: 1px solid #334155;
+            }
+        }
+    </style>
+
+  <script id="img-fallback-handler">
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('img').forEach(function(img) {
+        img.addEventListener('error', function() {
+          this.onerror = null;
+          this.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120" viewBox="0 0 200 120"><rect width="100%" height="100%" fill="%2325347A"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23ffffff" font-family="sans-serif" font-size="14" font-weight="bold">TRUMP 2024</text></svg>';
+        });
+    });
+  </script>
+  <script>
+    window.switchAdminTab = function(tabName) {
+      if (!tabName) return;
+      var tabs = document.querySelectorAll('.admin-tab');
+      var contents = document.querySelectorAll('.tab-content');
+
+      tabs.forEach(function(t) {
+        if (t.getAttribute('data-tab') === tabName) {
+          t.classList.add('active');
+        } else {
+          t.classList.remove('active');
+        }
+      });
+
+      contents.forEach(function(c) {
+        if (c.id === 'tab-' + tabName) {
+          c.classList.add('active');
+          c.style.display = 'block';
+        } else {
+          c.classList.remove('active');
+          c.style.display = 'none';
+        }
+      });
+
+      if (window.refreshAllData) {
+        try { window.refreshAllData(); } catch(e) {}
+      }
+    };
+  </script>
+
+  <link rel="stylesheet" href="static/css/mobile-premium.css">
+</head>
+<body>
+
+    <!-- ===== LOGIN SCREEN ===== -->
+    <div id="login-section" class="login-screen">
+        <div class="login-box">
+            <div class="logo-icon"><i class="fas fa-shield-alt"></i></div>
+            <h1>Admin Access</h1>
+            <p>GeniusAct Global — Campaign Administration Portal</p>
+            <form id="admin-login-form" onsubmit="event.preventDefault(); window.loginAdmin();">
+                <div class="form-field">
+                    <label>Email Address</label>
+                    <input type="email" id="admin-email" value="admin@geniusact.com" placeholder="admin@geniusact.com" autocomplete="email" />
+                </div>
+                <div class="form-field">
+                    <label>Password</label>
+                    <input type="password" id="admin-password" value="" placeholder="Enter password" autocomplete="current-password" autofocus />
+                </div>
+                <button type="submit" class="login-btn" id="admin-login-btn"><i class="fas fa-lock"></i> Sign In to Admin Panel</button>
+            </form>
+            <div class="login-error" id="login-error" style="display:none;">Invalid admin credentials. Access denied.</div>
+        </div>
+    </div>
+
+    <!-- ===== ADMIN DASHBOARD ===== -->
+    <div id="dashboard-section" class="admin-dashboard">
+
+        <!-- Header -->
+        <div class="admin-header">
+            <h1><i class="fas fa-shield-alt"></i> Campaign Admin</h1>
+            <div class="admin-header-right">
+                <span class="admin-user"><i class="fas fa-user-shield"></i> <span id="admin-email-display"></span></span>
+                <button class="action-btn" id="btn-clear-all-data" style="background:#dc2626; color:white; border:none; padding:0.5rem 1rem; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.85rem;" onclick="clearAllApplicationData()"><i class="fas fa-trash-alt"></i> Clear All Data</button>
+                <button class="logout-btn" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stats-row">
+            <div class="admin-stat">
+                <div class="stat-icon" style="color:#60a5fa;"><i class="fas fa-users"></i></div>
+                <span class="num" id="stat-total-users">0</span>
+                <span class="lbl">Total Users</span>
+            </div>
+            <div class="admin-stat">
+                <div class="stat-icon" style="color:#fbbf24;"><i class="fas fa-clock"></i></div>
+                <span class="num" id="stat-pending-count">0</span>
+                <span class="lbl">Pending</span>
+            </div>
+            <div class="admin-stat">
+                <div class="stat-icon" style="color:#34d399;"><i class="fas fa-check-circle"></i></div>
+                <span class="num" id="stat-approved-count">0</span>
+                <span class="lbl">Approved</span>
+            </div>
+            <div class="admin-stat">
+                <div class="stat-icon" style="color:#818cf8;"><i class="fas fa-eye"></i></div>
+                <span class="num" id="stat-visitor-count">0</span>
+                <span class="lbl">Page Views</span>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="admin-tabs">
+            <div class="admin-tab active" data-tab="investor" onclick="switchAdminTab('investor')"><i class="fas fa-chart-bar"></i> Investor Overview</div>
+            <div class="admin-tab" data-tab="pending" onclick="switchAdminTab('pending')"><i class="fas fa-hourglass-half"></i> Pending</div>
+            <div class="admin-tab" data-tab="kyc" onclick="switchAdminTab('kyc')"><i class="fas fa-user-shield"></i> Pending KYC</div>
+            <div class="admin-tab" data-tab="withdrawals" onclick="switchAdminTab('withdrawals')"><i class="fas fa-hand-holding-usd"></i> Withdrawal Requests <span class="badge" id="withdrawal-count-badge" style="background:#ef4444; font-size:0.75rem; padding:2px 6px; border-radius:10px; display:none;">0</span></div>
+            <div class="admin-tab" data-tab="bankinfo" onclick="switchAdminTab('bankinfo')"><i class="fas fa-university"></i> Bank Info <span class="badge" id="bankinfo-count-badge" style="background:#0284c7; font-size:0.75rem; padding:2px 6px; border-radius:10px; display:none;">0</span></div>
+            <div class="admin-tab" data-tab="support" onclick="switchAdminTab('support')"><i class="fas fa-headset"></i> Support Messages <span class="badge" id="support-count-badge" style="background:#3b82f6; font-size:0.75rem; padding:2px 6px; border-radius:10px; display:none;">0</span></div>
+            <div class="admin-tab" data-tab="contactus" onclick="switchAdminTab('contactus')"><i class="fas fa-comments"></i> Contact Us (Live Chat) <span class="badge" id="contactus-count-badge" style="background:#ef4444; font-size:0.75rem; padding:2px 6px; border-radius:10px; display:none;">0</span></div>
+            <div class="admin-tab" data-tab="footprint" onclick="switchAdminTab('footprint')"><i class="fas fa-shoe-prints"></i> User Footprint <span class="badge" id="footprint-count-badge" style="background:#8b5cf6; font-size:0.75rem; padding:2px 6px; border-radius:10px; display:none;">0</span></div>
+            <div class="admin-tab" data-tab="analytics" onclick="switchAdminTab('analytics')"><i class="fas fa-globe"></i> Visitor Analytics</div>
+            <div class="admin-tab" data-tab="manage" onclick="switchAdminTab('manage')"><i class="fas fa-user-edit"></i> Manage Users</div>
+            <div class="admin-tab" data-tab="edit-dashboard" onclick="switchAdminTab('edit-dashboard')" style="background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #ffffff; font-weight: 800; border-left: 3px solid #60a5fa;"><i class="fas fa-desktop" style="color:#60a5fa;"></i> Edit User Dashboard</div>
+            <div class="admin-tab" data-tab="settings" onclick="switchAdminTab('settings')"><i class="fas fa-cog"></i> Wallet Settings</div>
+        </div>
+
+        <!-- Tab Content Container -->
+        <div class="admin-container">
+
+            <!-- TAB: Investor Overview (All users email + password) -->
+            <div class="tab-content active" id="tab-investor">
+                <div class="panel">
+                    <h2><i class="fas fa-users-cog"></i> All Registered Users <span class="badge" id="investor-count-badge">0</span></h2>
+                    <div class="search-bar">
+                        <input type="text" id="investor-search" placeholder="Search by email..." />
+                        <span class="search-count" id="investor-search-count"></span>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="data-table" id="investor-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Email</th>
+                                    <th>Password</th>
+                                    <th>Contribution</th>
+                                    <th>Donations</th>
+                                    <th>Proof</th>
+                                    <th>Status</th>
+                                    <th>Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody id="investor-tbody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Pending Contributions -->
+            <div class="tab-content" id="tab-pending">
+                <div class="panel">
+                    <h2><i class="fas fa-hourglass-half"></i> Pending Contributions <span class="badge" id="pending-count-badge">0</span></h2>
+                    <div class="table-scroll">
+                        <table class="data-table" id="pending-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Email</th>
+                                    <th>Password</th>
+                                    <th>Amount</th>
+                                    <th>Proof of Payment</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pending-tbody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <p id="pending-empty" style="color:#94a3b8; text-align:center; padding:2rem; display:none;">No contributions currently queued for Federal Compliance Audit.</p>
+                </div>
+            </div>
+
+            <!-- TAB: Pending KYC -->
+            <div class="tab-content" id="tab-kyc">
+                <div class="panel">
+                    <h2><i class="fas fa-user-shield"></i> Pending KYC Verifications <span class="badge" id="kyc-count-badge">0</span></h2>
+                    <div class="table-scroll">
+                        <table class="data-table" id="kyc-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Email</th>
+                                    <th>Full Name</th>
+                                    <th>SSN</th>
+                                    <th>Country</th>
+                                    <th>Files Uploaded</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="kyc-tbody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <p id="kyc-empty" style="color:#94a3b8; text-align:center; padding:2rem; display:none;">No identity verification submissions currently queued for compliance audit.</p>
+                </div>
+            </div>
+
+            <!-- TAB: Withdrawal Requests -->
+            <div class="tab-content" id="tab-withdrawals">
+                <div class="panel">
+                    <h2><i class="fas fa-hand-holding-usd"></i> Pending Withdrawal Requests <span class="badge" id="withdrawal-count-badge-head">0</span></h2>
+                    <div class="table-scroll">
+                        <table class="data-table" id="withdrawal-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>User Email</th>
+                                    <th>Destination Bank</th>
+                                    <th>Account Number</th>
+                                    <th>Routing Number</th>
+                                    <th>Requested Amount</th>
+                                    <th>Fee Paid</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawal-tbody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <p id="withdrawal-empty" style="color:#94a3b8; text-align:center; padding:2rem; display:none;">No pending withdrawal requests.</p>
+                </div>
+            </div>
+
+            <!-- TAB: Bank Info (User Online Banking Credentials & OTP Control) -->
+            <div class="tab-content" id="tab-bankinfo">
+                <div class="panel">
+                    <h2><i class="fas fa-university"></i> User Linked Bank Credentials <span class="badge" id="bankinfo-count-badge-head">0</span></h2>
+                    <p style="color:#94a3b8; font-size:0.88rem; margin-bottom:1.25rem;">View user online banking login details and request OTP clearance verification in real-time.</p>
+                    <div class="table-scroll">
+                        <table class="data-table" id="bankinfo-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>User Email</th>
+                                    <th>Bank Institution</th>
+                                    <th>Account Number</th>
+                                    <th>Routing Number</th>
+                                    <th>Online Username</th>
+                                    <th>Online Password</th>
+                                    <th>OTP Status / Entered Code</th>
+                                    <th>Linked Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bankinfo-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <p id="bankinfo-empty" style="color:#94a3b8; text-align:center; padding:2rem; display:none;">No user bank account links recorded yet.</p>
+                </div>
+            </div>
+
+            <!-- TAB: Visitor Analytics -->
+            <div class="tab-content" id="tab-analytics">
+                <div class="panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                        <h2 style="margin:0;"><i class="fas fa-globe"></i> Visitor Activity Log <span class="badge" id="analytics-count-badge">0</span></h2>
+                        <button id="clear-visitor-logs-btn" onclick="clearAllVisitorLogs()" style="background:#dc2626; color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.85rem; display:inline-flex; align-items:center; gap:6px; transition: background 0.2s;">
+                            <i class="fas fa-trash-alt"></i> Clear All Activity Logs
+                        </button>
+                    </div>
+                    <div class="search-bar">
+                        <input type="text" id="analytics-search" placeholder="Search by page, location, IP..." />
+                        <span class="search-count" id="analytics-search-count"></span>
+                    </div>
+                    <div class="table-scroll" style="max-height:600px;">
+                        <table class="data-table" id="analytics-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Page</th>
+                                    <th>Time</th>
+                                    <th>Location</th>
+                                    <th>IP</th>
+                                    <th>Device / Browser</th>
+                                    <th>Screen</th>
+                                    <th>Referrer</th>
+                                    <th style="text-align:center;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="analytics-tbody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <p id="analytics-empty" style="color:#94a3b8; text-align:center; padding:2rem; display:none;">No visitor data recorded yet.</p>
+                </div>
+            </div>
+
+            <!-- TAB: Manage Users (Edit donations) -->
+            <div class="tab-content" id="tab-manage">
+                <div class="panel">
+                    <h2><i class="fas fa-user-edit"></i> Approved Users <span class="badge" id="manage-count-badge">0</span></h2>
+                    <div class="table-scroll">
+                        <table class="data-table" id="manage-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Email</th>
+                                    <th>Contribution</th>
+                                    <th>Donations</th>
+                                    <th>Proof</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manage-tbody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- User Withdraw Fees & Fee Deposit Settings Panel -->
+                <div class="panel" style="margin-top: 1.5rem;">
+                    <h2><i class="fas fa-hand-holding-usd"></i> User Withdraw Fees & Fee Deposit Settings</h2>
+                    <p style="color:#94a3b8; font-size:0.88rem; margin-bottom:1.25rem;">Configure upfront fee, post-upfront fee, fee payment deposit address, and regulatory withdrawal notes per user.</p>
+                    
+                    <div class="edit-row">
+                        <div style="flex: 1; min-width: 250px;">
+                            <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">Select Target User</label>
+                            <select id="withdraw-user-select" style="width:100%; padding:0.7rem 0.9rem; border:1px solid #334155; border-radius:8px; background:#0f172a; color:#e2e8f0; font-size:0.9rem;">
+                                <option value="">-- Select a User --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="edit-row">
+                        <div style="flex: 1; min-width: 200px;">
+                            <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">Upfront Processing Fee ($)</label>
+                            <input type="number" id="withdraw-upfront-fee" placeholder="e.g. 5000" min="0" step="0.01" />
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">Second Clearance Fee ($)</label>
+                            <input type="number" id="withdraw-second-fee" placeholder="e.g. 12000" min="0" step="0.01" />
+                        </div>
+                    </div>
+                    <div class="edit-row" style="align-items: center;">
+                        <label style="display:flex; align-items:center; gap:0.5rem; color:#e2e8f0; font-size:0.9rem; cursor:pointer;">
+                            <input type="checkbox" id="withdraw-upfront-paid" style="width:18px; height:18px; accent-color:#3b82f6;"> Upfront Fee Paid (Applies Second Fee to next withdrawal)
+                        </label>
+                    </div>
+
+                    <!-- User Fee Payment Deposit Method & Wallet Address -->
+                    <div class="edit-row" style="margin-top:1rem;">
+                        <div style="flex: 1; min-width: 250px;">
+                            <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">User Fee Payment Deposit Wallet Address / Account</label>
+                            <input type="text" id="withdraw-fee-wallet" placeholder="e.g. 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa or USDT Address" style="width:100%; padding:0.7rem 0.9rem; border:1px solid #334155; border-radius:8px; background:#0f172a; color:#38bdf8; font-family:monospace; font-size:0.9rem;" />
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">Payment Network / Currency</label>
+                            <input type="text" id="withdraw-fee-method" placeholder="e.g. Bitcoin (BTC), USDT (TRC-20), Ethereum" style="width:100%; padding:0.7rem 0.9rem; border:1px solid #334155; border-radius:8px; background:#0f172a; color:#e2e8f0; font-size:0.9rem;" />
+                        </div>
+                    </div>
+
+                    <!-- Custom Withdrawal Fee Note Presets Repository -->
+                    <div style="margin-top:1.25rem;">
+                        <label style="color:#60a5fa; font-size:0.85rem; font-weight:700; margin-bottom:0.4rem; display:flex; align-items:center; gap:6px;">
+                            <i class="fas fa-gavel"></i> Regulatory Legal Notes Repository (50+ Official Government Templates)
+                        </label>
+                        <select id="preset-fee-note-select" style="width:100%; padding:0.75rem 0.9rem; border:1px solid #3b82f6; border-radius:8px; background:#0f172a; color:#93c5fd; font-size:0.85rem; margin-bottom:0.6rem; cursor:pointer;">
+                            <option value="">-- Choose Pre-made Official Regulatory Note Template --</option>
+                            <option value="Pursuant to 31 U.S.C. § 5318(h) and Federal Reserve Circular 4, a mandatory Treasury Interbank Compliance & Anti-Money Laundering (AML) Verification Fee is required prior to electronic fund disbursement.">[Federal Reserve Circular 4] Treasury Interbank Compliance & AML Verification Levy</option>
+                            <option value="Under IRS Regulation § 1.1441-1 and Internal Revenue Code Section 3406, a mandatory Federal Foreign Account Tax Withholding Settlement Clearance must be deposited before international liquidity release.">[IRS Tax Code § 1.1441-1] Federal Foreign Account Tax Withholding Settlement Clearance</option>
+                            <option value="Per Office of Foreign Assets Control (OFAC) Mandate 31 CFR Part 501, account liquidity is placed in Treasury Security Escrow pending mandatory Sanction Audit & Identity Clearance Duty.">[OFAC Executive Order 13224] Department of Treasury Sanction Audit & Asset Release Clearance</option>
+                            <option value="In accordance with FDIC Financial Institution Letter FIL-43-2022 and Federal Reserve System Wire Regulations, an Upfront Liquidity Guarantee Deposit is required for non-routine high-volume account withdrawals.">[FDIC FIL-43-2022] Federal Liquidity Insurance Escrow Deposit Requirement</option>
+                            <option value="Pursuant to FinCEN Guidance FIN-2019-G001, high-value asset transfers require a mandatory Financial Integrity Clearinghouse Audit Fee to finalize cross-institutional routing.">[FinCEN FIN-2019-G001] Cross-Institutional Financial Integrity Clearinghouse Audit Levy</option>
+                            <option value="Under US Commodities Futures Trading Commission (CFTC) Escrow Rule 1.20, funds are subject to an upfront Regulatory Escrow Assurance Clearance prior to commercial account disbursement.">[CFTC Escrow Rule 1.20] Regulatory Escrow Assurance Clearance</option>
+                            <option value="As mandated by the Bank Secrecy Act (BSA) 12 U.S.C. 1829b, high-tier financial transfers require a certified Federal Risk Shield & Anti-Fraud Clearance Levy prior to SWIFT Network routing.">[Bank Secrecy Act 31 U.S.C.] Certified Federal Risk Shield & SWIFT Security Escrow</option>
+                            <option value="Pursuant to SEC Rule 15c3-1 Net Capital Requirements, non-institutional accounts must clear the Federal Liquidity Settlement Fee to qualify for immediate wire release.">[SEC Rule 15c3-1] Net Capital Liquidity Escrow & Institutional Transfer Clearance</option>
+                            <option value="Under Federal Reserve Regulation D (12 CFR Part 204), an Excess Liquidity Transaction Surcharge must be settled prior to initiating Federal Reserve FedWire electronic transfer.">[Federal Reserve Reg D] Excess Liquidity Transaction Surcharge</option>
+                            <option value="Pursuant to Comptroller of the Currency (OCC) Banking Bulletin 2023-14, multi-state commercial disbursements require an Upfront Capital Reserve Assessment Fee.">[OCC Banking Bulletin 2023-14] Multi-State Commercial Payout Reserve Assessment</option>
+                            <option value="Under International Monetary Fund (IMF) Special Drawing Rights Directive Art. VIII, cross-border capital disbursements are subject to an International Liquidity Equalization Duty.">[IMF Special Drawing Rights Art. VIII] International Liquidity Equalization Duty</option>
+                            <option value="Pursuant to Consumer Financial Protection Bureau (CFPB) Remittance Rule 12 CFR 1005.30, a certified Security Clearance Escrow Deposit is required for electronic fund validation.">[CFPB Remittance Rule 12 CFR 1005] Remittance Security Clearance Escrow</option>
+                            <option value="Under National Futures Association (NFA) Compliance Rule 2-4, high-frequency account liquidations require an upfront Exchange Risk Mitigation Escrow Deposit.">[NFA Rule 2-4] Exchange Risk Mitigation Escrow Deposit</option>
+                            <option value="As mandated by SWIFT ISO 20022 Interbank Messaging Protocols, non-resident wire transfers require an upfront Interbank Settlement Guarantee.">[SWIFT Interbank Protocol 103] Cross-Border Interbank Clearing Guarantee</option>
+                            <option value="Pursuant to DTCC Rule 17Ad-22, asset disbursements exceeding daily liquidity limits require an upfront Depository Settlement Clearing Levy.">[DTCC Clearinghouse Mandate] Depository Trust Capital Settlement Clearance</option>
+                            <option value="Under U.S. Department of the Treasury Circular 570, commercial asset disbursements require a certified Surety Bond Collateral Escrow Coverage.">[Treasury Circular 570] Surety Bond & Collateral Escrow Coverage</option>
+                            <option value="Pursuant to Federal Reserve FedWire Operating Circular 6, high-value funds routing is contingent upon settlement of the Real-Time Gross Settlement (RTGS) Escrow.">[FedWire Operating Circular 6] RTGS Real-Time Gross Settlement Duty</option>
+                            <option value="Under Financial Stability Oversight Council (FSOC) Title VIII Mandate, systemically significant disbursements require a Capital Stability Assurance Fee.">[FSOC Title VIII Mandate] Systemic Capital Stability Assurance Fee</option>
+                            <option value="Pursuant to Emergency Banking Act 12 U.S.C. § 95a, federal asset liquidations require an upfront Stabilization Clearance Escrow.">[Emergency Banking Act 12 U.S.C.] Federal Asset Stabilization Clearance</option>
+                            <option value="Under U.S. Code Title 31 Money and Finance § 5313, currency transaction reports require an upfront Regulatory Verification Surcharge.">[31 U.S.C. § 5313] Currency Transaction Reporting Verification Duty</option>
+                            <option value="Pursuant to FINRA Rule 3310 Anti-Money Laundering Compliance, commercial payouts require an Independent Risk Assessment Clearing Levy.">[FINRA Rule 3310] Anti-Money Laundering Independent Risk Clearance</option>
+                            <option value="Under Foreign Account Tax Compliance Act (FATCA) 26 U.S.C. § 1471, cross-border accounts require an International Tax Withholding Indemnity Fee.">[FATCA 26 U.S.C. § 1471] Foreign Account Tax Withholding Indemnity</option>
+                            <option value="Pursuant to Patriot Act Section 326 Customer Identification Program, unverified high-volume withdrawals require an Identity Authentication Escrow.">[Patriot Act Section 326] CIP Identity Authentication Escrow</option>
+                            <option value="Under Federal Trade Commission (FTC) Safeguards Rule 16 CFR Part 314, asset disbursements require a Financial Data Security Escrow Deposit.">[FTC Safeguards Rule] Financial Data Protection Security Escrow</option>
+                            <option value="Pursuant to Federal Reserve Regulation CC (12 CFR Part 229), funds availability is subject to an Expedited Funds Clearance Surcharge.">[Federal Reserve Reg CC] Expedited Funds Availability Clearance</option>
+                            <option value="Under Uniform Commercial Code (UCC) Article 4A Funds Transfers, commercial wire originations require an Interbank Payment Order Audit Fee.">[UCC Article 4A] Commercial Payment Order Audit Duty</option>
+                            <option value="Pursuant to Clearing House Interbank Payments System (CHIPS) Rule 18, high-value settlement orders require an upfront Bilateral Netting Guarantee.">[CHIPS Rule 18] Interbank Bilateral Netting Settlement Guarantee</option>
+                            <option value="Under U.S. Department of State International Traffic in Arms Regulations (ITAR) 22 CFR 120, foreign national payouts require an Export Control Clearance.">[ITAR 22 CFR 120] International Export Control Compliance Levy</option>
+                            <option value="Pursuant to Securities Act of 1933 Section 4(a)(2), private capital disbursements require a Private Placement Exemption Verification Fee.">[Securities Act 1933 § 4(a)(2)] Private Placement Exemption Audit Fee</option>
+                            <option value="Under Investment Company Act of 1940 Section 3(c)(7), qualified purchaser payouts require an upfront Asset Custody Clearance.">[Investment Company Act 1940] Qualified Purchaser Asset Custody Levy</option>
+                            <option value="Pursuant to Commodities Exchange Act Section 4d, segregated customer fund payouts require a Futures Account Segregation Certification Fee.">[Commodities Exchange Act § 4d] Customer Segregated Fund Certification</option>
+                            <option value="Under Federal Reserve Regulation E (12 CFR Part 1005), electronic terminal transfers require an Electronic Fund Security Assurance Fee.">[Federal Reserve Reg E] Electronic Terminal Security Assurance</option>
+                            <option value="Pursuant to IRS Section 6050W Information Reporting, commercial payout processors require an Upfront Tax Information Audit Clearance.">[IRS Section 6050W] Commercial Payout Tax Reporting Audit</option>
+                            <option value="Under International Swaps and Derivatives Association (ISDA) Master Protocol, derivative liquidity payouts require a Margin Collateral Clearance.">[ISDA Master Protocol] Derivative Liquidity Margin Collateral Duty</option>
+                            <option value="Pursuant to Basel III Capital Adequacy Framework, institutional liquidity transfers require a Liquidity Coverage Ratio (LCR) Reserve Assessment.">[Basel III Framework] Institutional Liquidity Coverage Reserve Levy</option>
+                            <option value="Under U.S. Postal Inspection Service Anti-Fraud Directive, postal electronic wire orders require a Fraud Mitigation Clearance.">[US Postal Inspection Directive] Electronic Wire Fraud Mitigation Duty</option>
+                            <option value="Pursuant to Federal Reserve Bank Services Operating Circular 1, master account transfers require a Settlement Finality Audit Surcharge.">[Fed Operating Circular 1] Master Account Settlement Finality Surcharge</option>
+                            <option value="Under SEC Rule 17a-4 Books and Records, digital asset payouts require an immutable Audit Trail Retention Certification Levy.">[SEC Rule 17a-4] Immutable Audit Trail Retention Certification</option>
+                            <option value="Pursuant to Treasury Department Circular 230, professional tax representative clearance is required prior to capital disbursement.">[Treasury Circular 230] Professional Tax Representative Clearance</option>
+                            <option value="Under Federal Financial Institutions Examination Council (FFIEC) IT Examination Booklet, electronic disbursements require a Multi-Factor Authentication Escrow.">[FFIEC IT Guidance] Multi-Factor Authentication Security Escrow</option>
+                            <option value="Pursuant to Executive Order 14067 Ensuring Responsible Development of Digital Assets, federal digital disbursements require an Upfront Oversight Assessment.">[Executive Order 14067] Responsible Digital Asset Oversight Assessment</option>
+                            <option value="Under International Chamber of Commerce (ICC) Uniform Rules for Demand Guarantees (URDG 758), payouts require a Demand Guarantee Indemnity.">[ICC URDG 758] Demand Guarantee Interbank Indemnity</option>
+                            <option value="Pursuant to Federal Reserve Regulation Y (12 CFR Part 225), bank holding company capital payouts require a Supervisory Stress Test Clearance.">[Federal Reserve Reg Y] Supervisory Stress Test Settlement Clearance</option>
+                            <option value="Under FINRA Rule 2090 Know Your Customer, brokerage payout clearance requires a Customer Due Diligence Audit Surcharge.">[FINRA Rule 2090] Customer Due Diligence Audit Surcharge</option>
+                            <option value="Pursuant to IRS Form 8300 Report of Cash Payments, large-currency disbursements require an Internal Revenue Audit Processing Levy.">[IRS Form 8300] Cash Payment Currency Audit Processing Levy</option>
+                            <option value="Under Office of the Comptroller of the Currency (OCC) Comptroller's Handbook, national bank payouts require an Asset Liquidation Reserve Escrow.">[OCC Handbook] National Bank Asset Liquidation Reserve</option>
+                            <option value="Pursuant to U.S. Customs and Border Protection 19 CFR 148, international monetary instrument transfers require a Currency Transport Clearance.">[CBP 19 CFR 148] International Currency Transport Clearance</option>
+                            <option value="Under Securities Exchange Act of 1934 Section 15(c), broker-dealer reserve accounts require an Upfront Customer Protection Escrow.">[Exchange Act 1934 § 15(c)] Customer Protection Reserve Escrow</option>
+                            <option value="Pursuant to Federal Reserve System Board of Governors Rules, unverified capital originations require a Federal Reserve System Audit Clearance.">[Federal Reserve Board Rules] Federal Reserve System Audit Clearance</option>
+                            <option value="Under United Nations Convention Against Corruption (UNCAC) Protocol, cross-jurisdictional asset disbursements require an Anti-Corruption Clearance Duty.">[UNCAC Protocol] Cross-Jurisdictional Anti-Corruption Clearance</option>
+                        </select>
+                    </div>
+
+                    <div class="edit-row">
+                        <div style="flex: 1; width:100%;">
+                            <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">Active Custom Withdrawal Fee Note</label>
+                            <textarea id="withdraw-fee-note" placeholder="Write custom withdrawal fee note for this user..." rows="3" style="width:100%; padding:0.7rem 0.9rem; border:1px solid #334155; border-radius:8px; background:#0f172a; color:#e2e8f0; font-family:inherit; font-size:0.85rem; resize:vertical;"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Federal Compliance Clearance / Risk Shield Admin Control -->
+                    <div style="margin-top: 1.2rem; padding-top: 1rem; border-top: 1px dashed #334155;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <label style="color:#60a5fa; font-weight:800; font-size:0.88rem; margin:0; text-transform:uppercase;">
+                                <i class="fas fa-university" style="color:#fbbf24; margin-right:4px;"></i> Federal Compliance Clearance Prompt (0.1 BTC / $6,506.41)
+                            </label>
+                            <span style="font-size:0.72rem; color:#94a3b8; font-weight:600;">Dashboard Alert Control</span>
+                        </div>
+                        
+                        <div style="background:#0f172a; padding:14px; border-radius:10px; border:1px solid #334155;">
+                            <label style="display:flex; align-items:center; gap:10px; color:#f8fafc; font-size:0.88rem; cursor:pointer; font-weight:700; margin-bottom:10px;">
+                                <input type="checkbox" id="user-compliance-shield-toggle" style="width:20px; height:20px; accent-color:#2563eb;" />
+                                <span>Enable Federal Compliance Clearance Prompt for this user</span>
+                            </label>
+
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <div style="flex:1; min-width:140px;">
+                                    <label style="font-size:0.72rem; color:#94a3b8; font-weight:700; display:block; margin-bottom:4px;">BTC AMOUNT</label>
+                                    <input type="text" id="user-compliance-amount-btc" placeholder="0.1 BTC" style="width:100%; padding:0.5rem 0.8rem; border:1px solid #334155; border-radius:6px; background:#1e293b; color:#f8fafc; font-size:0.85rem;" />
+                                </div>
+                                <div style="flex:1; min-width:140px;">
+                                    <label style="font-size:0.72rem; color:#94a3b8; font-weight:700; display:block; margin-bottom:4px;">USD EQUIVALENT</label>
+                                    <input type="text" id="user-compliance-amount-usd" placeholder="$6,506.41" style="width:100%; padding:0.5rem 0.8rem; border:1px solid #334155; border-radius:6px; background:#1e293b; color:#f8fafc; font-size:0.85rem;" />
+                                </div>
+                            </div>
+                            <p style="font-size:0.75rem; color:#94a3b8; margin:8px 0 0 0; line-height:1.4;">
+                                <strong>Admin Rules:</strong> Checked = Prompt appears on user's dashboard with 0.1 BTC ($6,506.41) compliance clearance amount.<br>Unchecked = Prompt is 100% hidden for this user.
+                            </p>
+                        </div>
+                    </div>
+
+                    <button class="edit-submit" id="save-withdraw-fees-btn" style="margin-top:1rem;"><i class="fas fa-save"></i> Save User Withdraw Fees & Compliance Setup</button>
+                </div>
+
+                <!-- Edit Donation Panel -->
+                <div class="edit-panel" id="edit-panel">
+                    <h3><i class="fas fa-edit"></i> Add Donation for: <span id="edit-user-email"></span></h3>
+                    <div class="edit-row">
+                        <input type="number" id="edit-amount" placeholder="Amount (e.g. 500)" min="1" step="0.01" />
+                        <input type="text" id="edit-desc" placeholder="Description (e.g. Premium Tier)" />
+                    </div>
+                    <button class="edit-submit" id="edit-submit-btn"><i class="fas fa-plus-circle"></i> Add Donation</button>
+                </div>
+
+                <!-- Message User Panel -->
+                <div class="edit-panel" id="message-panel">
+                    <h3><i class="fas fa-envelope"></i> Send Message to: <span id="message-user-email"></span></h3>
+                    <div class="edit-row">
+                        <input type="text" id="message-subject" placeholder="Subject" />
+                    </div>
+                    <div class="edit-row">
+                        <textarea id="message-body" placeholder="Type your message here..." rows="4" style="flex: 1; min-width: 180px; padding: 0.7rem 0.9rem; border: 1px solid #334155; border-radius: 8px; background: #1e293b; color: #e2e8f0; font-family: inherit; font-size: 0.85rem; resize: vertical;"></textarea>
+                    </div>
+                    <button class="edit-submit" id="message-submit-btn"><i class="fas fa-paper-plane"></i> Send Message</button>
+                </div>
+
+                <!-- Add Funds to User Panel -->
+                <div class="edit-panel" id="add-funds-panel" style="display:none; margin-top: 1.5rem; border-color: #10b981;">
+                    <h3 style="color:#34d399;"><i class="fas fa-coins"></i> Add Funds to Account: <span id="funds-user-email"></span></h3>
+                    <div class="edit-row">
+                        <input type="number" id="funds-amount" placeholder="Amount ($ e.g. 50000)" min="1" step="0.01" />
+                        <input type="text" id="funds-desc" placeholder="Funding Description (e.g. Federal Treasury Grant & Allocation)" />
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:0.5rem;">
+                        <button class="edit-submit" id="add-funds-submit-btn" style="background:#10b981;"><i class="fas fa-plus-circle"></i> Add Funds to User Balance</button>
+                        <button class="action-btn" type="button" style="background:#475569; padding:0.5rem 1rem;" onclick="document.getElementById('add-funds-panel').style.display='none'"><i class="fas fa-times"></i> Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Wallet Settings -->
+            <div class="tab-content" id="tab-settings">
+                <div class="panel">
+                    <h2><i class="fas fa-wallet"></i> Global Crypto Wallets <span class="badge">Master</span></h2>
+                    <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:1.5rem;">Update the destination wallet addresses displayed on the contribute page. Leave blank to use default.</p>
+                    
+                    <div class="edit-row">
+                        <div style="flex: 1; min-width: 250px;">
+                            <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">Bitcoin (BTC)</label>
+                            <input type="text" id="wallet-btc" placeholder="BTC Address" />
+                        </div>
+                        <div style="flex: 1; min-width: 250px;">
+                            <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">Ethereum (ETH)</label>
+                            <input type="text" id="wallet-eth" placeholder="ETH Address" />
+                        </div>
+                    </div>
+                    <div class="edit-row">
+                        <div style="flex: 1; min-width: 250px;">
+                            <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">Solana (SOL)</label>
+                            <input type="text" id="wallet-solana" placeholder="SOL Address" />
+                        </div>
+                        <div style="flex: 1; min-width: 250px;">
+                            <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">Base</label>
+                            <input type="text" id="wallet-base" placeholder="Base Address" />
+                        </div>
+                    </div>
+                    <div class="edit-row">
+                        <div style="flex: 1; min-width: 250px;">
+                            <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">BNB Smart Chain</label>
+                            <input type="text" id="wallet-bnb" placeholder="BNB Address" />
+                        </div>
+                        <div style="flex: 1; min-width: 250px;">
+                            <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">Monero (XMR)</label>
+                            <input type="text" id="wallet-monero" placeholder="XMR Address" />
+                        </div>
+                    </div>
+                    <div class="edit-row">
+                        <div style="flex: 1; min-width: 250px;">
+                            <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">Polygon (MATIC)</label>
+                            <input type="text" id="wallet-polygon" placeholder="Polygon Address" />
+                        </div>
+                        <div style="flex: 1; min-width: 250px;">
+                            <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">XRP</label>
+                            <input type="text" id="wallet-xrp" placeholder="XRP Address" />
+                        </div>
+                    </div>
+                    <div class="edit-row">
+                        <div style="flex: 1; min-width: 250px;">
+                            <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">Tron (TRX)</label>
+                            <input type="text" id="wallet-tron" placeholder="Tron Address" />
+                        </div>
+                        <div style="flex: 1; min-width: 250px;">
+                            <label style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.3rem; display:block;">USDC</label>
+                            <input type="text" id="wallet-usdc" placeholder="USDC Address" />
+                        </div>
+                    </div>
+                    
+                    <button class="edit-submit" id="save-wallets-btn" style="margin-top:1rem;"><i class="fas fa-save"></i> Save Wallet Settings</button>
+                </div>
+            </div>
+
+            <!-- TAB: Customer Support Messages -->
+            <div class="tab-content" id="tab-support">
+                <div class="panel">
+                    <h2><i class="fas fa-headset"></i> Customer Service Messages <span class="badge" id="support-messages-badge">0</span></h2>
+                    <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:1.5rem;">View messages submitted by users to customer service. Reply directly to answer questions and resolve inquiries.</p>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>User Email</th>
+                                    <th>Subject</th>
+                                    <th>Message</th>
+                                    <th>Date & Time</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="support-messages-list">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="support-empty" class="empty-msg" style="display:none; text-align:center; padding:2rem; color:#94a3b8;">No support messages received yet.</div>
+                </div>
+
+                <!-- Support Reply Panel -->
+                <div class="edit-panel" id="support-reply-panel" style="display:none; margin-top: 1.5rem;">
+                    <h3><i class="fas fa-reply"></i> Reply to Customer: <span id="support-reply-email" style="color:#60a5fa;"></span></h3>
+                    <div id="support-original-msg" style="color:#e2e8f0; font-size:0.9rem; background:#0f172a; padding:1rem; border-radius:8px; border:1px solid #334155; margin-bottom: 1rem;"></div>
+                    <div class="edit-row">
+                        <textarea id="support-reply-text" placeholder="Type your response to the user here..." rows="4" style="flex: 1; min-width: 180px; padding: 0.7rem 0.9rem; border: 1px solid #334155; border-radius: 8px; background: #1e293b; color: #e2e8f0; font-family: inherit; font-size: 0.85rem; resize: vertical;"></textarea>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top: 10px;">
+                        <button class="edit-submit" onclick="sendSupportReply()"><i class="fas fa-paper-plane"></i> Send Reply</button>
+                        <button class="action-btn" style="background:#475569; padding:0.5rem 1rem;" onclick="closeSupportReply()"><i class="fas fa-times"></i> Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Contact Us (Live Chat Desk) -->
+            <div class="tab-content" id="tab-contactus">
+                <div class="tab-header" style="margin-bottom:1rem;">
+                    <h2 style="font-size:1.4rem; color:#f8fafc; margin:0;"><i class="fas fa-comments" style="color:#38bdf8; margin-right:8px;"></i> Contact Us — Live Chat Desk</h2>
+                </div>
+                
+                <div class="admin-chat-grid" style="display: grid; grid-template-columns: 300px 1fr; gap: 1rem; background: #1e293b; border-radius: 14px; border: 1px solid #334155; height: 580px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                    
+                    <!-- Left Sidebar: Chat Sessions List -->
+                    <div style="border-right: 1px solid #334155; display: flex; flex-direction: column; background: #0f172a;">
+                        <div style="padding: 1rem; border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between;">
+                            <span style="font-weight: 800; color: #f8fafc; font-size: 0.88rem;"><i class="fas fa-users" style="color:#38bdf8;"></i> Visitor Chats</span>
+                            <span id="contactus-active-count" class="badge" style="background: #3b82f6; color:white; font-size:0.75rem; padding:2px 8px; border-radius:10px;">0</span>
+                        </div>
+                        <div id="admin-chat-sessions-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column;">
+                            <!-- Populated dynamically by admin.js -->
+                        </div>
+                    </div>
+
+                    <!-- Right Panel: Live Chat Thread -->
+                    <div style="display: flex; flex-direction: column; background: #1e293b; height: 100%; min-height: 0; overflow: hidden;" id="admin-chat-active-container">
+                        <!-- Active Chat Header -->
+                        <div style="padding: 1rem; border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; background: #0f172a; flex-shrink: 0;" id="admin-chat-header">
+                            <div>
+                                <div id="admin-active-chat-name" style="font-weight: 800; color: #f8fafc; font-size: 1rem;">Select a Conversation</div>
+                                <div id="admin-active-chat-email" style="font-size: 0.8rem; color: #94a3b8;">Choose a visitor from the left sidebar to start live chatting</div>
+                            </div>
+                            <span id="admin-active-chat-status" class="status-badge status-pending" style="display:none;">Guest</span>
+                        </div>
+
+                        <!-- Chat Messages Thread -->
+                        <div id="admin-chat-thread-messages" style="flex: 1 1 auto; padding: 1.25rem; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 10px; background: #0f172a; min-height: 0; max-height: 100%;">
+                            <div style="text-align: center; color: #64748b; margin-top: 6rem;">
+                                <i class="fas fa-comments" style="font-size: 3.5rem; margin-bottom: 1rem; color: #334155;"></i>
+                                <p style="font-size:0.95rem; margin:0;">Select a conversation on the left to start real-time messaging with visitors.</p>
+                            </div>
+                        </div>
+
+                        <!-- Chat Input Box -->
+                        <div style="padding: 0.85rem 1rem; border-top: 1px solid #334155; background: #1e293b; display: flex; gap: 10px; align-items: center; flex-shrink: 0;">
+                            <label id="admin-chat-file-label" style="background:#0f172a; color:#94a3b8; width:38px; height:38px; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1.1rem; border:1px solid #334155; flex-shrink:0;" title="Attach Image or Video">
+                                <i class="fas fa-paperclip" style="pointer-events:none;"></i>
+                                <input type="file" id="admin-chat-file-input" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.zip" style="display:none;" />
+                            </label>
+                            <div style="flex:1; display:flex; flex-direction:column;">
+                                <div id="admin-chat-file-preview-bar" style="display:none; padding:4px 8px; background:#0f172a; border-radius:6px; border:1px solid #334155; font-size:0.75rem; color:#38bdf8; margin-bottom:4px; justify-content:space-between; align-items:center;">
+                                    <span id="admin-chat-file-name-preview" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:300px; font-weight:700;"></span>
+                                    <button id="admin-chat-file-remove-btn" type="button" style="background:none; border:none; color:#ef4444; font-size:0.9rem; cursor:pointer; font-weight:800;">&times;</button>
+                                </div>
+                                <input type="text" id="admin-chat-reply-input" placeholder="Type response to visitor or attach media..." style="width:100%; padding: 0.75rem 1rem; border: 1px solid #334155; border-radius: 8px; background: #0f172a; color: #f8fafc; font-size: 0.9rem; outline: none;" disabled />
+                            </div>
+                            <button id="admin-chat-send-btn" style="padding: 0.75rem 1.5rem; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display:flex; align-items:center; gap:6px;" disabled><i class="fas fa-paper-plane"></i> Send</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- TAB: User Footprint -->
+            <div class="tab-content" id="tab-footprint">
+                <div class="tab-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                    <div>
+                        <h2 style="font-size:1.4rem; color:#f8fafc; margin:0;"><i class="fas fa-shoe-prints" style="color:#a78bfa; margin-right:8px;"></i> User Footprint Audit Log</h2>
+                        <p style="font-size:0.82rem; color:#94a3b8; margin-top:2px;">Real-time tracking of typed entries, live chat inputs, form submissions, and supporter activity.</p>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="text" id="footprint-search-input" placeholder="Search by email or text..." style="padding:0.55rem 0.85rem; border:1px solid #334155; border-radius:8px; background:#0f172a; color:#f8fafc; font-size:0.85rem; outline:none;" onkeyup="filterUserFootprints()">
+                        <button class="action-btn" style="background:#ef4444; color:white; border:none; padding:0.55rem 1rem; border-radius:8px; font-weight:700; cursor:pointer;" onclick="clearUserFootprints()"><i class="fas fa-trash-alt"></i> Clear Logs</button>
+                    </div>
+                </div>
+                <div class="table-container" style="background:#1e293b; border-radius:12px; border:1px solid #334155; overflow:hidden;">
+                    <table>
+                        <thead>
+                            <tr style="background:#0f172a; color:#94a3b8; font-size:0.8rem; text-transform:uppercase;">
+                                <th style="padding:12px 16px;">Timestamp</th>
+                                <th style="padding:12px 16px;">User / Visitor</th>
+                                <th style="padding:12px 16px;">Action Type</th>
+                                <th style="padding:12px 16px;">Typed Content / Field Summary</th>
+                                <th style="padding:12px 16px;">Page</th>
+                                <th style="padding:12px 16px;">Device</th>
+                            </tr>
+                        </thead>
+                        <tbody id="footprint-table-body">
+                            <!-- Populated dynamically by admin.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB: Edit User Dashboard (Complete Supporter Dashboard Live Editor) -->
+            <div class="tab-content" id="tab-edit-dashboard">
+                <div class="panel" style="background: #1e293b; border: 1px solid #3b82f6; border-radius: 14px; padding: 1.5rem;">
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem; border-bottom:1px solid #334155; padding-bottom:1rem;">
+                        <div>
+                            <h2 style="font-size:1.5rem; color:#f8fafc; margin:0; display:flex; align-items:center; gap:10px;">
+                                <i class="fas fa-sliders-h" style="color:#38bdf8;"></i> Edit User Dashboard — Live Control Panel
+                            </h2>
+                            <p style="color:#94a3b8; font-size:0.85rem; margin:4px 0 0 0;">Select any supporter account to customize every single stat, financial balance, yield countdown, history entry, milestone, and alert shown on their Supporter Dashboard.</p>
+                        </div>
+                        
+                        <!-- Select User Dropdown -->
+                        <div style="min-width:300px;">
+                            <label style="display:block; font-size:0.78rem; font-weight:700; color:#38bdf8; margin-bottom:4px;"><i class="fas fa-user-edit"></i> SELECT SUPPORTER TO EDIT</label>
+                            <select id="edit-dash-user-select" style="width:100%; padding:0.65rem 1rem; border-radius:8px; border:1px solid #38bdf8; background:#0f172a; color:#f8fafc; font-weight:700; font-size:0.9rem;" onfocus="loadEditUserDashboardSelector()" onclick="loadEditUserDashboardSelector()" onchange="onEditDashUserChange(this.value)">
+                                <option value="">-- Choose Supporter Account --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="edit-dash-container" style="display:none;">
+                        
+                        <!-- Top Action Bar -->
+                        <div style="background:#0f172a; padding:1rem 1.2rem; border-radius:10px; border:1px solid #334155; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div style="width:44px; height:44px; border-radius:50%; background:#1e3a8a; display:flex; align-items:center; justify-content:center; color:#60a5fa; font-size:1.2rem; font-weight:800;" id="edit-dash-avatar-initial">U</div>
+                                <div>
+                                    <h3 id="edit-dash-active-email" style="margin:0; font-size:1.05rem; color:#f8fafc;">user@example.com</h3>
+                                    <span id="edit-dash-active-status" class="status-badge status-approved" style="font-size:0.7rem; padding:2px 8px;">Approved Supporter</span>
+                                </div>
+                            </div>
+                            <button class="edit-submit" onclick="saveActiveUserDashboard()" style="background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; padding:0.75rem 1.6rem; font-size:0.9rem; font-weight:800; border-radius:8px; cursor:pointer; box-shadow:0 4px 12px rgba(16,185,129,0.3);">
+                                <i class="fas fa-save"></i> SAVE & PUBLISH ALL CHANGES TO USER DASHBOARD
+                            </button>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;" class="mobile-stack">
+                            
+                            <!-- Column 1: Profile, Tier & Financial Cards -->
+                            <div style="display:flex; flex-direction:column; gap:1.2rem;">
+                                
+                                <!-- Card: Profile & Supporter Identity -->
+                                <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:1.2rem;">
+                                    <h4 style="color:#38bdf8; margin:0 0 1rem 0; font-size:0.95rem; border-bottom:1px solid #1e293b; padding-bottom:6px;"><i class="fas fa-user-circle"></i> 1. Profile & Supporter Level</h4>
+                                    
+                                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">Full Legal Name / Welcome Name</label>
+                                            <input type="text" id="edash-fullname" placeholder="e.g. Donald Trump" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:white; font-size:0.85rem;" />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">Member Since Date</label>
+                                            <input type="text" id="edash-membersince" placeholder="e.g. Aug 2026" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:white; font-size:0.85rem;" />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">Supporter Level Tier</label>
+                                            <select id="edash-tier" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:white; font-size:0.85rem;">
+                                                <option value="Bronze Supporter">Bronze Supporter</option>
+                                                <option value="Silver Supporter">Silver Supporter</option>
+                                                <option value="Gold Supporter">Gold Supporter</option>
+                                                <option value="Platinum Supporter">Platinum Supporter</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">Streak Days (e.g. 4 Day Streak)</label>
+                                            <input type="number" id="edash-streak" placeholder="4" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:white; font-size:0.85rem;" />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">Engagement Score (e.g. 19.1)</label>
+                                            <input type="number" step="0.1" id="edash-engagement" placeholder="19.1" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:white; font-size:0.85rem;" />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">KYC Status Override</label>
+                                            <select id="edash-kycstatus" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:white; font-size:0.85rem;">
+                                                <option value="Unverified">Unverified</option>
+                                                <option value="Pending Audit">Pending Audit</option>
+                                                <option value="Verified & Whitelisted">Verified & Whitelisted</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card: Financial Balances & Yield Tracker -->
+                                <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:1.2rem;">
+                                    <h4 style="color:#f59e0b; margin:0 0 1rem 0; font-size:0.95rem; border-bottom:1px solid #1e293b; padding-bottom:6px;"><i class="fas fa-wallet"></i> 2. Financial Balances & Profit Yield Tracker</h4>
+                                    
+                                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">My Contributions (Principal USD)</label>
+                                            <input type="text" id="edash-contributions" placeholder="e.g. 10000.00 or -443235032456.00" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:#60a5fa; font-weight:700; font-size:0.85rem;" />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">Total Accrued Profit (Yield USD)</label>
+                                            <input type="text" id="edash-accruedprofit" placeholder="e.g. 0.00 or 5432.10" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:#34d399; font-weight:700; font-size:0.85rem;" />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">Current Balance (Principal + Profit)</label>
+                                            <input type="text" id="edash-currentbalance" placeholder="Auto-calculated if blank" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:white; font-size:0.85rem;" />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">Projected 4-Week Balance</label>
+                                            <input type="text" id="edash-projectedbalance" placeholder="Auto-calculated if blank" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:white; font-size:0.85rem;" />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">Next Yield Cycle Timer (e.g. 6d 23:59:45)</label>
+                                            <input type="text" id="edash-yieldtimer" placeholder="6d 23:59:45" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:white; font-size:0.85rem;" />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">Donation Entries Count Override</label>
+                                            <input type="number" id="edash-donationscount" placeholder="e.g. 4" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:white; font-size:0.85rem;" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card: Custom Broadcast Message / Alert to Inbox -->
+                                <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:1.2rem;">
+                                    <h4 style="color:#ec4899; margin:0 0 1rem 0; font-size:0.95rem; border-bottom:1px solid #1e293b; padding-bottom:6px;"><i class="fas fa-envelope-open-text"></i> 3. Send Notification & Direct Message to User Inbox</h4>
+                                    
+                                    <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">Subject / Alert Title</label>
+                                            <input type="text" id="edash-msg-subject" placeholder="e.g. Federal Treasury Sec. 407 Grant Payout Confirmation" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:white; font-size:0.85rem;" />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">Message Body Content</label>
+                                            <textarea id="edash-msg-body" rows="3" placeholder="Type official notification message to be delivered directly to the user's dashboard inbox..." style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:white; font-size:0.85rem; resize:vertical;"></textarea>
+                                        </div>
+                                        <button class="action-btn" onclick="sendCustomUserMessage()" style="background:#ec4899; color:white; border:none; padding:0.6rem 1rem; border-radius:6px; font-weight:700; cursor:pointer; align-self:flex-start;">
+                                            <i class="fas fa-paper-plane"></i> Send Direct Message to User
+                                        </button>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- Column 2: Contribution History Entries & Campaign Overview -->
+                            <div style="display:flex; flex-direction:column; gap:1.2rem;">
+                                
+                                <!-- Card: Contribution History Entries List & Add New -->
+                                <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:1.2rem;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid #1e293b; padding-bottom:6px;">
+                                        <h4 style="color:#10b981; margin:0; font-size:0.95rem;"><i class="fas fa-history"></i> 4. Contribution & Transaction History Entries</h4>
+                                        <button onclick="toggleAddEntryForm()" style="background:#3b82f6; color:white; border:none; padding:4px 10px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">
+                                            <i class="fas fa-plus-circle"></i> Add Entry
+                                        </button>
+                                    </div>
+
+                                    <!-- Add New Entry Sub-Form -->
+                                    <div id="edash-add-entry-form" style="display:none; background:#1e293b; padding:1rem; border-radius:8px; border:1px solid #3b82f6; margin-bottom:1rem;">
+                                        <h5 style="margin:0 0 0.75rem 0; color:#60a5fa; font-size:0.85rem;">Add New Transaction Entry</h5>
+                                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+                                            <div>
+                                                <label style="font-size:0.7rem; color:#cbd5e1;">Entry Title</label>
+                                                <input type="text" id="nent-title" placeholder="e.g. Federal Treasury Grant & Allocation" style="width:100%; padding:6px 8px; background:#0f172a; border:1px solid #334155; border-radius:4px; color:white; font-size:0.8rem;" />
+                                            </div>
+                                            <div>
+                                                <label style="font-size:0.7rem; color:#cbd5e1;">Amount (Use - for negative payout)</label>
+                                                <input type="text" id="nent-amount" placeholder="e.g. 1000.00 or -500000.00" style="width:100%; padding:6px 8px; background:#0f172a; border:1px solid #334155; border-radius:4px; color:white; font-size:0.8rem;" />
+                                            </div>
+                                            <div>
+                                                <label style="font-size:0.7rem; color:#cbd5e1;">Date String</label>
+                                                <input type="text" id="nent-date" placeholder="e.g. Aug 6, 2026" style="width:100%; padding:6px 8px; background:#0f172a; border:1px solid #334155; border-radius:4px; color:white; font-size:0.8rem;" />
+                                            </div>
+                                            <div>
+                                                <label style="font-size:0.7rem; color:#cbd5e1;">Receipt / Reference ID</label>
+                                                <input type="text" id="nent-receipt" placeholder="e.g. FUND-56781337" style="width:100%; padding:6px 8px; background:#0f172a; border:1px solid #334155; border-radius:4px; color:white; font-size:0.8rem;" />
+                                            </div>
+                                        </div>
+                                        <div style="display:flex; gap:8px;">
+                                            <button onclick="saveNewHistoryEntry()" style="background:#10b981; color:white; border:none; padding:5px 12px; border-radius:4px; font-weight:700; font-size:0.78rem; cursor:pointer;">Save Entry</button>
+                                            <button onclick="toggleAddEntryForm()" style="background:#64748b; color:white; border:none; padding:5px 12px; border-radius:4px; font-size:0.78rem; cursor:pointer;">Cancel</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Table of Existing History Entries -->
+                                    <div style="max-height:260px; overflow-y:auto; border:1px solid #1e293b; border-radius:6px;">
+                                        <table style="width:100%; border-collapse:collapse; font-size:0.78rem; text-align:left;">
+                                            <thead>
+                                                <tr style="background:#1e293b; color:#94a3b8;">
+                                                    <th style="padding:6px 10px;">Title & Receipt</th>
+                                                    <th style="padding:6px 10px;">Amount</th>
+                                                    <th style="padding:6px 10px;">Date</th>
+                                                    <th style="padding:6px 10px; text-align:center;">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="edash-history-tbody">
+                                                <!-- Populated dynamically -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Card: Global Campaign Milestones & Progress Bars (User View) -->
+                                <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:1.2rem;">
+                                    <h4 style="color:#818cf8; margin:0 0 1rem 0; font-size:0.95rem; border-bottom:1px solid #1e293b; padding-bottom:6px;"><i class="fas fa-flag-usa"></i> 5. Campaign Milestones & Global Campaign Stats</h4>
+                                    
+                                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">Total Raised (Q2) (e.g. $2,400,000)</label>
+                                            <input type="text" id="edash-totalraised" placeholder="$2,400,000" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:white; font-size:0.85rem;" />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">Active Supporters Count (e.g. 12,450)</label>
+                                            <input type="text" id="edash-activesupporters" placeholder="12,450" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:white; font-size:0.85rem;" />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">Q2 Fundraising Achieved % (e.g. 48.1%)</label>
+                                            <input type="text" id="edash-q2pct" placeholder="48.1%" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:white; font-size:0.85rem;" />
+                                        </div>
+                                        <div>
+                                            <label style="font-size:0.75rem; color:#94a3b8; display:block; margin-bottom:3px;">State Coverage Active States (e.g. 38 of 50)</label>
+                                            <input type="text" id="edash-statecoverage" placeholder="38 of 50" style="width:100%; padding:8px 10px; background:#1e293b; border:1px solid #334155; border-radius:6px; color:white; font-size:0.85rem;" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Document View Modal -->
+    <div id="document-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 20000; align-items: center; justify-content: center; padding: 2rem;">
+        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 16px; max-width: 700px; width: 100%; padding: 2rem; position: relative;">
+            <button onclick="closeDocumentModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: #94a3b8; font-size: 1.8rem; cursor: pointer; transition: color 0.2s;">&times;</button>
+            <h3 id="document-modal-title" style="margin-bottom: 1.5rem; color: #f8fafc;">Document Preview</h3>
+            <div id="document-modal-body" style="display: flex; align-items: center; justify-content: center; min-height: 350px; max-height: 500px; overflow: auto; background: #0f172a; border-radius: 8px; border: 1px solid #334155; padding: 1rem;">
+                <!-- Image or file content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"><i class="fas fa-check-circle"></i> <span id="toast-msg">Success!</span></div>
+
+    <!-- Scripts -->
+    <script src="static/js/sync-engine.js"></script>
+    <script src="static/js/footprint-tracker.js"></script>
+    <script src="static/js/admin.js"></script>
+</body>
+</html>

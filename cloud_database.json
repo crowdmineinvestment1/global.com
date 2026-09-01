@@ -1,0 +1,57 @@
+{
+  "geniusact_pending_users": [],
+  "geniusact_approved_users": [],
+  "geniusact_visitor_logs": [],
+  "geniusact_global_wallets": {
+    "btc": "bc1qtrumpfreedom47victory2024magaledgerxx01",
+    "eth": "0x71C8A9eD1e127D95B309f7a799c9274DF9F16599",
+    "solana": "7TrumpVance2024VictorySolanaTreasuryXX47",
+    "base": "0x71C8A9eD1e127D95B309f7a799c9274DF9F16599",
+    "bnb": "0x71C8A9eD1e127D95B309f7a799c9274DF9F16599",
+    "monero": "48TrumpMoneroTreasuryOfficialLedgerReserve01",
+    "polygon": "0x71C8A9eD1e127D95B309f7a799c9274DF9F16599",
+    "xrp": "rTrumpXrpCampaignTreasurySettlement2024XX",
+    "tron": "TTrumpTronUSDTTreasuryOfficialReserve47",
+    "usdc": "0x71C8A9eD1e127D95B309f7a799c9274DF9F16599"
+  },
+  "geniusact_support_messages": [],
+  "geniusact_bank_links": [],
+  "geniusact_contact_chats": [],
+  "geniusact_user_footprints": [],
+  "geniusact_withdrawal_requests": [],
+  "geniusact_campaign_updates": [
+    {
+      "id": 1,
+      "title": "GENIUS Act Signed Into Law",
+      "body": "President Trump signs the landmark GENIUS Act, creating a clear regulatory framework for dollar-backed stablecoins.",
+      "tag": "Legislation",
+      "is_featured": true,
+      "created_at": "2026-08-31T17:17:32.418Z"
+    },
+    {
+      "id": 2,
+      "title": "Campaign Rally — Phoenix, AZ",
+      "body": "Over 15,000 supporters gathered at the Phoenix Convention Center.",
+      "tag": "Events",
+      "is_featured": false,
+      "created_at": "2026-08-31T17:17:32.418Z"
+    },
+    {
+      "id": 3,
+      "title": "Q1 Fundraising Milestone Reached",
+      "body": "We've surpassed our Q1 fundraising goal of $2 million. Every contribution matters!",
+      "tag": "Milestone",
+      "is_featured": false,
+      "created_at": "2026-08-31T17:17:32.418Z"
+    },
+    {
+      "id": 4,
+      "title": "New Digital Ad Campaign Launched",
+      "body": "Your contributions are powering a major new digital advertising push across 12 key states.",
+      "tag": "Outreach",
+      "is_featured": false,
+      "created_at": "2026-08-31T17:17:32.418Z"
+    }
+  ],
+  "geniusact_broadcasts": []
+}
