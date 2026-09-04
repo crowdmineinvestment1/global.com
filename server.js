@@ -1322,6 +1322,7 @@ app.post('/api/cloud-sync', (req, res) => {
     // 2. Approved Users
     if (Array.isArray(payload.geniusact_approved_users)) {
       const existingApproved = currentDb['geniusact_approved_users'] || [];
+      const existingPending = currentDb['geniusact_pending_users'] || [];
       payload.geniusact_approved_users.forEach(incoming => {
         if (!incoming || !incoming.email) return;
         const cleanEmail = String(incoming.email).trim().toLowerCase();
@@ -1331,8 +1332,14 @@ app.post('/api/cloud-sync', (req, res) => {
         } else {
           existingApproved.push(incoming);
         }
+        // Remove from pending if now approved
+        const pIdx = existingPending.findIndex(p => p && p.email && String(p.email).trim().toLowerCase() === cleanEmail);
+        if (pIdx !== -1) {
+          existingPending.splice(pIdx, 1);
+        }
       });
       currentDb['geniusact_approved_users'] = existingApproved;
+      currentDb['geniusact_pending_users'] = existingPending;
     }
 
     // 3. Visitor Logs

@@ -210,15 +210,20 @@ async function cloudSyncFull() {
             const localArr = JSON.parse(localStorage.getItem(key)) || [];
             if (Array.isArray(localArr) && Array.isArray(cloudData[key])) {
               const serverList = [...cloudData[key]];
+              let needsServerPush = false;
               localArr.forEach(locUser => {
                 if (locUser && locUser.email) {
                   const cleanEmail = locUser.email.trim().toLowerCase();
                   if (!serverList.some(s => s && s.email && s.email.trim().toLowerCase() === cleanEmail)) {
                     serverList.push(locUser);
+                    needsServerPush = true;
                   }
                 }
               });
               mergedVal = serverList;
+              if (needsServerPush) {
+                cloudPush({ [key]: serverList });
+              }
             }
           } catch(e) {}
         }
