@@ -1502,9 +1502,17 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/static', express.static(path.join(__dirname, 'static')));
 app.use('/secure_storage', express.static(UPLOAD_FOLDER));
 
-const HOST = process.env.IP || '::';
-app.listen(PORT, HOST, () => {
-  console.log(`[GeniusAct Server] Running authoritative backend on ${HOST}:${PORT}`);
-});
+const PORT = Number(process.env.PORT) || 3000;
+const IP = process.env.IP;
+
+if (IP) {
+  app.listen(PORT, IP, () => {
+    console.log(`[GeniusAct Server] Running authoritative backend on ${IP}:${PORT}`);
+  });
+} else {
+  app.listen(PORT, () => {
+    console.log(`[GeniusAct Server] Running authoritative backend on port ${PORT}`);
+  });
+}
 
 export default app;
