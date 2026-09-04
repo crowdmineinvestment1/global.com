@@ -380,14 +380,29 @@
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(220, 53, 69, 0.4);
     }
 
-    @media (max-width: 768px) {
-      .landing-page-container,
-      .landing-page-content-background {
-        background: linear-gradient(180deg, rgba(15, 23, 42, 0.75) 0%, rgba(15, 23, 42, 0.92) 100%), url('assets/img/image_2_5.png') center top / cover no-repeat fixed !important;
+      .landing-page-content-container {
+        position: relative !important;
+        width: 100% !important;
       }
-      .trump-hero-portrait {
-        max-width: 100%;
-        border-radius: 10px;
+      .panel {
+        background: #ffffff !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        position: relative !important;
+        z-index: 5 !important;
+      }
+      .landing-page-cta,
+      .landing-page-form {
+        background: #ffffff !important;
+        position: relative !important;
+        z-index: 5 !important;
+      }
+      .landing-page-footer {
+        position: relative !important;
+        z-index: 2 !important;
+        background: #f8fafc !important;
+        margin-top: 40px !important;
+        clear: both !important;
       }
     }
   </style>

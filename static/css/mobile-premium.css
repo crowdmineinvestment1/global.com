@@ -18,6 +18,50 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Fix for iPhone / Mobile text overlap & footer flow */
+.landing-page-content-container {
+  position: relative !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+}
+
+.panel {
+  position: relative !important;
+  background: #ffffff !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  margin: 15px auto !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
+}
+
+.landing-page-cta {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 5 !important;
+}
+
+.landing-page-form {
+  background: #ffffff !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 5 !important;
+}
+
+.landing-page-footer {
+  position: relative !important;
+  z-index: 2 !important;
+  width: 100% !important;
+  background: #f8fafc !important;
+  border-top: 1px solid #e2e8f0 !important;
+  padding: 30px 15px !important;
+  margin-top: 40px !important;
+  clear: both !important;
+}
+
 /* Touch friendly inputs and buttons */
 input, select, textarea, button, .btn, .button {
   font-size: 16px !important; /* Prevents auto-zoom on iOS */
