@@ -1505,3 +1505,5 @@ app.use('/secure_storage', express.static(UPLOAD_FOLDER));
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[GeniusAct Server] Running authoritative backend on http://0.0.0.0:${PORT}`);
 });
+
+export default app;
