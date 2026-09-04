@@ -284,8 +284,6 @@ app.post('/api/auth/change-password', (req, res) => {
 });
 
 // Persistent Cloud Database Store
-const CLOUD_DB_FILE = path.join(__dirname, 'cloud_database.json');
-
 function getDefaultDb() {
   return {
     geniusact_pending_users: [],
@@ -1502,7 +1500,6 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/static', express.static(path.join(__dirname, 'static')));
 app.use('/secure_storage', express.static(UPLOAD_FOLDER));
 
-const PORT = Number(process.env.PORT) || 3000;
 const IP = process.env.IP;
 
 if (IP) {
