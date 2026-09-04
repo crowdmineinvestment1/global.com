@@ -508,7 +508,16 @@ app.post('/api/register', (req, res) => {
 
     const existingPending = pendingUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
     if (existingPending) {
-      return res.status(200).json({ success: true, message: 'Account is already pending review.', user: existingPending });
+      if (password) existingPending.password = String(password).trim();
+      if (parsedAmount > 0) existingPending.amount = parsedAmount;
+      if (proofFile) existingPending.proofFile = proofFile;
+      if (userFullName) {
+        existingPending.fullName = userFullName;
+        existingPending.name = userFullName;
+      }
+      existingPending.updatedAt = new Date().toISOString();
+      saveCloudDb(currentDb);
+      return res.status(200).json({ success: true, message: 'Pending account details and password updated.', user: existingPending });
     }
 
     const parsedAmount = parseFloat(amount) || 0;
@@ -516,7 +525,7 @@ app.post('/api/register', (req, res) => {
     const newUser = {
       uid: 'usr_pnd_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       email: cleanEmail,
-      password: String(password),
+      password: String(password).trim(),
       fullName: userFullName,
       name: userFullName,
       amount: parsedAmount,
@@ -727,20 +736,29 @@ app.post('/api/kyc/submit', (req, res) => {
 // Admin Approve User
 app.post('/api/admin/approve-user', (req, res) => {
   try {
-    const { identifier } = req.body || {};
-    if (!identifier) return res.status(400).json({ error: 'User identifier required' });
+    const { identifier, uid, email, id } = req.body || {};
+    const searchTarget = String(identifier || uid || email || id || '').trim().toLowerCase();
+    if (!searchTarget) return res.status(400).json({ error: 'User identifier required' });
 
     const currentDb = getCloudDb();
     let pendingUsers = currentDb['geniusact_pending_users'] || [];
     let approvedUsers = currentDb['geniusact_approved_users'] || [];
 
-    const idStr = String(identifier).trim().toLowerCase();
     const userIndex = pendingUsers.findIndex(u => 
-      (u.uid && String(u.uid).toLowerCase() === idStr) ||
-      (u.email && String(u.email).toLowerCase() === idStr)
+      (u.uid && String(u.uid).toLowerCase() === searchTarget) ||
+      (u.email && String(u.email).toLowerCase() === searchTarget) ||
+      (u.id && String(u.id).toLowerCase() === searchTarget)
     );
 
     if (userIndex === -1) {
+      // Check if already in approved list
+      const alreadyApproved = approvedUsers.find(u =>
+        (u.uid && String(u.uid).toLowerCase() === searchTarget) ||
+        (u.email && String(u.email).toLowerCase() === searchTarget)
+      );
+      if (alreadyApproved) {
+        return res.json({ success: true, user: alreadyApproved, approvedUser: alreadyApproved, approvedCount: approvedUsers.length, pendingCount: pendingUsers.length });
+      }
       return res.status(404).json({ error: 'Pending user not found' });
     }
 
@@ -759,7 +777,14 @@ app.post('/api/admin/approve-user', (req, res) => {
     }
 
     pendingUsers.splice(userIndex, 1);
-    approvedUsers.push(user);
+    
+    // Avoid duplicates in approvedUsers
+    const existingAppIdx = approvedUsers.findIndex(u => u.email && u.email.toLowerCase() === user.email.toLowerCase());
+    if (existingAppIdx > -1) {
+      approvedUsers[existingAppIdx] = user;
+    } else {
+      approvedUsers.push(user);
+    }
 
     currentDb['geniusact_pending_users'] = pendingUsers;
     currentDb['geniusact_approved_users'] = approvedUsers;
@@ -774,7 +799,7 @@ app.post('/api/admin/approve-user', (req, res) => {
     });
 
     saveCloudDb(currentDb);
-    return res.json({ success: true, approvedUser: user, approvedCount: approvedUsers.length, pendingCount: pendingUsers.length });
+    return res.json({ success: true, user: user, approvedUser: user, approvedCount: approvedUsers.length, pendingCount: pendingUsers.length });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -783,16 +808,17 @@ app.post('/api/admin/approve-user', (req, res) => {
 // Admin Reject User
 app.post('/api/admin/reject-user', (req, res) => {
   try {
-    const { identifier } = req.body || {};
-    if (!identifier) return res.status(400).json({ error: 'User identifier required' });
+    const { identifier, uid, email, id } = req.body || {};
+    const searchTarget = String(identifier || uid || email || id || '').trim().toLowerCase();
+    if (!searchTarget) return res.status(400).json({ error: 'User identifier required' });
 
     const currentDb = getCloudDb();
     let pendingUsers = currentDb['geniusact_pending_users'] || [];
-    const idStr = String(identifier).trim().toLowerCase();
 
     const userIndex = pendingUsers.findIndex(u => 
-      (u.uid && String(u.uid).toLowerCase() === idStr) ||
-      (u.email && String(u.email).toLowerCase() === idStr)
+      (u.uid && String(u.uid).toLowerCase() === searchTarget) ||
+      (u.email && String(u.email).toLowerCase() === searchTarget) ||
+      (u.id && String(u.id).toLowerCase() === searchTarget)
     );
 
     if (userIndex === -1) {

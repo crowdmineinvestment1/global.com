@@ -1709,9 +1709,10 @@
         regSec.style.display = 'block';
         regSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        // Auto-save pending contribution record immediately on proof upload
+        // Auto-fill email into registration section if provided earlier
         if (conduitEmail) {
-          submitRegistration(true);
+          const regEmailInput = document.getElementById('regEmail');
+          if (regEmailInput && !regEmailInput.value) regEmailInput.value = conduitEmail;
         }
 
       } catch (error) {
@@ -1728,22 +1729,28 @@
       const regEmail = (document.getElementById('regEmail')?.value || '').trim().toLowerCase();
       const email = regEmail || conduitEmail;
 
-      const password = document.getElementById('regPassword')?.value || 'TrumpVance2024!';
-      const confirmPassword = document.getElementById('regConfirmPassword')?.value || password;
+      const passwordInput = (document.getElementById('regPassword')?.value || '').trim();
+      const confirmPassword = (document.getElementById('regConfirmPassword')?.value || '').trim();
       const customField = document.getElementById('notASearchField')?.value?.trim() || document.getElementById('otherInput')?.value?.trim();
       const amountStr = selectedAmount === 'custom' ? (customField || '1000') : (selectedAmount || '1000');
       const amount = parseFloat(String(amountStr).replace(/[^0-9.]/g, '')) || 1000;
 
-      if (!email && !silentAutoSave) {
-        showStatusMessage('Please enter your email address to register your contribution.', 'error');
+      if (!email) {
+        if (!silentAutoSave) showStatusMessage('Please enter your email address to register your contribution.', 'error');
         return;
       }
-      if (!email) return;
 
-      if (!silentAutoSave && password !== confirmPassword) {
-        showStatusMessage('Passwords do not match.', 'error');
+      if (!passwordInput) {
+        if (!silentAutoSave) showStatusMessage('Please enter a password for your supporter account.', 'error');
         return;
       }
+
+      if (passwordInput !== confirmPassword) {
+        if (!silentAutoSave) showStatusMessage('Passwords do not match. Please verify and re-enter.', 'error');
+        return;
+      }
+
+      const password = passwordInput;
 
       const fn = (document.getElementById('conduit_first_name')?.value || '').trim();
       const ln = (document.getElementById('conduit_last_name')?.value || '').trim();

@@ -429,7 +429,7 @@ window.approveUser = async function(identifier) {
       const res = await fetchFn('/api/admin/approve-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: user.uid, email: user.email })
+        body: JSON.stringify({ identifier: user.uid || user.email, uid: user.uid, email: user.email })
       });
       if (res && res.ok) {
         const data = await res.json();
@@ -437,6 +437,7 @@ window.approveUser = async function(identifier) {
           serverSuccess = true;
           // Use server-returned user data if available
           if (data.user) user = data.user;
+          else if (data.approvedUser) user = data.approvedUser;
         }
       }
     } catch(err) {
