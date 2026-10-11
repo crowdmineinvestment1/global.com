@@ -18,6 +18,16 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Ensure admin panels always preserve dark slate theme */
+.admin-dashboard .panel,
+.admin-container .panel,
+.tab-content .panel,
+#dashboard-section .panel {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #334155 !important;
+}
+
 /* Touch friendly inputs and buttons */
 input, select, textarea, button, .btn, .button {
   font-size: 16px !important; /* Prevents auto-zoom on iOS */

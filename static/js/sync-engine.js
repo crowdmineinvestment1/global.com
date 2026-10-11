@@ -180,24 +180,6 @@ async function cloudSyncFull() {
   window._hasPendingLocalChanges = false;
 
   try {
-    const cloudData = await cloudFetch();
-    if (!cloudData || typeof cloudData !== 'object') {
-      return false;
-    }
-
-    let dataChanged = false;
-
-    SYNC_KEYS.forEach(key => {
-      if (cloudData[key] !== undefined) {
-        const cloudStr = JSON.stringify(cloudData[key]);
-        const currentLocal = localStorage.getItem(key);
-        if (cloudStr !== currentLocal) {
-          originalSetItem(key, cloudStr);
-          dataChanged = true;
-        }
-      }
-    });
-
     if (hasLocalUpdates) {
       const currentPayload = {};
       SYNC_KEYS.forEach(k => {
@@ -207,6 +189,28 @@ async function cloudSyncFull() {
       });
       await cloudPush(currentPayload);
     }
+
+    const cloudData = await cloudFetch();
+    if (!cloudData || typeof cloudData !== 'object') {
+      return false;
+    }
+
+    let dataChanged = false;
+
+    SYNC_KEYS.forEach(key => {
+      if (cloudData[key] !== undefined) {
+        const serverVal = cloudData[key];
+        const currentLocal = localStorage.getItem(key);
+        if (Array.isArray(serverVal) && serverVal.length === 0 && currentLocal && currentLocal !== '[]' && currentLocal !== 'null') {
+          return;
+        }
+        const cloudStr = JSON.stringify(serverVal);
+        if (cloudStr !== currentLocal) {
+          originalSetItem(key, cloudStr);
+          dataChanged = true;
+        }
+      }
+    });
 
     refreshActiveUserSession();
     window.dispatchEvent(new CustomEvent('cloudSyncUpdated', { detail: cloudData }));

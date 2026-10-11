@@ -173,17 +173,19 @@ document.addEventListener('DOMContentLoaded', async function () {
         const sidebar = document.querySelector('.sidebar');
         if (!sidebar) return;
 
-        let overlay = document.querySelector('.sidebar-overlay');
+        let overlay = document.querySelector('.sidebar-overlay') || document.getElementById('dashboard-sidebar-overlay');
         if (!overlay) {
             overlay = document.createElement('div');
             overlay.className = 'sidebar-overlay';
+            overlay.id = 'dashboard-sidebar-overlay';
             document.body.appendChild(overlay);
         }
 
-        let btn = document.querySelector('.mobile-menu-btn');
+        let btn = document.querySelector('.mobile-menu-btn') || document.getElementById('dashboard-mobile-menu-btn');
         if (!btn) {
             btn = document.createElement('button');
             btn.className = 'mobile-menu-btn';
+            btn.id = 'dashboard-mobile-menu-btn';
             btn.innerHTML = '<i class="fas fa-bars"></i>';
             btn.setAttribute('aria-label', 'Open menu');
             document.body.insertBefore(btn, document.body.firstChild);
@@ -198,6 +200,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         };
 
         btn.onclick = (e) => {
+            e.preventDefault();
             e.stopPropagation();
             toggleMenu();
         };
@@ -212,12 +215,26 @@ document.addEventListener('DOMContentLoaded', async function () {
         const links = document.querySelectorAll('.sidebar-nav a');
         links.forEach(link => {
             link.addEventListener('click', function (e) {
-                links.forEach(l => l.classList.remove('active'));
-                this.classList.add('active');
+                const href = this.getAttribute('href');
+                if (href && href.startsWith('#')) {
+                    const targetSection = document.querySelector(href);
+                    if (targetSection) {
+                        e.preventDefault();
+                        links.forEach(l => l.classList.remove('active'));
+                        this.classList.add('active');
+                        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        if (window.history && window.history.replaceState) {
+                            window.history.replaceState(null, null, href);
+                        }
+                    }
+                }
+
                 // Close mobile sidebar on nav click
                 const sidebar = document.querySelector('.sidebar');
                 if (sidebar && sidebar.classList.contains('active')) {
                     sidebar.classList.remove('active');
+                    const overlay = document.querySelector('.sidebar-overlay');
+                    if (overlay) overlay.classList.remove('active');
                     document.body.style.overflow = '';
                     const btn = document.querySelector('.mobile-menu-btn');
                     if (btn) btn.innerHTML = '<i class="fas fa-bars"></i>';
